@@ -67,17 +67,17 @@ export function Header() {
                 </div>
 
                 <div className="hidden lg:flex flex-col  gap-2">
-                    <a href="#">
+                    <Link href="/signup">
                         <div className="py-1 px-5 rounded uppercase text-white text-2xl bg-[rgba(245,136,90,.9)] hover:bg-[rgba(245,136,90,.8)] transition duration-150 ease-in-out  ">
                             Sign up
                         </div>
-                    </a>
+                    </Link>
 
-                    <a href="#">
+                    <Link href="/login">
                         <div className="flex justify-center items-center py-1 px-3 uppercase text-black text-2xl rounded bg-[rgb(255,255,255)] hover:bg-[rgba(255,255,255,0.8)] transition duration-150 ease-in-out ">
                             Sign in
                         </div>
-                    </a>
+                    </Link>
                 </div>
             </div>
 
