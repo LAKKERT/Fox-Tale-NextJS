@@ -1,7 +1,9 @@
 "use client";
 import { useForm } from "react-hook-form";
+import { useState } from "react";
 import Link from "next/link";
 import { K2D } from "next/font/google";
+import { useRouter } from "next/navigation";
 
 const MainFont = K2D({
     style: "normal",
@@ -10,10 +12,11 @@ const MainFont = K2D({
 });
 
 export function LoginPage() {
+    const router = useRouter();
     const {register, handleSubmit} = useForm();
+    const [error, setError] = useState('');
 
     const onSubmit = async(data) => {
-        console.log("send",data);
         try {
             const response = await fetch('/api/users/loginAPI', {
                 method: 'POST',
@@ -26,9 +29,9 @@ export function LoginPage() {
             const result = await response.json();
 
             if (response.ok) {
-                console.log("Loged in successfully");
+                router.push(result.redirectUrl);
             }else {
-                console.log('Failed to log in:');
+                setError(result.message);
             }
 
         } catch (error) {
@@ -39,6 +42,9 @@ export function LoginPage() {
         <div className={`h-[90vh] w-full mt-[100px] flex flex-col justify-center items-center gap-2 ${MainFont.className} text-white `}>
             <h1 className="uppercase  text-4xl drop-shadow-[4px_4px_2px_rgba(0,0,0,0.5)]">LOG IN</h1>
             <div className="w-[290px] h-[330px] sm:w-[500px] md:w-[730px] md:h-[429px] flex flex-col justify-center items-center gap-3 md:gap-12 px-6 md:px-[100px] py-[20px] bg-[rgba(6,6,6,.65)] rounded-lg">
+                <div className="md:h-2 text-lg">
+                    <p>{error}</p>
+                </div>
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col items-center gap-8 md:gap-12">
                     <input type="text" {...register("username")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none " placeholder="LOGIN"/>
                     <input type="password" {...register("password")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none" placeholder="PASSWORD" />

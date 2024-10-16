@@ -1,12 +1,26 @@
 "use server";
 import Connect from "@/db/dbConfig";
 import jwt from "jsonwebtoken";
-import { redirect } from 'next/navigation'
+import { redirect } from "next/navigation";
+import { destroyCookie } from "nookies";
+import Cookies from "js-cookie"
+
+export async function getAllUserData(cookies) {
+    const token = cookies.auth_token;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const currentUserId = decoded.userId;
+
+    const conn = await Connect();
+    const result = await conn.query('SELECT * FROM users WHERE id = $1', [currentUserId])
+    await conn.end();
+    
+    return result.rows[0];
+}
 
 export async function getAllUsers(cookies) {
     const token = cookies.auth_token;
     if (!token) {
-        console.log("Unauthorized");
         return redirect('/');
     }
 
@@ -26,18 +40,14 @@ export async function getAllUsers(cookies) {
             throw error;
         }
     }else {
-        console.log("Access denied");
         return redirect('/');
     }
 }
 
 export async function getUserProfile(userID, cookies) {
-    console.log(cookies);
-
     const token = cookies.auth_token;
     
     if (!token) {
-        console.log("Unauthorized");
         return redirect('/');
     }
 
@@ -48,46 +58,20 @@ export async function getUserProfile(userID, cookies) {
         const currentUserRole = decoded.userRole;
 
         if (currentUserRole === "admin" || userID === currentUser) {
-
             const conn = await Connect();
             const result = await conn.query('SELECT * FROM users WHERE id = $1', [userID]);
             await conn.end();
-    
+
+            if (result.rows.length === 0) {
+                console.error("No users found");
+                return redirect('/');
+            }
             return result.rows[0];
         }else {
-            console.log("Access denied");
             return redirect('/');
         }
     }catch (error) {
-        console.error('Error getting user profile:', error);
-        if (error.name === 'JsonWebTokenError') {
-            console.log("Invalid token");
-        }
-        throw error;
+        return redirect('/');
     }
-
-    // const {currentUser, currentUserRole} = await cookies;
-    // if (!currentUser) { // не залогинен
-    //     console.log("Unauthorized");
-    //     return;
-    // }else {
-    //     try {
-    //         // if (userID !== currentUser) {
-    //         //     console.log("Access denied");
-    //         //     return;
-    //         // }
-    //         // if (currentUserRole!== 'admin') { // не администратор
-    //         //     console.log("Access denied");
-    //         //     return;
-    //         // }
-    //         const conn = await Connect();
-    //         const result = await conn.query('SELECT * FROM users WHERE id = $1', [userID]);
-    //         await conn.end();
-            
-    //         return result.rows[0];
-    //     }catch (error) {
-    //         console.error('Error getting user profile:', error);
-    //         throw error;
-    //     }
-    // }
 }
+

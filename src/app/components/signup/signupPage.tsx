@@ -48,12 +48,12 @@ export function SignUpPage() {
                 router.push(result.redirectUrl);
             } else {
                 console.error("Failed to create user");
-                setServerError(result.errors); // Сохраняем общее сообщение об ошибке
-                setServerMessage(result.message); // Сохраняем общее сообщение об ошибке
+                setServerError(result.errors);
+                setServerMessage(result.message);
             }
         } catch (error) {
             console.error("Error:", error);
-            setServerMessage("An unexpected error occurred."); // Обработка других ошибок
+            setServerMessage("An unexpected error occurred.");
         }
     };
 

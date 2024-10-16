@@ -41,7 +41,7 @@ export default async function CreateUser(req, res) {
 
             await conn.end();
 
-            return res.status(201).json({ message: "User created successfully", redirectUrl: '/' });
+            return res.status(201).json({ message: "User created successfully", redirectUrl: '/login' });
 
         } catch (error) {
             if (error instanceof Yup.ValidationError) {

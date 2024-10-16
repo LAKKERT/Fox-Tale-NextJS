@@ -32,8 +32,8 @@ export default async function Login(req, res) {
                 path: '/',
             });
 
-            res.setHeader('set-cookie', serializedCookie);
-            res.status(200).json({ message: 'Login successful' });
+            res.setHeader('Set-cookie', serializedCookie);
+            res.status(200).json({ message: 'Login successful', redirectUrl: '/' });
 
         }catch (error) {
             console.error(error);

@@ -38,39 +38,3 @@ export default function AllUsers() {
         </div>
     );
 }
-
-// "use client";
-// import { getAllUsers } from "@/pages/api/users/getAllUsers";
-// import { useState, useEffect } from "react";
-// import Link from "next/link";
-
-// interface User {
-//   id: number;
-//   username: string;
-//   email: string;
-// }
-
-// export default function AllUsers() {
-//   const [usersData, setUsersData] = useState<User[]>([]);
-//   useEffect(() => {
-//     async function fetchData() {
-//       const users = await getAllUsers();
-//       setUsersData(users);
-//       console.log('getAllUsers ----------------------------------------------')
-//     }
-//     fetchData();
-//   }, []);
-
-//   return (
-//     <div>
-//       <h1>All Users</h1>
-//       {usersData.map((data) => (
-//         <Link href={`/profile/[id]`} as={`/profile/${data.id}`} key={data.id}>
-//           <li key={data.id}>
-//             {data.username} - {data.email}
-//           </li>
-//         </Link>
-//       ))}
-//     </div>
-//   );
-// }
