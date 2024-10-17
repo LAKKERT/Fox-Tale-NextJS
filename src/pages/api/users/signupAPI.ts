@@ -2,6 +2,7 @@
 import Connect from "@/db/dbConfig";
 import * as Yup from "yup";
 import { v4 as uuidv4 } from "uuid";
+import { cookies } from "jsonwebtoken";
 
 const bcrypt = require("bcrypt");
 

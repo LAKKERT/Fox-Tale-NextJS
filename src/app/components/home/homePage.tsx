@@ -62,7 +62,7 @@ export function Main() {
                 <div className="flex flex-row items-center justify-end">
                     <a href="#" className="flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 mr-4 mt-4 mb-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out">
                         All news •
-                        <Image src="home/Arrow.svg" alt="arrow" width={25} height={25} />
+                        <Image src="home/Arrow.svg" alt="arrow" width={25} height={25} className="mt-1" />
                     </a>
                 </div>
             </div>
