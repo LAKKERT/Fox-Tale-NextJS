@@ -110,8 +110,15 @@ export function Header() {
                         </button>
                         <div className={`absolute flex flex-col justify-center items-center h-auto w-[250px] px-7 py-2 top-[70px] left-[-134px] gap-2 rounded-b-lg bg-[#000000] text-white text-2xl border-4 border-t-0 border-[rgba(245,136,90,.9)] ${isOptionsMenuOpen ? "flex flex-col" : "hidden"}`}>
                             <p className="w-full text-center border-b-2 border-[rgba(245,136,90,.9)]">{userData.username}</p>
-                            {userData && (
+                            {/* {userData && (
                                 <Link href={`/profile/[id]`} as={`/profile/${userData.id}`} key={userData.id} className="uppercase text-left hover:bg-[rgba(245,136,90,.9)] py-1 px-3 rounded transition duration-150 ease-in-out ">
+                                    <div>
+                                        PROFILE
+                                    </div>
+                                </Link>
+                            )} */}
+                            {userData && (
+                                <Link href={`/profile/verify`} as={`/profile/${userData.id}`} key={userData.id} className="uppercase text-left hover:bg-[rgba(245,136,90,.9)] py-1 px-3 rounded transition duration-150 ease-in-out ">
                                     <div>
                                         PROFILE
                                     </div>

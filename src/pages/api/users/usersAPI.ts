@@ -78,7 +78,6 @@ export async function getUserProfile(userID, cookies) {
     const currentUser = decoded.userId;
     const currentUserRole = decoded.userRole;
 
-    // Разрешение доступа для админов и текущего пользователя
     if (currentUserRole === "admin" || userID === currentUser) {
         const conn = await Connect();
         const result = await conn.query('SELECT * FROM users WHERE id = $1', [userID]);
@@ -89,7 +88,7 @@ export async function getUserProfile(userID, cookies) {
             return redirect('/');
         }
 
-        return result.rows[0];
+        return { profile: result.rows[0], UserRole: currentUserRole };
     } else {
         return redirect('/');
     }

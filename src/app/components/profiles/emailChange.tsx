@@ -1,6 +1,48 @@
 "use client";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as Yup from "yup";
+
+const validationSchema = Yup.object().shape({
+    email: Yup.string().email('Email is not correct').required('Enter your current email'),
+    Newemail: Yup.string().email('Email is not correct').required('Enter your new email'),
+})
+
 
 export function EmailChange({ userData }) {
+
+    const {register, handleSubmit, formState: { errors }} = useForm({
+        resolver: yupResolver(validationSchema)
+    });
+
+    const onSubmit = async (data) => {
+        try {
+            const payload = {
+                ...data,
+                id: userData.id
+            }
+            
+            const response = await fetch('api/profile/changeEmailAPI', {
+                method: 'POST',
+                headers: {
+                    'content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                console.log("Email changed successfully!");
+            } else {
+                console.error("Failed to change email");
+            }
+
+        }catch (error) {
+            console.error(error);
+        }
+    }
+
     if (!userData) {
         return <p>Loading email data...</p>;
     }
@@ -13,9 +55,9 @@ export function EmailChange({ userData }) {
             <div className="w-full flex flex-col gap-3">
                 <p >Your EMAIL: {userData.email}</p>
                 <form className="flex flex-col gap-3">
-                    <input type="email" placeholder="Email" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline" />
+                    <input type="email" {...register("currentEmail")} placeholder="Email" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline" />
                     <p className="flex items-center justify-center w-full h-11 rounded text-white text-center">Code from: {userData.email}</p>
-                    <input type="text" placeholder="Code" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline" />
+                    <input type="text" {...register("newEmail")} placeholder="Code" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline" />
                     <input type="submit" value="Save changes" className="w-full h-11 bg-[#C67E5F] hover:bg-[rgba(198,126,95,.80)] rounded text-white text-center cursor-pointer transition-all duration-150 ease-in-out" />
                 </form>
             </div>

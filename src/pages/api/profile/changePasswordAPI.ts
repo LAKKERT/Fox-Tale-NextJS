@@ -38,7 +38,7 @@ async function checkPassword(userID, password) {
 export default async function ChangePassword(req, res) {
     if (req.method === "POST") {
         try {
-            const { password1, password2, repeatPassword2 } = await schema.validate(req.body, {abortEarly: false})
+            const { password1, password2, repeatPassword2 } = await schema.validate(req.body, {abortEarly: false});
             
             const passwordCompare = await checkPassword(req.body.id, password1)
 

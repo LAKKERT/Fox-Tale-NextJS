@@ -1,7 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { getUserProfile } from "@/pages/api/users/usersAPI";
 import { useCookies } from "react-cookie";
+
+import { useForm } from "react-hook-form";
+import * as Yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
 
 import { Header } from "@/app/components/header";
 import { ChangePassword } from "@/app/components/profiles/passwordChange";
@@ -14,15 +19,30 @@ const MainFont = K2D({
     weight: "400",
 });
 
+const validationSchema = Yup.object().shape({
+    code: Yup.number().min(1000, 'Number must be a 4-digit number').max(9999, 'Number must be a 4-digit number').typeError('Please enter a 4-digit number'),
+})
+
 export default function UserProfile({ params }) {
+    const router = useRouter();
     const [userData, setUserData] = useState(null);
     const [cookies] = useCookies(['auth_token']);
+
+    const { register, handleSubmit, formState: { errors } } = useForm({
+        resolver: yupResolver(validationSchema)
+    })
 
     useEffect(() => {
         const fetchUserData = async () => {
             try {
                 const data = await getUserProfile(params.id, cookies);
-                setUserData(data);
+                console.log(data?.profile)
+                setUserData(data?.profile);
+                if (data.UserRole !== "admin") {
+                    if (data?.verified === false) {
+                        router.push('/profile/verify')
+                    }
+                }
             } catch (error) {
                 console.log("fetching data error", error);
             }
@@ -34,16 +54,16 @@ export default function UserProfile({ params }) {
         <div className={`w-full h-[90vh] mt-[100px] px-2 flex flex-col justify-center items-center bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden ${MainFont.className}`}>
             <Header />
             {userData ? (
-                <>
+                <div className={`${userData?.verified || userData?.role === "admin" ? "block" : "hidden"}`}>
                     <h1>WELCOME TO YOUR TEMPLE {userData.username}</h1>
                     <div className="max-w-2xl flex flex-col gap-3">
                         <ChangePassword userData={userData} />
                         <EmailChange userData={userData} />
                     </div>
-                </>
+                </div>
             ) : (
                 <div>Loading...</div>
             )}
         </div>
-    );    
+    );
 }

@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { useState } from "react";
 
 const validationSchema = Yup.object().shape({
-    // password1: Yup.string().min(6, 'Old password must be at least 6 characters').required('Enter your password'),
+    password1: Yup.string().min(6, 'Old password must be at least 6 characters').required('Enter your password'),
     password2: Yup.string().min(6, 'New password must be at least 6 characters').required('Enter your new password'),
     repeatPassword2: Yup.string().oneOf([Yup.ref('password2'), null], 'Passwords must match').required('Repeat your new password'),
 })
