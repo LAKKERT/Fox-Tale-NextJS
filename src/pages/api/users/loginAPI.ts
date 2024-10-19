@@ -28,7 +28,7 @@ export default async function Login(req, res) {
             const serializedCookie = serialize('auth_token', token, {
                 httpOnly: false,
                 sameSite: 'strict',
-                maxAge: 60 * 60,
+                maxAge: 86400,
                 path: '/',
             });
 

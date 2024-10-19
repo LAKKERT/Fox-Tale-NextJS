@@ -67,8 +67,8 @@ export function Header() {
     }, [cookies]);
 
     return (
-        <div className={`fixed w-full z-50 ${isOptionsMenuOpen ? "border-b-2 border-[rgba(245,136,90,.9)]" : "border-0"}`}>
-            <div className={`fixed top-0 z-50 h-[100px] w-full px-3 flex lg:justify-between items-center bg-black ${MainFont.className}`}>
+        <div className={`fixed w-full z-50 `}>
+            <div className={`fixed top-0 z-50 h-[100px] w-full px-3 flex lg:justify-between items-center bg-black ${MainFont.className} ${isOptionsMenuOpen ? "outline outline-[rgba(245,136,90,.9)]" : "outline-none"}`}>
 
                 <MobileMode isMenuOpen={isMenuOpen} toggleMenu={toggleMenu} />
 
@@ -108,16 +108,16 @@ export function Header() {
                                 <p>{userData.username}</p>
                             </div>
                         </button>
-                        <div className={`absolute h-auto w-auto px-7 py-2 top-[70px] left-[-41px] gap-2 rounded-b-lg bg-[#000000] text-white text-2xl border-2 border-t-0 border-[rgba(245,136,90,.9)] ${isOptionsMenuOpen ? "flex flex-col" : "hidden"}`}>
-                            <p className="text-center border-b-2 border-[rgba(245,136,90,.9)]">{userData.username}</p>
+                        <div className={`absolute flex flex-col justify-center items-center h-auto w-[250px] px-7 py-2 top-[70px] left-[-134px] gap-2 rounded-b-lg bg-[#000000] text-white text-2xl border-4 border-t-0 border-[rgba(245,136,90,.9)] ${isOptionsMenuOpen ? "flex flex-col" : "hidden"}`}>
+                            <p className="w-full text-center border-b-2 border-[rgba(245,136,90,.9)]">{userData.username}</p>
                             {userData && (
-                                <Link href={`/profile/[id]`} as={`/profile/${userData.id}`} key={userData.id} className="uppercase text-left">
+                                <Link href={`/profile/[id]`} as={`/profile/${userData.id}`} key={userData.id} className="uppercase text-left hover:bg-[rgba(245,136,90,.9)] py-1 px-3 rounded transition duration-150 ease-in-out ">
                                     <div>
                                         PROFILE
                                     </div>
                                 </Link>
                             )}
-                            <button onClick={destroyCookie} className="uppercase text-left">
+                            <button onClick={destroyCookie} className="uppercase text-left hover:bg-[rgba(245,136,90,.9)] py-1 px-3 rounded transition duration-150 ease-in-out ">
                                 <div>
                                     LOGOUT
                                 </div>
