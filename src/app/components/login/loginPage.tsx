@@ -39,7 +39,7 @@ export function LoginPage() {
         }
     }
     return (
-        <div className={`h-[90vh] w-full mt-[100px] flex flex-col justify-center items-center gap-2 ${MainFont.className} text-white`}>
+        <div className={`h-[90vh] w-full flex flex-col justify-center items-center gap-2 ${MainFont.className} text-white`}>
             <h1 className="uppercase  text-4xl drop-shadow-[4px_4px_2px_rgba(0,0,0,0.5)]">LOG IN</h1>
             <div className="w-[290px] h-[330px] sm:w-[500px] md:w-[730px] md:h-[429px] flex flex-col justify-center items-center gap-3 md:gap-12 px-6 md:px-[100px] py-[20px] bg-[rgba(6,6,6,.65)] rounded-lg">
                 <div className="md:h-2 text-lg">

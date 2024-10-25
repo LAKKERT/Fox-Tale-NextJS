@@ -16,8 +16,8 @@ const MainFont = K2D({
 });
 
 const MobileMode: React.FC<{ isMenuOpen: boolean; toggleMenu: () => void }> = ({ isMenuOpen, toggleMenu }) => (
-    <div className="lg:hidden absolute right-0 mr-5">
-        <div className={`flex flex-col gap-2 cursor-pointer onClick`} onClick={toggleMenu}>
+    <div className="lg:hidden absolute right-0 mr-5 cursor-pointer">
+        <div className={`flex flex-col gap-2`} onClick={toggleMenu}>
             <div className={`w-10 h-1 rounded bg-white transform duration-500 ease-in-out ${isMenuOpen ? "opacity-0" : "opacity-100"}`}></div>
             <div className="relative">
                 <div className={`w-10 h-1 rounded bg-white transform duration-500 ease-in-out origin-center ${isMenuOpen ? "rotate-[-45deg]" : "rotate-[0deg]"}`}></div>
@@ -57,7 +57,7 @@ export function Header() {
                     const data = await getAllUserData(cookies);
                     setUserData(data);
                 } catch (error) {
-                    console.log("fetching data error", error);
+                    console.error("fetching data error", error);
                 }
             };
             fetchUserData();
@@ -72,7 +72,7 @@ export function Header() {
 
                 <MobileMode isMenuOpen={isMenuOpen} toggleMenu={toggleMenu} />
 
-                <Link href="#" className="mx-auto lg:mx-0">
+                <Link href='/' className="mx-auto lg:mx-0">
                     <Image src="/header/logo.svg" alt="Logo" width={100} height={75} />
                 </Link>
 
@@ -110,15 +110,8 @@ export function Header() {
                         </button>
                         <div className={`absolute flex flex-col justify-center items-center h-auto w-[250px] px-7 py-2 top-[70px] left-[-134px] gap-2 rounded-b-lg bg-[#000000] text-white text-2xl border-4 border-t-0 border-[rgba(245,136,90,.9)] ${isOptionsMenuOpen ? "flex flex-col" : "hidden"}`}>
                             <p className="w-full text-center border-b-2 border-[rgba(245,136,90,.9)]">{userData.username}</p>
-                            {/* {userData && (
-                                <Link href={`/profile/[id]`} as={`/profile/${userData.id}`} key={userData.id} className="uppercase text-left hover:bg-[rgba(245,136,90,.9)] py-1 px-3 rounded transition duration-150 ease-in-out ">
-                                    <div>
-                                        PROFILE
-                                    </div>
-                                </Link>
-                            )} */}
                             {userData && (
-                                <Link href={`/profile/verify`} as={`/profile/${userData.id}`} key={userData.id} className="uppercase text-left hover:bg-[rgba(245,136,90,.9)] py-1 px-3 rounded transition duration-150 ease-in-out ">
+                                <Link href={`/profile/[id]`} as={`/profile/${userData.id}`} key={userData.id} className="uppercase text-left hover:bg-[rgba(245,136,90,.9)] py-1 px-3 rounded transition duration-150 ease-in-out ">
                                     <div>
                                         PROFILE
                                     </div>

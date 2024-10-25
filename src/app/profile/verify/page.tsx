@@ -44,7 +44,6 @@ export default function VerifyPage() {
             const result = await response.json();
 
             if (response.ok) {
-                console.log("User verified successfully!");
                 router.push(result.redirectUrl);
             } else {
                 console.error("Failed to verify user");
@@ -56,9 +55,20 @@ export default function VerifyPage() {
     }
 
     useEffect(() => {
-        console.log(cookies)
-        createVerificationCode(cookies)
-    }, [cookies]);
+        const verifyUser = async () => {
+            const verifyData = await createVerificationCode(cookies);
+
+            if (verifyData?.redirectUrl) {
+                router.push(verifyData.redirectUrl);
+            } else if (verifyData?.code) {
+                console.log('Verification code:', verifyData.code);
+            } else {
+                console.error('Error during verification:', verifyData?.error);
+            }
+        };
+
+        verifyUser();
+    }, [cookies, router]);
 
     return (
         <div>

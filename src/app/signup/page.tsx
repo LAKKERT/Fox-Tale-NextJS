@@ -15,9 +15,11 @@ export default function SignUp() {
     }, [cookies]);
 
     return (
-        <div className="h-[90vh] w-full mt-[100px] bg-[url('/signup/bg-signup.png')] flex justify-center items-center object-cover bg-cover bg-center bg-no-repeat overflow-hidden">
+        <div className="h-[90vh] w-full mt-[100px] bg-[url('/signup/bg-signup.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden">
             <Header />
-            <SignUpPage />
+            <div className="h-full flex flex-col justify-center items-center">
+                <SignUpPage />
+            </div>
         </div>
     );
 }

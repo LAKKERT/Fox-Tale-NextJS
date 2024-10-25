@@ -3,6 +3,8 @@ import Connect from "@/db/dbConfig";
 import * as Yup from "yup";
 import { v4 as uuidv4 } from "uuid";
 import { cookies } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
+import { serialize } from "cookie";
 
 const bcrypt = require("bcrypt");
 
@@ -13,11 +15,14 @@ const schema = Yup.object().shape({
     password2: Yup.string().oneOf([Yup.ref('password'), null], 'Passwords must match').required('Confirm your password')
 });
 
-async function checkEmailExists(email) {
+async function checkEmailandLoginExists(email, username) {
     const conn = await Connect();
-    const result = await conn.query('SELECT * FROM users WHERE email = $1', [email]);
+    const result = await conn.query('SELECT * FROM users WHERE email = $1 OR username = $2', [email, username]);
     await conn.end();
-    return result.rows.length > 0;
+    return {
+        emailExist: result.rows.some(row => row.email === email),
+        usernameExist: result.rows.some(row => row.username === username)
+    };
 }
 
 export default async function CreateUser(req, res) {
@@ -25,9 +30,13 @@ export default async function CreateUser(req, res) {
         try {
             const { email, username, password } = await schema.validate(req.body, { abortEarly: false });
 
-            const emailExist = await checkEmailExists(email);
+            const { emailExist, usernameExist } = await checkEmailandLoginExists(email, username);
             if (emailExist) {
                 return res.status(400).json({ message: "Email already exists" });
+            }
+
+            if (usernameExist) {
+                return res.status(400).json({ message: "Username already exists" });
             }
 
             const hashedPassword = await bcrypt.hash(password, 10);
@@ -42,7 +51,18 @@ export default async function CreateUser(req, res) {
 
             await conn.end();
 
-            return res.status(201).json({ message: "User created successfully", redirectUrl: '/login' });
+            const token = jwt.sign({ userID: uniqueID, email: email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+            const serializedCookie = serialize('regToken', token, {
+                httpOnly: false,
+                sameSite: 'strict',
+                maxAge: 3600,
+                path: '/',
+            })
+
+            res.setHeader('Set-cookie', serializedCookie);
+
+            return res.status(201).json({ message: "User created successfully", redirectUrl: '/signup/emailVerify' });
 
         } catch (error) {
             if (error instanceof Yup.ValidationError) {
@@ -51,6 +71,7 @@ export default async function CreateUser(req, res) {
                     const fieldName = err.path;
                     fieldErrors[fieldName] = err.message;
                 });
+                console.log(fieldErrors);
                 res.status(400).json({ message: "Validation error", errors: fieldErrors });
             } else {
                 res.status(400).json({ message: (error as Error).message });

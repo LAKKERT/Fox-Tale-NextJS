@@ -13,6 +13,7 @@ import { ChangePassword } from "@/app/components/profiles/passwordChange";
 import { EmailChange } from "@/app/components/profiles/emailChange";
 
 import { K2D } from "next/font/google";
+
 const MainFont = K2D({
     style: "normal",
     subsets: ["latin"],
@@ -26,6 +27,7 @@ const validationSchema = Yup.object().shape({
 export default function UserProfile({ params }) {
     const router = useRouter();
     const [userData, setUserData] = useState(null);
+    const [access, setAccess] = useState(false);
     const [cookies] = useCookies(['auth_token']);
 
     const { register, handleSubmit, formState: { errors } } = useForm({
@@ -36,34 +38,36 @@ export default function UserProfile({ params }) {
         const fetchUserData = async () => {
             try {
                 const data = await getUserProfile(params.id, cookies);
-                console.log(data?.profile)
                 setUserData(data?.profile);
+                setAccess(data?.accessProfile);
                 if (data.UserRole !== "admin") {
-                    if (data?.verified === false) {
+                    if (data?.accessProfile === false) {
                         router.push('/profile/verify')
                     }
                 }
             } catch (error) {
-                console.log("fetching data error", error);
+                console.error("fetching data error", error);
             }
         };
         fetchUserData();
     }, [params.id]);
 
     return (
-        <div className={`w-full h-[90vh] mt-[100px] px-2 flex flex-col justify-center items-center bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden ${MainFont.className}`}>
-            <Header />
-            {userData ? (
-                <div className={`${userData?.verified || userData?.role === "admin" ? "block" : "hidden"}`}>
-                    <h1>WELCOME TO YOUR TEMPLE {userData.username}</h1>
-                    <div className="max-w-2xl flex flex-col gap-3">
-                        <ChangePassword userData={userData} />
-                        <EmailChange userData={userData} />
+        <div className={`w-full h-[90vh] mt-[100px] px-2 bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden ${MainFont.className}`}>
+        <Header />
+            <div className="h-full flex flex-col justify-center items-center">
+                {userData ? (
+                    <div>
+                        <h1>WELCOME TO YOUR TEMPLE {userData.username}</h1>
+                        <div className="max-w-2xl flex flex-col gap-3">
+                            <ChangePassword userData={userData} />
+                            <EmailChange userData={userData} />
+                        </div>
                     </div>
-                </div>
-            ) : (
-                <div>Loading...</div>
-            )}
+                ) : (
+                    <div>Loading...</div>
+                )}
+            </div>
         </div>
     );
 }

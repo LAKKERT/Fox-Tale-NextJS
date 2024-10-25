@@ -1,9 +1,10 @@
 "use client";
 import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as Yup from "yup";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 
 import Link from "next/link";
 import { K2D } from "next/font/google";
@@ -13,6 +14,7 @@ const MainFont = K2D({
     subsets: ["latin"],
     weight: "400",
 });
+
 
 const validationSchema = Yup.object().shape({
     email: Yup.string().email('EMAIL is not correct').required('Enter your EMAIL'),
@@ -25,10 +27,22 @@ export function SignUpPage() {
     const router = useRouter();
     const [serverMessage, setServerMessage] = useState("");
     const [serverError, setServerError] = useState("");
-    
+    const [clientError, setClientError] = useState({});
+
     const { register, handleSubmit, formState: { errors } } = useForm({
         resolver: yupResolver(validationSchema),
     });
+
+    useEffect(() => {
+        if (errors) {
+            setClientError(errors);
+        } else {
+            const timeout = setTimeout(() => {
+                setClientError(errors);
+                return () => clearTimeout(timeout);
+            }, 300);
+        }
+    }, [errors]);
 
     const onSubmit = async (data) => {
         try {
@@ -41,10 +55,8 @@ export function SignUpPage() {
             });
 
             const result = await response.json();
-            console.log(result);
 
             if (response.ok) {
-                console.log("User created successfully!");
                 router.push(result.redirectUrl);
             } else {
                 console.error("Failed to create user");
@@ -65,22 +77,50 @@ export function SignUpPage() {
                     <div className="sm:text-2xl text-center">FIRST, LET’S GET YOUR INFO</div>
                     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col items-center gap-8 md:gap-12">
                         <div className="flex flex-col text-center">
-                            <p>{errors.email?.message || (serverMessage && serverMessage.includes("Email") ? serverMessage : '')}</p>
-                            <input type="email" autoComplete="off" {...register("email")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none" placeholder="Enter email here"/>
+                            <motion.p
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: errors.email?.message || serverError?.email || (serverMessage && serverMessage.includes("Email")) ? 1 : 0, height: errors.email?.message || serverError?.email || (serverMessage && serverMessage.includes("Email")) ? 30 : 0}}
+                                transition={{ duration: .3 }}
+                                className="text-orange-300"
+                            >
+                                {errors.email?.message || serverError?.email || (serverMessage && serverMessage.includes("Email") ? serverMessage : '')}
+                            </motion.p>
+                            <input type="email" autoComplete="off" {...register("email")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none" placeholder="Enter email here" />
                         </div>
                         <div className="flex flex-col text-center">
-                            <p>{errors.username?.message || (serverError?.username && serverError.username)}</p>
-                            <input type="text" autoComplete="off" {...register("username")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none" placeholder="LOGIN"/>
+                            <motion.p
+                                initial={{ opacity: 0, height: 0}}
+                                animate={{ opacity: errors.username?.message || serverError?.username || (serverMessage && serverMessage.includes("Username")) ? 1 : 0, height: errors.username?.message || serverError?.username || (serverMessage && serverMessage.includes("Username")) ? 30 : 0 }}
+                                transition={{ duration: .3 }}
+                                className="text-orange-300"
+                                >
+                                {errors.username?.message || serverError?.username || (serverMessage && serverMessage.includes("Username") ? serverMessage : '')}
+                            </motion.p>
+                            <input type="text" autoComplete="off" {...register("username")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none" placeholder="LOGIN" />
                         </div>
                         <div className="flex flex-col text-center">
-                            <p>{errors.password?.message || (serverError?.password && serverError.password)}</p>
+                            <motion.p
+                                initial={{ opacity: 0, height: 0}}
+                                animate={{ opacity: errors.password?.message || (serverError?.password && serverError.password) ? 1 : 0, height: errors.password?.message || (serverError?.password && serverError.password) ? 30 : 0 }}
+                                transition={{ duration: .3 }}
+                                className="text-orange-300"
+                            >
+                                {errors.password?.message || (serverError?.password && serverError.password)}
+                            </motion.p>
                             <input type="password" autoComplete="off" {...register("password")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none" placeholder="PASSWORD" />
                         </div>
                         <div className="flex flex-col text-center">
-                            <p>{errors.password2?.message || (serverError?.password2 && serverError.password2)}</p>
+                            <motion.p
+                                initial={{ opacity: 0, height: 0}}
+                                animate={{ opacity: errors.password2?.message || (serverError?.password2 && serverError.password2) ? 1 : 0, height: errors.password2?.message || (serverError?.password2 && serverError.password2) ? 30 : 0 }}
+                                transition={{ duration: .3 }}
+                                className="text-orange-300"
+                            >
+                                {errors.password2?.message || (serverError?.password2 && serverError.password2)}
+                            </motion.p>
                             <input type="password" autoComplete="off" {...register("password2")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none" placeholder="CONFIRM PASSWORD" />
                         </div>
-                        
+
                         <input type="submit" value="SIGN UP" className="w-[250px] h-[50px] text-2xl tracking-widest rounded border border-[#F5DEB3] bg-[#C2724F] cursor-pointer transition duration-75 ease-in-out hover:bg-[rgba(194,114,79,.7)]" />
                     </form>
                     <div className="flex flex-col text-center gap-2 uppercase text-base tracking-widest">

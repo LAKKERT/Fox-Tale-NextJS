@@ -77,6 +77,7 @@ export async function getUserProfile(userID, cookies) {
 
     const currentUser = decoded.userId;
     const currentUserRole = decoded.userRole;
+    const accessProfile = decoded.profileAccess;
 
     if (currentUserRole === "admin" || userID === currentUser) {
         const conn = await Connect();
@@ -88,7 +89,7 @@ export async function getUserProfile(userID, cookies) {
             return redirect('/');
         }
 
-        return { profile: result.rows[0], UserRole: currentUserRole };
+        return { profile: result.rows[0], UserRole: currentUserRole, accessProfile: accessProfile };
     } else {
         return redirect('/');
     }

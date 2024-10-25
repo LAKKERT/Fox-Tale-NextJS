@@ -22,9 +22,11 @@ export default function Login() {
         };
     }, []);
     return (
-        <div className="w-full h-full bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden">
-                <Header />
+        <div className="w-full h-full mt-[100px] bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden">
+            <Header />
+            <div className="flex flex-col justify-center items-center">
                 <LoginPage />
+            </div>
         </div>
     );
 }

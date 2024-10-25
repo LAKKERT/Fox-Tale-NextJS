@@ -1,5 +1,5 @@
-import nodemailer from 'nodemailer';
-
+// import nodemailer from 'nodemailer';
+const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: process.env.SMTP_PORT,
@@ -9,3 +9,13 @@ const transporter = nodemailer.createTransport({
         pass: process.env.SMTP_PASS
     }
 });
+
+transporter.verify((error, success) => {
+    if (error) {
+        console.log('Error with transporter:', error);
+    } else {
+        console.log('Transporter is ready to send emails');
+    }
+});
+
+export default transporter;

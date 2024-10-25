@@ -12,7 +12,7 @@ export function Main() {
     return (
         <div className={`lg:max-w-8xl mx-auto mt-[100px] ${MainFont.className}`}>
             <video width={1280} height={902} controls-none="false" autoPlay muted className="w-full h-auto lg:h-[555px] pointer-events-none">
-                <source src="home/introduction_logo.mp4" type="video/mp4" />
+                <source src="/home/introduction_logo.mp4" type="video/mp4" />
             </video>
 
             <div className="w-full bg-[#f5885a]">
@@ -62,7 +62,7 @@ export function Main() {
                 <div className="flex flex-row items-center justify-end">
                     <a href="#" className="flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 mr-4 mt-4 mb-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out">
                         All news •
-                        <Image src="home/Arrow.svg" alt="arrow" width={25} height={25} className="mt-1" />
+                        <Image src="/home/Arrow.svg" alt="arrow" width={25} height={25} className="mt-1" />
                     </a>
                 </div>
             </div>
@@ -70,7 +70,7 @@ export function Main() {
             <div className={`relative`}>
 
                 <video width={1280} controls-none="false" autoPlay loop muted className="w-full relative hidden md:block opacity-50 xl:opacity-100">
-                    <source src="home/leaves.mp4" type="video/mp4" />
+                    <source src="/home/leaves.mp4" type="video/mp4" />
                 </video>
 
                 <div className={`${styles.gradient} absolute inset-0 z-10`} />
