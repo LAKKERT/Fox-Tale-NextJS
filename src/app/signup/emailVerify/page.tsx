@@ -11,7 +11,6 @@ import { motion } from "framer-motion";
 import { getRegistrationUserData } from "@/pages/api/profile/verifyUserAPI";
 import { createVerificationCode } from "@/pages/api/profile/verifyUserAPI";
 
-
 const validationCode = Yup.object().shape({
     code: Yup.number().min(1000, 'Number must be a 4-digit number').max(9999, 'Number must be a 4-digit number').typeError('Please enter a 4-digit number'),
 })

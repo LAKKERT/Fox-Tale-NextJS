@@ -11,6 +11,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { Header } from "@/app/components/header";
 import { ChangePassword } from "@/app/components/profiles/passwordChange";
 import { EmailChange } from "@/app/components/profiles/emailChange";
+import { ChangeLogin } from "@/app/components/profiles/loginChange";
 
 import { K2D } from "next/font/google";
 
@@ -53,13 +54,14 @@ export default function UserProfile({ params }) {
     }, [params.id]);
 
     return (
-        <div className={`w-full h-[90vh] mt-[100px] px-2 bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden ${MainFont.className}`}>
-        <Header />
-            <div className="h-full flex flex-col justify-center items-center">
+        <div className={`w-full h-full bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat ${MainFont.className}`}>
+            <Header />
+            <div className="h-full mt-[100px] flex flex-col items-center px-2 py-8">
                 {userData ? (
                     <div>
                         <h1>WELCOME TO YOUR TEMPLE {userData.username}</h1>
                         <div className="max-w-2xl flex flex-col gap-3">
+                            <ChangeLogin userData={userData} />
                             <ChangePassword userData={userData} />
                             <EmailChange userData={userData} />
                         </div>

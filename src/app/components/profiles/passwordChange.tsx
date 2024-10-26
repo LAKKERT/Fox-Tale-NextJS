@@ -17,7 +17,7 @@ export function ChangePassword({ userData }) {
     const [serverError, setServerError] = useState({});
     const [clientError, setClientError] = useState({});
 
-    const { register, handleSubmit, formState: { errors } } = useForm({
+    const { register, handleSubmit, reset, formState: { errors } } = useForm({
         resolver: yupResolver(validationSchema)
     });
 
@@ -33,21 +33,6 @@ export function ChangePassword({ userData }) {
 
     }, [errors]);
 
-    // useEffect(() => {
-    //     console.log(errors.password1);
-
-    //     if (errors.password1) {
-    //         setClientError(errors.password1);
-    //     } else {
-    //         const timeout = setTimeout(() => {
-    //             setClientError("");
-    //             console.log('300ms timeout');
-    //             return () => clearTimeout(timeout);
-    //         }, 300);
-    //     }
-
-    // }, [errors.password1]);
-    
     const onSubmit = async (data) => {
         try {
             const payload = {
@@ -65,9 +50,8 @@ export function ChangePassword({ userData }) {
             const result = await response.json();
 
             if (response.ok) {
-                console.log("Password changed successfully!");
                 setSuccessMessage(result.message);
-                console.log(successMessage)
+                reset();
             } else {
                 console.error("Failed to change password");
                 setServerMessage(result.message);
@@ -86,24 +70,24 @@ export function ChangePassword({ userData }) {
 
             <div className="w-full flex flex-col gap-3">
 
-            <p>Change password</p>
-            <motion.p
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: successMessage ? 1 : 0, height: successMessage ? 30 : 0 }}
-                transition={{ duration: 0.3 }}
-                className="text-orange-300"
-            >
-                {successMessage ? successMessage : ''}
-            </motion.p>
+                <p>Change password</p>
+                <motion.p
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: successMessage ? 1 : 0, height: successMessage ? 30 : 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="text-orange-300"
+                >
+                    {successMessage ? successMessage : ''}
+                </motion.p>
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3 text-balance">
                     <div className="flex flex-col gap-2">
                         <motion.p
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: errors.password1 || serverError.password1 || serverMessage ? 1 : 0, height: errors.password1 || serverError.password1 || serverMessage ? 30 : 0 }}
                             transition={{ duration: 0.3 }}
-                            className="text-orange-300"
+                            className="text-orange-300 text-sm sm:text-large"
                         >
-                            { clientError.password1?.message  || serverError?.password1 || serverMessage}
+                            {clientError.password1?.message || serverError?.password1 || serverMessage}
                         </motion.p>
                         <input type="password" {...register("password1")} placeholder="Current password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline" />
                     </div>
@@ -112,18 +96,18 @@ export function ChangePassword({ userData }) {
                             initial={{ opacity: 0, heigth: 0 }}
                             animate={{ opacity: errors.password2 || serverError.password2 || serverMessage ? 1 : 0, height: errors.password2 || serverError.password2 || serverMessage ? 30 : 0 }}
                             transition={{ duration: 0.3 }}
-                            className="text-orange-300"
+                            className="text-orange-300 text-[13px] sm:text-large"
                         >
-                            { clientError.password2?.message || serverError?.password2 || serverMessage}
+                            {clientError.password2?.message || serverError?.password2 || serverMessage}
                         </motion.p>
                         <input type="password" {...register("password2")} placeholder="New password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline" />
                     </div>
                     <div className="flex flex-col gap-2">
                         <motion.p
                             initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: errors.repeatPassword2 || serverError ? 1 : 0, height: errors.repeatPassword2 || serverError?.repeatPassword2 ? 30 : 0}}
-                            transition={{ duration: 0.3}}
-                            className="text-orange-300"
+                            animate={{ opacity: errors.repeatPassword2 || serverError ? 1 : 0, height: errors.repeatPassword2 || serverError?.repeatPassword2 ? 30 : 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="text-orange-300 text-sm sm:text-large"
                         >
                             {errors.repeatPassword2?.message || serverError?.repeatPassword2}
                         </motion.p>

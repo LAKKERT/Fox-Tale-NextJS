@@ -23,8 +23,7 @@ export default async function Login(req, res) {
                 return res.status(401).json({ message: "Invalid username or password" });
             }
 
-            const token = jwt.sign({userId: userData.id, userRole: userData.role, profileAccess: false}, process.env.JWT_SECRET, {expiresIn: '1d'});
-
+            const token = jwt.sign({userId: userData.id, userRole: userData.role, profileAccess: false}, process.env.JWT_SECRET);
             const serializedCookie = serialize('auth_token', token, {
                 httpOnly: false,
                 sameSite: 'strict',

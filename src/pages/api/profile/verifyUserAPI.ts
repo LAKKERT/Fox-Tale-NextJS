@@ -64,7 +64,6 @@ export async function createVerificationCode(cookies) {
             ]);
             await conn.end();
 
-            return code;
         } catch (error) {
             console.error(error);
         }
@@ -124,11 +123,11 @@ export default async function VerifyUser(req, res) {
             });
 
             const token = cookies.auth_token;
-
+            
             if (!token) {
                 return res.status(401).json({ message: "Unauthorized" });
             }
-
+            
             let decoded;
             try {
                 decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -136,9 +135,19 @@ export default async function VerifyUser(req, res) {
                 console.error("Invalid token:", error);
                 return res.status(401).json({ message: "Unauthorized" });
             }
-
+            
             const userID = decoded.userId;
-            decoded.profileAccess = true;
+            
+            const conn = await Connect()
+            const result = await conn.query('SELECT verificationcode FROM users WHERE id = $1', [userID])
+            await conn.end()
+
+            if (result.rows[0].verificationcode == code) {
+                decoded.profileAccess = true;
+            } else {
+                console.error("Incorrect verification code");
+                return res.status(401).json({ message: "Incorrect verification code" });
+            }
 
             const updateToken = jwt.sign(decoded, process.env.JWT_SECRET);
 
