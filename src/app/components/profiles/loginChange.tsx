@@ -76,7 +76,7 @@ export function ChangeLogin({ userData }) {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: clientError.login?.message || serverError?.login || serverMessage ? 1 : 0, height: clientError.login?.message || serverError?.login || serverMessage ? 30 : 0 }}
                         transition={{ duration: .3 }}
-                        className="text-orange-300 text-sm sm:text-large"
+                        className="text-orange-300 text-[13px] sm:text-[18px]"
                     >
                         {clientError.login?.message || serverError?.login || serverMessage}
                     </motion.p>

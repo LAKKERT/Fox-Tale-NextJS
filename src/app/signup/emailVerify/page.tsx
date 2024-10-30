@@ -153,7 +153,7 @@ export default function EmailVerification() {
                             initial={{ opacity: 0, height: 0}}
                             animate={{ opacity: errors.code?.message || serverError ? 1 : 0, height: errors.code?.message || serverError ? 30 : 0 }}
                             transition={{ duration: .3 }}
-                            className="text-orange-300"
+                            className="text-orange-300 text-[13px] sm:text-[18px]"
                         >
                             { errors.code?.message || serverError }
                         </motion.p>

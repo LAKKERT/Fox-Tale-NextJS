@@ -12,6 +12,7 @@
     "@hookform/resolvers": "^3.9.0",
     "@next/font": "^14.2.13",
     "bcrypt": "^5.1.1",
+    "crypto": "^1.0.1",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "framer-motion": "^11.11.9",

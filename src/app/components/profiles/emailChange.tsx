@@ -7,7 +7,6 @@ import { motion } from "framer-motion";
 
 const validationSchema = Yup.object().shape({
     newEmail: Yup.string().email('Email is not correct').required('Enter your new email'),
-    // code: Yup.number().min(1000, 'Number must be a 4-digit number').max(9999, 'Number must be a 4-digit number').typeError('Please enter a 4-digit number'),
 })
 
 const codeValidationSchema = Yup.object().shape({
@@ -134,7 +133,7 @@ export function EmailChange({ userData }) {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: successMessage ? 1 : 0, height: successMessage ? 30 : 0 }}
                     transition={{ duration: .3 }}
-                    className="text-orange-300"
+                    className="text-orange-300 text-[13px] sm:text-[18px]"
                 >
                     {successMessage}
                 </motion.p>
@@ -144,7 +143,7 @@ export function EmailChange({ userData }) {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: clientError.newEmail?.message || serverError?.newEmail || serverMessage ? 1 : 0, height: clientError.newEmail?.message || serverError?.newEmail || serverMessage ? 30 : 0}}
                         transition={{ duration: .3}}
-                        className="text-orange-300"
+                        className="text-orange-300 text-[13px] sm:text-[18px]"
                     >
                         {clientError.newEmail?.message || serverError?.newEmail || serverMessage }
                     </motion.p>
@@ -173,7 +172,7 @@ export function EmailChange({ userData }) {
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: errorsCode.code?.message || serverError?.code || codeIncorrect ? 1 : 0, height: errorsCode.code?.message || serverError?.code || codeIncorrect ? 30 : 0}}
                             transition={{ duration: .3}}
-                            className="text-orange-300 text-sm sm:text-large"
+                            className="text-orange-300 text-[13px] sm:text-[18px]"
                         >
                             { errorsCode.code?.message || serverError?.code || codeIncorrect }
                         </motion.p>

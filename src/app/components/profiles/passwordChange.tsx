@@ -85,7 +85,7 @@ export function ChangePassword({ userData }) {
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: errors.password1 || serverError.password1 || serverMessage ? 1 : 0, height: errors.password1 || serverError.password1 || serverMessage ? 30 : 0 }}
                             transition={{ duration: 0.3 }}
-                            className="text-orange-300 text-sm sm:text-large"
+                            className="text-orange-300 text-[13px] sm:text-[18px]"
                         >
                             {clientError.password1?.message || serverError?.password1 || serverMessage}
                         </motion.p>
@@ -96,7 +96,7 @@ export function ChangePassword({ userData }) {
                             initial={{ opacity: 0, heigth: 0 }}
                             animate={{ opacity: errors.password2 || serverError.password2 || serverMessage ? 1 : 0, height: errors.password2 || serverError.password2 || serverMessage ? 30 : 0 }}
                             transition={{ duration: 0.3 }}
-                            className="text-orange-300 text-[13px] sm:text-large"
+                            className="text-orange-300 text-[13px] sm:text-[18px]"
                         >
                             {clientError.password2?.message || serverError?.password2 || serverMessage}
                         </motion.p>
@@ -107,7 +107,7 @@ export function ChangePassword({ userData }) {
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: errors.repeatPassword2 || serverError ? 1 : 0, height: errors.repeatPassword2 || serverError?.repeatPassword2 ? 30 : 0 }}
                             transition={{ duration: 0.3 }}
-                            className="text-orange-300 text-sm sm:text-large"
+                            className="text-orange-300 text-[13px] sm:text-[18px]"
                         >
                             {errors.repeatPassword2?.message || serverError?.repeatPassword2}
                         </motion.p>

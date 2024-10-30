@@ -3,11 +3,17 @@ import Connect from "@/db/dbConfig";
 import { compare } from "bcrypt";
 import jwt from "jsonwebtoken";
 import { serialize } from "cookie";
+import * as Yup from "yup";
+
+const validationSchema = Yup.object().shape({
+    username: Yup.string().min(4, 'Username must be at least 4 characters').required('Enter your username'),
+    password: Yup.string().min(6, 'Password must be at least 6 characters').required('Enter your password'),
+});
 
 export default async function Login(req, res) {
     if (req.method === "POST") {
         try {
-            const {username, password} = await req.body;
+            const {username, password} = await validationSchema.validate(req.body, {abortEarly: false});
 
             const conn = await Connect();
             const result = await conn.query('SELECT * FROM users WHERE username = $1', [username]);
@@ -35,8 +41,17 @@ export default async function Login(req, res) {
             res.status(200).json({ message: 'Login successful', redirectUrl: '/' });
 
         }catch (error) {
-            console.error(error);
-            res.status(500).json({ message: "Server error" });
+            if (error instanceof Yup.ValidationError) {
+                const fieldErrors: Record<string, string> = {};
+                error.inner.forEach((err) => {
+                    const fieldName = err.path;
+                    fieldErrors[fieldName] = err.message;
+                });
+                console.log(fieldErrors);
+                res.status(400).json({ message: "Validation error", errors: fieldErrors });
+            } else {
+                res.status(400).json({ message: (error as Error).message });
+            }
         }
     }
 }

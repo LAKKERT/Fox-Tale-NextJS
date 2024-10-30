@@ -83,7 +83,6 @@ export default async function verificationEmail(req, res) {
         });
 
         res.setHeader('Set-cookie', serializedCookie);
-        // res.status(204).end();
         res.status(200).json({message: 'registration failed'});
     } else {
         return res.status(405).json({ message: 'Method not allowed' });

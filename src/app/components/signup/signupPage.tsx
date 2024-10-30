@@ -73,7 +73,7 @@ export function SignUpPage() {
         <div>
             <div className={`w-full h-full flex flex-col justify-center items-center gap-2 ${MainFont.className} text-white`}>
                 <h1 className="uppercase text-center text-3xl sm:text-4xl text-balance drop-shadow-[4px_4px_2px_rgba(0,0,0,0.5)]">YOUR ADVENTURE STARTS HERE</h1>
-                <div className="w-[290px] h-auto sm:w-[500px] md:w-[730px] flex flex-col justify-center items-center gap-3 md:gap-8 px-6 md:px-[100px] py-[20px] bg-[rgba(6,6,6,.65)] rounded-lg">
+                <div className="w-[290px] h-auto sm:w-[500px] md:w-[730px] flex flex-col justify-center items-center gap-3 md:gap-8 px-4 md:px-[100px] py-[20px] bg-[rgba(6,6,6,.65)] rounded-lg">
                     <div className="sm:text-2xl text-center">FIRST, LET’S GET YOUR INFO</div>
                     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col items-center gap-8 md:gap-12">
                         <div className="flex flex-col text-center">
@@ -81,7 +81,7 @@ export function SignUpPage() {
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: errors.email?.message || serverError?.email || (serverMessage && serverMessage.includes("Email")) ? 1 : 0, height: errors.email?.message || serverError?.email || (serverMessage && serverMessage.includes("Email")) ? 30 : 0}}
                                 transition={{ duration: .3 }}
-                                className="text-orange-300"
+                                className="text-orange-300 text-[13px] sm:text-[18px]"
                             >
                                 {errors.email?.message || serverError?.email || (serverMessage && serverMessage.includes("Email") ? serverMessage : '')}
                             </motion.p>
@@ -92,39 +92,39 @@ export function SignUpPage() {
                                 initial={{ opacity: 0, height: 0}}
                                 animate={{ opacity: errors.username?.message || serverError?.username || (serverMessage && serverMessage.includes("Username")) ? 1 : 0, height: errors.username?.message || serverError?.username || (serverMessage && serverMessage.includes("Username")) ? 30 : 0 }}
                                 transition={{ duration: .3 }}
-                                className="text-orange-300"
+                                className="text-orange-300 text-[13px] sm:text-[18px]"
                                 >
                                 {errors.username?.message || serverError?.username || (serverMessage && serverMessage.includes("Username") ? serverMessage : '')}
                             </motion.p>
-                            <input type="text" autoComplete="off" {...register("username")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none" placeholder="LOGIN" />
+                            <input type="text" autoComplete="off" {...register("username")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none" placeholder="Login" />
                         </div>
                         <div className="flex flex-col text-center">
                             <motion.p
                                 initial={{ opacity: 0, height: 0}}
                                 animate={{ opacity: errors.password?.message || (serverError?.password && serverError.password) ? 1 : 0, height: errors.password?.message || (serverError?.password && serverError.password) ? 30 : 0 }}
                                 transition={{ duration: .3 }}
-                                className="text-orange-300"
+                                className="text-orange-300 text-[13px] sm:text-[18px]"
                             >
                                 {errors.password?.message || (serverError?.password && serverError.password)}
                             </motion.p>
-                            <input type="password" autoComplete="off" {...register("password")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none" placeholder="PASSWORD" />
+                            <input type="password" autoComplete="off" {...register("password")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none" placeholder="Password" />
                         </div>
                         <div className="flex flex-col text-center">
                             <motion.p
                                 initial={{ opacity: 0, height: 0}}
                                 animate={{ opacity: errors.password2?.message || (serverError?.password2 && serverError.password2) ? 1 : 0, height: errors.password2?.message || (serverError?.password2 && serverError.password2) ? 30 : 0 }}
                                 transition={{ duration: .3 }}
-                                className="text-orange-300"
+                                className="text-orange-300 text-[13px] sm:text-[18px]"
                             >
                                 {errors.password2?.message || (serverError?.password2 && serverError.password2)}
                             </motion.p>
-                            <input type="password" autoComplete="off" {...register("password2")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none" placeholder="CONFIRM PASSWORD" />
+                            <input type="password" autoComplete="off" {...register("password2")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none" placeholder="Confirm Password" />
                         </div>
 
                         <input type="submit" value="SIGN UP" className="w-[250px] h-[50px] text-2xl tracking-widest rounded border border-[#F5DEB3] bg-[#C2724F] cursor-pointer transition duration-75 ease-in-out hover:bg-[rgba(194,114,79,.7)]" />
                     </form>
                     <div className="flex flex-col text-center gap-2 uppercase text-base tracking-widest">
-                        <div>ALREADY REGISTERED? <Link href="/" className="text-[#F5DEB3] underline transition duration-100 ease-in-out hover:text-[rgba(245,222,179,.7)]">CLICK TO LOG IN</Link></div>
+                        <div>ALREADY REGISTERED? <Link href="/login" className="text-[#F5DEB3] underline transition duration-100 ease-in-out hover:text-[rgba(245,222,179,.7)]">CLICK TO LOG IN</Link></div>
                     </div>
                 </div>
             </div>
