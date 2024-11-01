@@ -78,7 +78,7 @@ export function AllProfilesTable({ placeholder }: { placeholder: string }) {
 
                     <div className="flex flex-col gap-5">
                         {sortedUsersData.map(data => (
-                            <div key={data.id} className="grid grid-cols-4 gap-2 p-4 min-w-5xl w-[1070px] text-center text-md text-balance uppercase bg-[rgba(6,6,6,.65)] rounded-xl shadow-[8px_9px_6px_0px_rgba(34,60,80,0.2)] transition-all duration-150 ease-in-out hover:outline outline-[#f5885a]">
+                            <div key={data.id} className="grid grid-cols-4 gap-2 p-4 min-w-5xl w-[1070px] text-center text-md text-balance bg-[rgba(6,6,6,.65)] rounded-xl shadow-[8px_9px_6px_0px_rgba(34,60,80,0.2)] transition-all duration-150 ease-in-out hover:outline outline-[#f5885a]">
                                 <div className="border-r-2 border-white flex justify-center items-center">
                                     {data.id}
                                 </div>

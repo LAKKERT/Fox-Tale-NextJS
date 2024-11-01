@@ -14,11 +14,11 @@ const codeValidationSchema = Yup.object().shape({
 })
 
 function maskEmail(email) {
-    const index = email.indexOf("@");
+    const index = email?.indexOf("@");
 
-    const visiblePart = email.slice(0, index - 4);
+    const visiblePart = email?.slice(0, index - 4);
     const hiddenPart = "*".repeat(4);
-    const domain = email.slice(index);
+    const domain = email?.slice(index);
 
     return `${visiblePart}${hiddenPart}${domain}`;
 }
@@ -32,7 +32,7 @@ export function EmailChange({ userData }) {
     const [serverError, setServerError] = useState({});
     const [newEmail, setNewEmail] = useState("");
 
-    const maskedEmail = maskEmail(userData.email);
+    const maskedEmail = maskEmail(userData?.email);
 
     const {register, handleSubmit, reset, formState: { errors }} = useForm({
         resolver: yupResolver(validationSchema)
