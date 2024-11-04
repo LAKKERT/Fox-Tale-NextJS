@@ -46,6 +46,7 @@ export function AllProfilesTable({ placeholder }: { placeholder: string }) {
             setSortedUsersData(filteredUsers);
         }
     }, [searchTerm, usersData]);
+    
     return (
         <div className={`h-[90vh] w-full mt-[100px] pt-8 flex flex-col justify-top items-center gap-5 text-white `}>
             <h1 className="text-4xl">All Users</h1>

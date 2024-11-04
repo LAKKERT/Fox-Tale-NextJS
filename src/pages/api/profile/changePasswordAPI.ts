@@ -3,7 +3,6 @@ import Connect from "@/db/dbConfig";
 import { Cookies } from "react-cookie";
 import { compare } from "bcrypt";
 import * as Yup from "yup";
-import { v4 as uuidv4 } from "uuid";
 
 const bcrypt = require("bcrypt");
 

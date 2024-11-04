@@ -52,10 +52,11 @@ export default function UserProfile({ params }) {
                 setAccess(data?.accessProfile);
                 if (data.UserRole !== "admin") {
                     if (data?.accessProfile === false) {
-                        router.push('/profile/verify')
+                        router.push('/profile/verify');
                     }
                 }
             } catch (error) {
+                router.push('/');
                 console.error("fetching data error", error);
             }
         };
