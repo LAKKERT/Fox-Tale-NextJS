@@ -82,12 +82,10 @@ export async function addNewParticipant(cookies, roomID) {
         );
 
         if (existingParticipant.rowCount > 0) {
-            console.log("User already exists in the chat room.");
             return;
         }
 
         await conn.query("INSERT INTO participants (user_id, room_id) VALUES ($1, $2)", [decoded.userId, roomID]);
-        console.log("Participant added successfully.");
 
     } catch (errors) {
         console.error("Error adding new participant:", errors);

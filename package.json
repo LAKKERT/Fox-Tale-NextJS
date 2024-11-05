@@ -28,6 +28,8 @@
     "react-dom": "^18",
     "react-hook-form": "^7.53.0",
     "sass": "^1.79.3",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "use-debounce": "^10.0.4",
     "uuid": "^10.0.0",
     "v4": "^0.0.1",
