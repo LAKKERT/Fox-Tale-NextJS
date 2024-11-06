@@ -1,7 +1,7 @@
 import Connect from "@/db/dbConfig";
 import jwt from "jsonwebtoken";
 
-export async function saveMessageToDB(content, roomID, cookies) {
+export async function saveMessageToDB(content, roomID, cookies, file_url) {
     if (!cookies) {
         console.error("No cookies found, cannot save message");
         return;
@@ -24,8 +24,8 @@ export async function saveMessageToDB(content, roomID, cookies) {
 
     try {
         await conn.query(
-            'INSERT INTO messages (room_id, user_id, message, sent_at) VALUES ($1, $2, $3, NOW())',
-            [roomID, decoded.userId, content]
+            'INSERT INTO messages (room_id, user_id, message, sent_at, file_url) VALUES ($1, $2, $3, NOW(), $4)',
+            [roomID, decoded.userId, content, file_url ]
         );
     } catch (errors) {
         console.error("Error saving message to DB:", errors);
