@@ -9,7 +9,7 @@ export default async function GetMessages(req, res) {
 
         try {
             const result = await conn.query(
-                "SELECT message, file_url FROM messages WHERE room_id = $1 ORDER BY sent_at ASC",
+                "SELECT user_id, message, file_url FROM messages WHERE room_id = $1 ORDER BY sent_at ASC",
                 [roomID]
             );
             res.status(200).json({ messages: result.rows });

@@ -4,6 +4,11 @@ const nextConfig = {
     images: {
         domains: ['localhost'],
     },
+    experimental: {
+        serverActions: {
+            bodySizeLimit: '2000mb', // 2 ГБ
+        },
+    },
 };
 
 export default nextConfig;

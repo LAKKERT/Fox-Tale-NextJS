@@ -15,7 +15,7 @@ export default async function sendToken(req, res) {
             res.status(401).json({ message: "Invailed choice" });
             console.error("invailed choice");
         }
-
+        
         if (req.body.clientChoice === "forgetLogin") {
             try {
 
@@ -60,22 +60,27 @@ export default async function sendToken(req, res) {
         } else if (req.body.clientChoice === "forgetPassword") {
             try {
                 const { email } = await validationSchema.validate(req.body, { abortEarly: false });
-
+                
                 const conn = await Connect();
                 const result = await conn.query('SELECT id, email FROM users WHERE email = $1', [email]);
-
+                
                 if (!result.rows.length) {
                     return res.status(400).json({ message: "Email not found" });
                 }
-
+                
                 const uniqueID = uuidv4();
                 const userID = result.rows[0].id;
                 const token = crypto.randomBytes(32).toString('hex');
                 const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
-
-                await conn.query('INSERT INTO password_reset (id, user_id, token, expires_at) VALUES ($1, $2, $3, $4)', [uniqueID, userID, token, expiresAt]);
-                await conn.end();
-
+                
+                try {
+                    await conn.query('INSERT INTO password_reset (id, user_id, token, expires_at) VALUES ($1, $2, $3, $4)', [uniqueID, userID, token, expiresAt]);
+                    await conn.end();
+                }catch (errors) {
+                    console.error("Failed to create password reset:", errors);
+                    return res.status(500).json({ message: "Failed to create password reset" });
+                }
+                
                 const resetLink = `http://localhost:3000/restoring_access/resetPassword?token=${token}`;
 
                 const mailOptions = {
@@ -84,7 +89,7 @@ export default async function sendToken(req, res) {
                     subject: "Password Reset",
                     html: `Click the link to reset your password: ${resetLink}`
                 }
-
+                
                 try {
                     await transporter.sendMail(mailOptions);
                 } catch (error) {

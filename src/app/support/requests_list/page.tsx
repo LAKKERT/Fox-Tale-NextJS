@@ -22,7 +22,6 @@ export default function AllSupporRequests() {
             try {
                 const data = await GetAllRequests(cookies);
                 setRequests(data || []);
-                console.log(data);
             }catch (error) {
                 console.error("Error fetching requests:", error);
             }

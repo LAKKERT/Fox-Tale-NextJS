@@ -31,7 +31,7 @@ export function Loader() {
     };
 
     return (
-        <div className="w-full h-[100vh]">
+        <div className="w-full h-[100vh] select-none">
             <div 
                 className="relative w-full h-full flex justify-center items-center" 
                 onMouseMove={handleMouseMove} 
