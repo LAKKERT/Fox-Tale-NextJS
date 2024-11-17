@@ -3,7 +3,6 @@ import Connect from "@/db/dbConfig";
 
 export default async function lastSeenMessage(req, res) {
     if (req.method === "POST") {
-        console.error("lastSeenMessage");
         const conn = await Connect();
 
         console.error(req.body)

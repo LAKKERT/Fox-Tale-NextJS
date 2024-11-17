@@ -1,8 +1,6 @@
 "use client";
 import { Loader } from '@/app/components/load';
 import { Header } from '@/app/components/header';
-import { getChatRoom, addNewParticipant, closeChat } from '@/pages/api/support/getRequestsAPI';
-import { getUserDataByCookie } from '@/pages/api/support/fetchUserData';
 import { saveFile } from '@/pages/api/support/sendMessageAPI';
 import { useEffect, useState, useRef, useCallback, useReducer } from 'react';
 import { useCookies } from 'react-cookie';
@@ -71,6 +69,7 @@ const reducer = (state, action) => {
 
 export default function SupportChatRoom(params: { params: { id: number; }; }) {
     const [isLoading, setIsLoading] = useState(true);
+    const [isChatClose, setIsChatClose] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [showImage, setShowImage] = useState<string | null>(null);
     const [chatData, setChatData] = useState<ChatData>({} as ChatData);
@@ -89,7 +88,6 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     const [socket, setSocket] = useState<Socket | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [message, setMessage] = useState('');
-    const [file, setFile] = useState<FileList | null>(null);
 
     const [timing, setTiming] = useState(false);
 
@@ -148,9 +146,15 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
             }
 
             try {
-                const currentUserPromise = getUserDataByCookie(cookies);
-                const addParticipantPromise = addNewParticipant(cookies, params.params.id);
-                const chatRoomDataPromise = getChatRoom(params.params.id);
+                const currentUserPromise = fetch(`/api/support/fetchUserData?cookies=${cookies}`).then((res) => res.json());
+                const addParticipantPromise = fetch(`/api/support/addNewParticipantAPI`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ cookies: cookies.auth_token, roomID: params.params.id})
+                })
+                const chatRoomDataPromise = fetch(`/api/support/getChatRoomAPI?roomID=${params.params.id}`).then((res) => res.json());
                 const messagesPromise = fetch(`/api/support/getMessagesAPI?roomID=${params.params.id}`).then((res) => res.json());
             
                 const [currentUserId, , chatData, result] = await Promise.all([
@@ -184,7 +188,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
             isMounted = false;
         }
 
-    }, [cookies, params.params.id, router]);
+    }, [cookies, params.params.id, router, isChatClose]);
 
     useEffect(() => {
         const fetchLastSeenMessage = async () => {
@@ -220,30 +224,38 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     
 
     useEffect(() => {
-        const socketInstance = io("http://localhost:3000", { path: "/api/support/socket" })
-        setSocket(socketInstance);
-
-        socketInstance.on("message", (msg) => {
-            setMessages((prev) => [...prev, msg]);
-        });
-
-        return () => {
-            socketInstance.disconnect();
+        if (!socket) {
+            const socketInstance = io("http://localhost:3000", { path: "/api/support/socket" })
+            setSocket(socketInstance);
+    
+            socketInstance.on("message", (msg) => {
+                setMessages((prev) => [...prev, msg]);
+            });
+    
+            return () => {
+                socketInstance.disconnect();
+            }
         }
     }, [])
 
-    function getFile(file: string | any[] | FileList) {
+    function getFile(selectedFiles: string | any[] | FileList) {
         const fileProperty = [];
-        for (let i = 0; i < file.length; i++) {
-            const parts = file[i].name.lastIndexOf('.');
-
+        for (let i = 0; i < selectedFiles.length; i++) {
+            const fileName = selectedFiles[i].name;
+            const lastDotIndex = fileName.lastIndexOf('.');
+    
+            const name = lastDotIndex !== -1 ? fileName.substring(0, lastDotIndex) : fileName;
+            const extension = lastDotIndex !== -1 ? fileName.substring(lastDotIndex + 1) : '';
+    
             fileProperty[i] = {
-                name: parts[0],
-                extenstion: parts[1] || '',
-                size: file[i].size,
+                name: name,
+                extension: extension,
+                size: selectedFiles[i].size,
             };
         }
-
+    
+        console.log(fileProperty);
+    
         return fileProperty;
     }
 
@@ -264,7 +276,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
 
     const sendMessage = async () => {
         try {
-            const filesData = await processFiles(file);
+            const filesData = await processFiles(selectedFiles);
             await sendMessageWithFile(filesData);
         } catch (error) {
             console.error('Error sending message:', error);
@@ -272,11 +284,11 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     }
 
     const sendMessageWithFile = async (filesData: (string | ArrayBuffer | null)[] | null) => {
-        if (!message && (!file || file.length === 0)) {
+        if (!message && (!selectedFiles || selectedFiles.length === 0)) {
             return;
         }
 
-        if (file && file?.length > MAX_FILES_ALLOWED) {
+        if (selectedFiles && selectedFiles?.length > MAX_FILES_ALLOWED) {
             return;
         }
 
@@ -284,10 +296,10 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
         const fileUrl = [];
 
 
-        if (file) {
-            fullFileName = getFile(file);
-            for (let i = 0; i < file.length; i++) {
-                const fileName = `${Date.now()}_${fullFileName[i].name}.${fullFileName[i].extenstion}`;
+        if (selectedFiles) {
+            fullFileName = getFile(selectedFiles);
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const fileName = `${Date.now()}_${fullFileName[i].name}.${fullFileName[i].extension}`;
                 fileUrl.push(`/uploads/${fileName}`);
             }
 
@@ -308,7 +320,6 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                 status: chatData.status
             }
             socket.emit("message", messageData);
-            setFile(null);
             setSelectedFiles(null);
             setMessage("");
         }
@@ -346,9 +357,12 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     const handleFileChange = (e) => {
         const files = e.target.files
         if (files.length > 0) {
-            setFile(files);
             setSelectedFiles([...files]);
         }
+    }
+
+    const handleDelete = (index) => {
+        setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
     }
 
     useEffect(() => {
@@ -443,7 +457,28 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
         }
     }, [messages]);
 
-    const closeChatRoom = () => closeChat(chatData.id, cookies);
+    const handleKeyDown = (event) => {
+        if (event.key === "Enter" && message.trim() !== '') {
+            event.preventDefault();
+            sendMessage();
+            setMessage('');
+        }
+    }
+
+    const closeChatRoom = async() => {
+        await fetch(`/api/support/closeChatAPI`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                roomID: chatData.id,
+                cookies: cookies.auth_token,
+            }),
+        })
+
+        return setIsChatClose(true);
+    };
 
     return (
         <div className={`w-full h-[90vh] bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat ${MainFont.className} text-white`}>
@@ -590,7 +625,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                 ) : (
                                     <div className='flex flex-col bg-[rgba(6,6,6,.65)] p-2 rounded-xl'>
                                         <div className='flex flex-row gap-2 items-center'>
-                                            <textarea value={message} rows={1} onChange={handleInputChange} maxLength={1000} placeholder='WRITE A MESSAGE...' className='w-full bg-transparent outline-none font-extralight tracking-[1px] text-balance resize-none' />
+                                            <textarea value={message} rows={1} onChange={handleInputChange} onKeyDown={handleKeyDown} autoFocus maxLength={1000} placeholder='WRITE A MESSAGE...' className={`w-full bg-transparent outline-none font-extralight tracking-[1px] text-balance resize-none ${styles.custom_scroll}`} />
 
                                             <label>
                                                 <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple accept='image/*,video/*' className='hidden' />
@@ -606,8 +641,11 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                             {selectedFiles && selectedFiles.length > 0 && (
                                                 <ul>
                                                     {selectedFiles.map((file, i) => (
-                                                        <li key={i}>
+                                                        <li key={i} className='flex items-center'>
                                                             <p className='truncate'>{file?.name}</p>
+                                                            <button onClick={() => handleDelete(i)}>
+                                                                delete
+                                                            </button>
                                                         </li>
                                                     ))}
                                                 </ul>
