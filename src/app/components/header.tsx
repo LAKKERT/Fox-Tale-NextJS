@@ -7,7 +7,6 @@ import { useCookies } from "react-cookie";
 import Cookies from 'js-cookie';
 
 import { getAllUserData } from "@/pages/api/users/usersAPI";
-import { logoutHandler } from "@/pages/api/users/usersAPI";
 
 const MainFont = K2D({
     style: "normal",
@@ -54,8 +53,21 @@ export function Header() {
             setIsAuth(true);
             const fetchUserData = async () => {
                 try {
-                    const data = await getAllUserData(cookies);
-                    setUserData(data);
+                    const response = await fetch('/api/users/getAllUserDataAPI', {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${cookies.auth_token}`
+                        },
+                    })
+
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        setUserData(result.result);
+                    }else {
+                        console.error("Error fetching user data", result.message);
+                    }
+
                 } catch (error) {
                     console.error("fetching data error", error);
                 }
@@ -67,7 +79,7 @@ export function Header() {
     }, [cookies]);
 
     return (
-        <div className={`fixed w-full z-50 `}>
+        <div className={`fixed w-full z-50 select-none`}>
             <div className={`fixed top-0 z-50 h-[100px] w-full px-3 flex lg:justify-between items-center bg-black ${MainFont.className} ${isOptionsMenuOpen ? "outline outline-[rgba(245,136,90,.9)]" : "outline-none"}`}>
 
                 <MobileMode isMenuOpen={isMenuOpen} toggleMenu={toggleMenu} />
@@ -104,7 +116,7 @@ export function Header() {
                 {isAuth && userData ?
                     <div className="relative hidden lg:block">
                         <button onClick={optionsMenu}>
-                            <div className={`py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.9)]${isOptionsMenuOpen ? "text-red-500" : "text-white"}`}>
+                            <div className={`py-1 px-3 rounded uppercase select-text text-white text-2xl hover:bg-[rgba(245,136,90,.9)]${isOptionsMenuOpen ? "text-red-500" : "text-white"}`}>
                                 <p>{userData.username}</p>
                             </div>
                         </button>

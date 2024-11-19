@@ -6,11 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 import { K2D } from "next/font/google";
-const MainFont = K2D({
-    style: "normal",
-    subsets: ["latin"],
-    weight: "400",
-});
+
 
 export function AllProfilesTable({ placeholder }: { placeholder: string }) {
     const [usersData, setUsersData] = useState<any[]>([]);
@@ -26,8 +22,23 @@ export function AllProfilesTable({ placeholder }: { placeholder: string }) {
                 return;
             }
             try {
-                const users = await getAllUsers(cookies);
-                setUsersData(users || []);
+                // const users = await getAllUsers(cookies);
+                const response = await fetch(`/api/users/getAllusersAPI`, {
+                    method: "GET",
+                    headers: {
+                        'Authorization': `Bearer ${cookies.auth_token}`
+                    }
+                });
+
+                const users = await response.json();
+                console.log(users);
+
+                if (response.ok) {
+                    setUsersData(users.result || []);
+                }else {
+                    console.error("Error fetching users:", error);
+                }
+
             } catch (error) {
                 console.error("Error fetching users:", error);
             }

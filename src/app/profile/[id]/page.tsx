@@ -41,20 +41,32 @@ export default function UserProfile({ params }) {
     useEffect(() => {
         const fetchUserData = async () => {
             try {
-                const data = await getUserProfile(params.id, cookies);
-                if (data) {
-                    setIsLoading(false);
-                    const timeout = setTimeout(() => {
-                        setUserData(data?.profile);
-                        return () => clearTimeout(timeout);
-                    }, 300)
-                }
-                setAccess(data?.accessProfile);
-                if (data.UserRole !== "admin") {
-                    if (data?.accessProfile === false) {
+                const response = await fetch(`/api/users/getUserProfileAPI?userID=${params.id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${cookies.auth_token}`,
+                    }
+                })
+
+                const userProfile = await response.json();
+
+                setAccess(userProfile?.accessProfile);
+                if (userProfile.userRole !== "admin") {
+                    if (userProfile?.accessProfile === false) {
                         router.push('/profile/verify');
                     }
                 }
+
+                if (response.ok) {
+                    setIsLoading(false);
+                    const timeout = setTimeout(() => {
+                        setUserData(userProfile?.profile);
+                        return () => clearTimeout(timeout);
+                    }, 300)
+                } else {
+                    console.error('Error fetching user profile');
+                }
+
             } catch (error) {
                 router.push('/');
                 console.error("fetching data error", error);
@@ -69,19 +81,19 @@ export default function UserProfile({ params }) {
             <div className="h-full mt-[100px] flex flex-col items-center">
                 {!userData ? (
                     <motion.div
-                    initial={{ opacity: 1}}
-                    animate={{ opacity: isLoading ? 1 : 0}}
-                    transition={{ duration: .3}}
-                    className="bg-black w-full h-[100vh]"
+                        initial={{ opacity: 1 }}
+                        animate={{ opacity: isLoading ? 1 : 0 }}
+                        transition={{ duration: .3 }}
+                        className="bg-black w-full h-[100vh]"
                     >
                         <Loader />
                     </motion.div>
                 ) : (
                     <motion.div
-                    initial={{ opacity: 0}}
-                    animate={{ opacity: isLoading ? 0 : 1}}
-                    transition={{ duration: .3}}
-                    className="px-3"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: isLoading ? 0 : 1 }}
+                        transition={{ duration: .3 }}
+                        className="px-3"
                     >
                         <h1>WELCOME TO YOUR TEMPLE {userData?.username}</h1>
                         <div className="max-w-2xl flex flex-col gap-3">

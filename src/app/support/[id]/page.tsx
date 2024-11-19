@@ -359,6 +359,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
         if (files.length > 0) {
             setSelectedFiles([...files]);
         }
+        e.target.value = '';
     }
 
     const handleDelete = (index) => {
@@ -481,7 +482,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     };
 
     return (
-        <div className={`w-full h-[90vh] bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat ${MainFont.className} text-white`}>
+        <div className={`w-full h-[90vh] bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat ${MainFont.className} text-white `}>
             <Header />
             <div className='h-full mt-[100px] flex flex-col justify-center items-center'>
 
@@ -557,7 +558,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                                     )}
 
                                                     {(msg?.content || msg?.message) ? (
-                                                        <p ref={chatEndRef} className={`bg-[rgba(194,114,79,1)] rounded-lg py-2 px-3 `}>
+                                                        <p ref={chatEndRef} className={`bg-[rgba(194,114,79,1)] rounded-lg py-2 px-3`}>
                                                             {msg?.content || msg?.message}
                                                         </p>
                                                     ) : (
@@ -568,9 +569,9 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                                         msg.file_url.map((url, i) => (
                                                             <motion.div key={`${index}-${i}`}
                                                                 onClick={() => handleImageClick(`http://localhost:3000/${url}`)}
-                                                                initial={{ width: '100px', height: '100px' }}
+                                                                initial={{ width: '50%', height: 'auto' }}
                                                                 transition={{ duration: .3 }}
-                                                                className={`${i !== 0 || (msg.content || msg.message) ? 'mt-3' : ''}`}
+                                                                className={`${i !== 0 || (msg.content || msg.message) ? 'mt-3' : ''} `}
                                                             >
                                                                 <Image
                                                                     src={`http://localhost:3000/${url}`}
@@ -588,7 +589,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                                             animate={{ opacity: timing ? 0 : 1 }}
                                                             transition={{ duration: 0.3 }}
                                                             onClick={closeImage}
-                                                            className="fixed inset-0 flex items-center justify-center bg-[rgba(0,0,0,0.02)] bg-opacity-70 z-50"
+                                                            className="fixed inset-0 flex items-center justify-center bg-[rgba(0,0,0,0.02)] bg-opacity-70 z-50 px-3"
                                                         >
                                                             <motion.div
                                                                 initial={{ scale: 0.5 }}
@@ -623,8 +624,8 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                         <p>problem has been solved</p>
                                     </div>
                                 ) : (
-                                    <div className='flex flex-col bg-[rgba(6,6,6,.65)] p-2 rounded-xl'>
-                                        <div className='flex flex-row gap-2 items-center'>
+                                    <div className={`flex flex-col ${ selectedFiles.length === 0 ? null : 'gap-2' } bg-[rgba(6,6,6,.65)] p-2 rounded-xl`}>
+                                        <div className='flex flex-row gap-2 items-center select-none'>
                                             <textarea value={message} rows={1} onChange={handleInputChange} onKeyDown={handleKeyDown} autoFocus maxLength={1000} placeholder='WRITE A MESSAGE...' className={`w-full bg-transparent outline-none font-extralight tracking-[1px] text-balance resize-none ${styles.custom_scroll}`} />
 
                                             <label>
@@ -637,14 +638,21 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                             </button>
                                         </div>
 
-                                        <div>
+                                        <div className='w-full'>
                                             {selectedFiles && selectedFiles.length > 0 && (
-                                                <ul>
+                                                <ul className='w-full space-y-1'>
                                                     {selectedFiles.map((file, i) => (
-                                                        <li key={i} className='flex items-center'>
-                                                            <p className='truncate'>{file?.name}</p>
-                                                            <button onClick={() => handleDelete(i)}>
-                                                                delete
+                                                        <li key={i} className='flex items-center w-full max-w-60'>
+                                                            <p className='truncate w-3/4 overflow-hidden whitespace-nowrap text-ellipsis'>{file?.name}</p>
+                                                            <button onClick={() => handleDelete(i)} className='ml-1'>
+                                                                <svg
+                                                                    width={25}
+                                                                    height={25}
+                                                                    viewBox="0 0 512 512"
+                                                                    className='fill-white hover:fill-[rgba(194,114,79,1)]'
+                                                                >
+                                                                    <path d="M435.2 25.6H76.7996C48.6396 25.6 25.5996 48.64 25.5996 76.8V435.2C25.5996 463.36 48.6396 486.4 76.7996 486.4H435.2C463.36 486.4 486.4 463.36 486.4 435.2V76.8C486.4 48.64 463.36 25.6 435.2 25.6ZM465.92 435.2C465.92 452.096 452.096 465.92 435.2 465.92H76.7996C59.9036 465.92 46.0796 452.096 46.0796 435.2V76.8C46.0796 59.904 59.9036 46.08 76.7996 46.08H435.2C452.096 46.08 465.92 59.904 465.92 76.8V435.2ZM329.728 196.608L270.336 256L329.728 315.392C333.824 319.488 333.824 325.632 329.728 329.728C327.68 331.776 325.12 332.8 322.56 332.8C320 332.8 317.44 331.776 315.392 329.728L256 270.336L196.608 329.728C194.56 331.776 192 332.8 189.44 332.8C186.88 332.8 184.32 331.776 182.272 329.728C178.176 325.632 178.176 319.488 182.272 315.392L241.664 256L182.272 196.608C178.176 192.512 178.176 186.368 182.272 182.272C186.368 178.176 192.512 178.176 196.608 182.272L256 241.664L315.392 182.272C319.488 178.176 325.632 178.176 329.728 182.272C333.824 186.368 333.824 192.512 329.728 196.608Z"></path>
+                                                                </svg>
                                                             </button>
                                                         </li>
                                                     ))}
