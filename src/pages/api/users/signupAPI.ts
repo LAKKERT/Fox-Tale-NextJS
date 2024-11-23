@@ -16,13 +16,21 @@ const schema = Yup.object().shape({
 });
 
 async function checkEmailandLoginExists(email, username) {
+    
     const conn = await Connect();
-    const result = await conn.query('SELECT * FROM users WHERE email = $1 OR username = $2', [email, username]);
-    await conn.end();
-    return {
-        emailExist: result.rows.some(row => row.email === email),
-        usernameExist: result.rows.some(row => row.username === username)
-    };
+    try {
+        const result = await conn.query('SELECT * FROM users WHERE email = $1 OR username = $2', [email, username]);
+        return {
+            emailExist: result.rows.some(row => row.email === email),
+            usernameExist: result.rows.some(row => row.username === username)
+        };
+    }catch (errors) {
+        console.error('Error in database query:', errors.message);
+        return;
+    }finally {
+        await conn.end();
+    }
+
 }
 
 export default async function CreateUser(req, res) {
@@ -44,12 +52,17 @@ export default async function CreateUser(req, res) {
 
             const conn = await Connect();
 
-            await conn.query(`
-                INSERT INTO users (id, email, username, password)
-                VALUES ($1, $2, $3, $4)
-            `, [uniqueID, email, username, hashedPassword]);
-
-            await conn.end();
+            try {
+                await conn.query(`
+                    INSERT INTO users (id, email, username, password)
+                    VALUES ($1, $2, $3, $4)
+                `, [uniqueID, email, username, hashedPassword]);
+            }catch (error) {
+                console.error('Error in database query:', error.message);
+                res.status(500).json({ message: "Server error" });
+            }finally {
+                await conn.end();
+            }
 
             const token = jwt.sign({ userID: uniqueID, email: email }, process.env.JWT_SECRET, { expiresIn: '1h' });
 

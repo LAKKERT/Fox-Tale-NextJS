@@ -17,7 +17,7 @@ export default async function getUserProfile(req, res) {
         try {
             decoded = jwt.verify(token, process.env.JWT_SECRET);
         } catch ( error ) {
-            console.error('Invalid token');
+            console.error('Invalid token', error);
             return res.status(401).json({ error: 'Unauthorized' });
         }
         

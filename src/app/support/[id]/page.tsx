@@ -500,7 +500,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                     <div className='w-full flex flex-row justify-center sm:min-w-[500px] md:min-w-[750px]'>
                         {currentUser.userRole === 'admin' ? (
                             <div className='flex flex-col justify-between bg-[rgba(6,6,6,.65)] rounded-xl px-3 py-5 h-1/2 w-[250px]'>
-                                <div className='h-full pb-4 overflow-auto overflow-x-hidden ${styles.custom_chat_scroll}'>
+                                <div className={`h-full pb-4 overflow-auto overflow-x-hidden ${styles.custom_chat_scroll}`}>
                                     <p className='uppercase text-center'>participants</p>
                                     {usersData.map((user) => (
                                         <div key={user.username} className='text-center'>
@@ -624,7 +624,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                         <p>problem has been solved</p>
                                     </div>
                                 ) : (
-                                    <div className={`flex flex-col ${ selectedFiles.length === 0 ? null : 'gap-2' } bg-[rgba(6,6,6,.65)] p-2 rounded-xl`}>
+                                    <div className={`flex flex-col ${ selectedFiles?.length === 0 || selectedFiles === null ? null : 'gap-2' } bg-[rgba(6,6,6,.65)] p-2 rounded-xl`}>
                                         <div className='flex flex-row gap-2 items-center select-none'>
                                             <textarea value={message} rows={1} onChange={handleInputChange} onKeyDown={handleKeyDown} autoFocus maxLength={1000} placeholder='WRITE A MESSAGE...' className={`w-full bg-transparent outline-none font-extralight tracking-[1px] text-balance resize-none ${styles.custom_scroll}`} />
 

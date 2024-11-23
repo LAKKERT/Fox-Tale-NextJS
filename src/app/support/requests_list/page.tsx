@@ -1,42 +1,19 @@
 'use client';
+import { Header } from '@/app/components/header';
+import { RequestsListComponent } from '@/app/components/support/requestsList';
 
-import { GetAllRequests } from '@/pages/api/support/getRequestsAPI';
-import { useState, useEffect } from "react";
-import { useCookies } from "react-cookie";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { K2D } from "next/font/google";
+const MainFont = K2D({
+    style: "normal",
+    subsets: ["latin"],
+    weight: "400",
+});
 
 export default function AllSupporRequests() {
-    
-    const [requests, setRequests] = useState<any[]>([]);
-    const [cookies] = useCookies(['auth_token']);
-    const router = useRouter();
-
-    useEffect(() => {
-        const fetchAllRequests = async () => {
-            if (!cookies.auth_token) {
-                router.push("/");
-                return;
-            }
-
-            try {
-                const data = await GetAllRequests(cookies);
-                setRequests(data || []);
-            }catch (error) {
-                console.error("Error fetching requests:", error);
-            }
-        };
-        
-        fetchAllRequests();
-    }, [cookies]);
-
     return (
-        <div>
-            {requests.map((request) => (
-                <div key={request.id}>
-                    <Link href={`/support/${request.id}`}>{request.title}</Link>
-                </div>
-            ))}
+        <div className={`w-full h-full bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden ${MainFont.className}`}>
+            <Header />
+            <RequestsListComponent />
         </div>
     );
 }

@@ -20,7 +20,7 @@ const validationSchema = Yup.object().shape({
     email: Yup.string().email('EMAIL is not correct').required('Enter your EMAIL'),
     username: Yup.string().min(4, 'Username must be at least 4 characters').required('Enter your username'),
     password: Yup.string().min(6, 'Password must be at least 6 characters').required('Enter your password'),
-    password2: Yup.string().oneOf([Yup.ref('password'), null], 'Passwords must match').required('Confirm your password'),
+    password2: Yup.string().oneOf([Yup.ref('password'), undefined], 'Passwords must match').required('Confirm your password'),
 });
 
 export function SignUpPage() {
