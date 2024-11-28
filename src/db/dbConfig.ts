@@ -16,7 +16,7 @@ async function Connect() {
         client.release();
         console.log('Connected to PostgreSQL database');
         return pool;
-    }catch(error) {
+    } catch(error) {
         console.error('Error connecting to database:', error);
         throw error;
     }

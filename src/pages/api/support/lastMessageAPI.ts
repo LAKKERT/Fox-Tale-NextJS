@@ -9,18 +9,18 @@ export default async function lastSeenMessage(req, res) {
 
         try {
             await conn.query(`INSERT INTO last_message (last_message_id, user_id, room_id) VALUES ($1, $2, $3)
-                ON CONFLICT ( user_id )
+                ON CONFLICT ( user_id, room_id )
                 DO UPDATE SET last_message_id = EXCLUDED.last_message_id
                 WHERE EXCLUDED.last_message_id > last_message.last_message_id
                 `, [req.body.lastSeenMessage, req.body.userID, req.body.roomID]);
-        }catch (errors) {
+                res.status(200).json({ message: "Last seen message saved successfully" });
+        } catch (errors) {
             console.error("Error saving last seen message:", errors);
-            res.status(400).json({errors: errors});
-        }finally {
+            res.status(400).json({ errors: errors });
+        } finally {
             await conn.end();
-            res.status(200).json({message: "Last seen message saved successfully"});
         }
-    }else if (req.method === "GET") {
+    } else if (req.method === "GET") {
 
         const { userID, roomID } = req.query;
         console.log(userID, roomID);
@@ -34,17 +34,17 @@ export default async function lastSeenMessage(req, res) {
             const result = await conn.query("SELECT * FROM last_message WHERE user_id = $1 AND room_id = $2", [userID, roomID]);
             
             if (result.rows.length === 0) {
-                return res.status(404).json({ message: "No data found" });
+                return res.status(200).json({ message: "No data found" });  // Changed from 204 to 200
             }
             
             res.status(200).json(result.rows[0]);
-        }catch (error) {
+        } catch (error) {
             console.error("Error getting last seen message:", error);
-            res.status(400).json({error: error});
-        }finally {
+            res.status(400).json({ error: error });
+        } finally {
             await conn.end();
         }
-    }else {
+    } else {
         res.setHeader('Allow', ['POST', 'GET']);
         res.status(405).end(`Method ${req.method} not allowed`);
     }

@@ -24,7 +24,8 @@ export default async function CreateSupportChat(req, res) {
             }
             
             const { title, description } = await validationSchema.validate(req.body, {abortEarly: false})
-            
+            const fileURL = req.body.files
+
             const userID = decoded.userId;
             const uniqueRoomID = uuidv4();
             const createdAt = new Date();
@@ -34,7 +35,7 @@ export default async function CreateSupportChat(req, res) {
             const conn = await Connect();
 
             try {
-                await conn.query('INSERT INTO chat_room (id, created_at, title, description) VALUES ($1, $2, $3, $4)', [uniqueRoomID, createdAt, req.body.title, req.body.description]);
+                await conn.query('INSERT INTO chat_room (id, created_at, title, description, files) VALUES ($1, $2, $3, $4, $5)', [uniqueRoomID, createdAt, title, description, fileURL]);
                 await conn.query('INSERT INTO participants (room_id, user_id) VALUES ($1, $2)', [uniqueRoomID, userID]);
 
                 await conn.query('COMMIT');

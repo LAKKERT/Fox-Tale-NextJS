@@ -1,12 +1,8 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import jwt from "jsonwebtoken";
 
 export default async function getUserDataByCookie(req, res) {
-    if (!req.cookies.auth_token) {
-        return redirect('/');
-    }
 
     const token = req.cookies.auth_token;
     
@@ -16,6 +12,6 @@ export default async function getUserDataByCookie(req, res) {
         return res.status(200).json({ userID: decoded.userId, userRole: decoded.userRole});
     }catch (errors) {
         console.error("Invalid token:", errors);
-        return redirect('/');
+        return res.status(403).json({ error: "Invalid token" });
     }
 }

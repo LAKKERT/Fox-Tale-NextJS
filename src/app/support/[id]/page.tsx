@@ -32,6 +32,7 @@ type ChatData = {
     created_at: string,
     description: string
     status: boolean,
+    files: string[],
 };
 
 type User = {
@@ -103,7 +104,6 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                     roomID: chatData.id,
                     lastSeenMessage: state.lastSeenMessage,
                 };
-                console.log(state.lastSeenMessage)
 
                 try {
                     const response = await fetch('/api/support/lastMessageAPI', {
@@ -156,7 +156,6 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                 })
                 const chatRoomDataPromise = fetch(`/api/support/getChatRoomAPI?roomID=${params.params.id}`).then((res) => res.json());
                 const messagesPromise = fetch(`/api/support/getMessagesAPI?roomID=${params.params.id}`).then((res) => res.json());
-            
                 const [currentUserId, , chatData, result] = await Promise.all([
                     currentUserPromise,
                     addParticipantPromise,
@@ -204,13 +203,18 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                         'Content-Type': 'application/json',
                     }
                 });
+
+                if (lastSeenMessage.status === 204 || lastSeenMessage.headers.get('Content-Length') === '0') {
+                    console.warn('No last seen message found for this user and room');
+                    return;
+                }
     
                 const lastSeenMessageData = await lastSeenMessage.json();
-    
+
                 if (lastSeenMessage.ok && lastSeenMessageData.last_message_id !== undefined) {
                     messageRefs.current[lastSeenMessageData.last_message_id]?.scrollIntoView({ behavior: "smooth" });
                 } else {
-                    console.error('Error fetching last seen message:', lastSeenMessageData);
+                    console.warn('Error fetching last seen message:');
                 }
             } catch (error) {
                 console.error('Error fetching last seen message:', error);
@@ -253,8 +257,6 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                 size: selectedFiles[i].size,
             };
         }
-    
-        console.log(fileProperty);
     
         return fileProperty;
     }
@@ -363,7 +365,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     }
 
     const handleDelete = (index) => {
-        setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
+        setSelectedFiles(selectedFiles.filter((value, i) => i !== index));
     }
 
     useEffect(() => {
@@ -431,7 +433,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
             entries.forEach((entry) => {
                 if (entry.isIntersecting) {
                     const messageId = parseInt(entry.target.getAttribute("data-id"), 10);
-    
+                    
                     if (messageId > messageIndex) {
                         messageIndex = messageId;
                         dispatch({ type: 'SET_LAST_SEEN_MESSAGE', payload: messageIndex });
@@ -538,6 +540,24 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                         <p>{chatData?.description}</p>
                                     </div>
 
+                                    <div className='flex flex-row justify-center gap-2'>
+                                        {Array.isArray(chatData.files) &&
+                                            chatData?.files.map((file, i) => (
+                                                <div key={i}
+                                                    onClick={() => handleImageClick(`http://localhost:3000/${file}`)}
+                                                >
+                                                    <Image
+                                                        src={`http://localhost:3000/${file}`}
+                                                        alt={`Image ${i + 1}`}
+                                                        width={80}
+                                                        height={80}
+                                                        className={`rounded cursor-pointer`}
+                                                        loading='lazy'
+                                                        />
+                                                </div>
+                                            ))}
+                                    </div>
+
                                     <div className='w-full text-base sm:text-lg flex flex-col gap-3 font-extralight tracking-[1px] text-balance'>
                                         {messages.map((msg, index) => {
                                             const isFirstMessageInSequence = index === 0 || messages[index - 1]?.user_id !== msg.user_id;
@@ -583,47 +603,47 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                                                 />
                                                             </motion.div>
                                                         ))}
-                                                    {showImage && (
-                                                        <motion.div
-                                                            initial={{ opacity: 0 }}
-                                                            animate={{ opacity: timing ? 0 : 1 }}
-                                                            transition={{ duration: 0.3 }}
-                                                            onClick={closeImage}
-                                                            className="fixed inset-0 flex items-center justify-center bg-[rgba(0,0,0,0.02)] bg-opacity-70 z-50 px-3"
-                                                        >
-                                                            <motion.div
-                                                                initial={{ scale: 0.5 }}
-                                                                animate={{ scale: timing ? 0 : 1 }}
-                                                                transition={{ duration: 0.3 }}
-                                                                onClick={(e) => e.stopPropagation()}
-                                                                className="relative"
-                                                            >
-                                                                <Image
-                                                                    src={showImage}
-                                                                    alt="Увеличенное изображение"
-                                                                    width={600}
-                                                                    height={600}
-                                                                    className="rounded"
-                                                                />
-                                                                <button
-                                                                    onClick={closeImage}
-                                                                    className="absolute top-2 right-2 bg-[rgba(194,114,79,1)] text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-500 transition"
-                                                                >
-                                                                    ✕
-                                                                </button>
-                                                            </motion.div>
-                                                        </motion.div>
-                                                    )}
                                                 </motion.div>
                                             );
                                         })}
+                                            {showImage && (
+                                                <motion.div
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: timing ? 0 : 1 }}
+                                                    transition={{ duration: 0.3 }}
+                                                    onClick={closeImage}
+                                                    className="fixed inset-0 flex items-center justify-center bg-[rgba(0,0,0,0.02)] bg-opacity-70 z-50 px-3"
+                                                >
+                                                    <motion.div
+                                                        initial={{ scale: 0.5 }}
+                                                        animate={{ scale: timing ? 0 : 1 }}
+                                                        transition={{ duration: 0.3 }}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="relative"
+                                                    >
+                                                        <Image
+                                                            src={showImage}
+                                                            alt="Scaled image"
+                                                            width={600}
+                                                            height={600}
+                                                            className="rounded"
+                                                        />
+                                                        <button
+                                                            onClick={closeImage}
+                                                            className="absolute top-2 right-2 bg-[rgba(194,114,79,1)] text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-500 transition"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </motion.div>
+                                                </motion.div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                                {chatData.status === true ? (
-                                    <div className='text-center text-white bg-[rgba(6,6,6,.65)] p-2 rounded-xl'>
-                                        <p>problem has been solved</p>
-                                    </div>
-                                ) : (
+                                    {chatData.status === true ? (
+                                        <div className='text-center text-white bg-[rgba(6,6,6,.65)] p-2 rounded-xl'>
+                                            <p>problem has been solved</p>
+                                        </div>
+                                    ) : (
                                     <div className={`flex flex-col ${ selectedFiles?.length === 0 || selectedFiles === null ? null : 'gap-2' } bg-[rgba(6,6,6,.65)] p-2 rounded-xl`}>
                                         <div className='flex flex-row gap-2 items-center select-none'>
                                             <textarea value={message} rows={1} onChange={handleInputChange} onKeyDown={handleKeyDown} autoFocus maxLength={1000} placeholder='WRITE A MESSAGE...' className={`w-full bg-transparent outline-none font-extralight tracking-[1px] text-balance resize-none ${styles.custom_scroll}`} />

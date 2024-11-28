@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import Image from "next/image";
 import { K2D } from "next/font/google";
 import { useState, useEffect } from "react";

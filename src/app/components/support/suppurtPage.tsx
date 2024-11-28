@@ -2,6 +2,7 @@
 import { K2D } from "next/font/google";
 import { motion } from 'framer-motion';
 import { useState } from "react";
+import Link from "next/link";
 
 const MainFont = K2D({
     style: "normal",
@@ -42,29 +43,41 @@ export function SupportPageComponent() {
     ];
  
     return (
-        <div className={`w-full h-[90vh] px-2 mt-[100px] bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden text-white ${MainFont.className}`}>
-            <div className="flex flex-col gap-2 pt-2">
-                <h2 className="text-xl text-balance text-center">Before contacting support, please read the frequently asked questions. You might find the answer there.</h2>
+        <div className={`w-full h-[89vh] px-2 mt-[100px] bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat text-white ${MainFont.className}`}>
+            <div className="flex flex-col items-center gap-5 pt-2">
+                <h2 className="text-lg md:text-2xl text-balance text-center">Before contacting support, please read the frequently asked questions.<br/> You might find the answer there.</h2>
                 
-                <div className="max-w-[1110px] flex flex-col gap-2">
+                <div className="max-w-[1110px] flex flex-col gap-5">
                     {cards.map((card) => (
-                        <div key={card.id} className={`flex flex-col gap-1 bg-[rgba(6,6,6,.65)] rounded p-2 `}>
+                        <div key={card.id} className={`flex flex-col gap-5 bg-[rgba(6,6,6,.65)] rounded p-2 `}>
                             <button onClick={() => toggleCard(card.id)}>
-                                <div className="text-lg flex flex-row justify-between">
-                                    <p>{card.title}</p>
-                                        {openCards[card.id] ? '▲' : '▼' }
+                                <div className="text-lg md:text-lg flex flex-row justify-between">
+                                    <p className="text-lg md:text-2xl">{card.title}</p>
+                                        <div className="select-none">
+                                            {openCards[card.id] ? '▲' : '▼' }
+                                        </div>
                                 </div>
                             </button>
                             <motion.div
                                 initial = {{ height: '0px' }}
                                 animate = {{ height: openCards[card.id] ? 'auto' : '0px'}}
                                 transition={{ duration: .3 }}
-                                className="overflow-hidden"
+                                className="overflow-hidden text-lg md:text-3xl select-text"
                             >
                                 {card.content}
                             </motion.div>
                         </div>
                     ))}
+                </div>
+
+                <div className="flex flex-col items-center gap-5">
+                    <p className="text-lg md:text-2xl text-balance text-center">If you haven't found the answer to your problem, please contact our support team.</p>
+                    <Link href='/support/create_support_chat' className="flex justify-center items-center w-[250px] h-[50px] text-lg tracking-wider transition-colors duration-75 rounded border border-[#F5DEB3] bg-[#C2724F] hover:bg-[#c2724f91] uppercase select-none">WRITE</Link>
+                </div>
+
+                <div className="flex flex-col items-center gap-5">
+                    <p className="text-lg md:text-2xl text-balance text-center">If you want to view the history of your requests, please follow the link.</p>
+                    <Link href='/' className="flex justify-center items-center w-[250px] h-[50px] text-lg tracking-wider transition-colors duration-75 rounded border border-[#F5DEB3] bg-[#C2724F] hover:bg-[#c2724f91] uppercase select-none">HISTORY</Link>
                 </div>
 
             </div>
