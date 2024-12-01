@@ -12,7 +12,7 @@ import styles from "@/app/styles/home/variables.module.scss";
 
 import { K2D } from "next/font/google";
 
-const MAX_FILES_ALLOWED = 5;
+const MAX_FILES_ALLOWED = 3;
 
 const MainFont = K2D({
     style: "normal",
@@ -72,6 +72,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isChatClose, setIsChatClose] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
+    const [clientErrors, setClientErrors] = useState({});
     const [showImage, setShowImage] = useState<string | null>(null);
     const [chatData, setChatData] = useState<ChatData>({} as ChatData);
     const [usersData, setUsersData] = useState<UsersData[]>([]);
@@ -297,7 +298,6 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
         let fullFileName;
         const fileUrl = [];
 
-
         if (selectedFiles) {
             fullFileName = getFile(selectedFiles);
             for (let i = 0; i < selectedFiles.length; i++) {
@@ -357,16 +357,30 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     }
 
     const handleFileChange = (e) => {
-        const files = e.target.files
-        if (files.length > 0) {
-            setSelectedFiles([...files]);
+        const files = Array.from(e.target.files);
+        const updatedFiles = [...(selectedFiles || []), ...files];
+
+        if (updatedFiles.length > MAX_FILES_ALLOWED) {
+            setClientErrors({
+                maxFilesAllowed: `You can upload up to ${MAX_FILES_ALLOWED} files only`,
+            });
+        } else {
+            setClientErrors({ maxFilesAllowed: '' });
         }
+
+        setSelectedFiles(updatedFiles.slice(0, MAX_FILES_ALLOWED));
         e.target.value = '';
-    }
+    };
 
     const handleDelete = (index) => {
-        setSelectedFiles(selectedFiles.filter((value, i) => i !== index));
-    }
+        const updatedFiles = selectedFiles.filter((value, i) => i !== index);
+
+        if (updatedFiles.length <= MAX_FILES_ALLOWED) {
+            setClientErrors({ maxFilesAllowed: '' });
+        }
+
+        setSelectedFiles(updatedFiles);
+    };
 
     useEffect(() => {
         if (state.isAtBottom) {
@@ -558,7 +572,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                             ))}
                                     </div>
 
-                                    <div className='w-full text-base sm:text-lg flex flex-col gap-3 font-extralight tracking-[1px] text-balance'>
+                                    <div className='w-full h-full text-base sm:text-lg flex flex-col justify-between gap-3 font-extralight tracking-[1px] text-balance'>
                                         {messages.map((msg, index) => {
                                             const isFirstMessageInSequence = index === 0 || messages[index - 1]?.user_id !== msg.user_id;
                                             return (
@@ -638,6 +652,14 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                                 </motion.div>
                                             )}
                                         </div>
+                                        <motion.p
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: clientErrors?.maxFilesAllowed ? 1 : 0, height: clientErrors?.maxFilesAllowed ? 30 : 0 }}
+                                            transition={{ duration: .3 }}
+                                            className="text-orange-300 text-[13px] sm:text-[18px]"
+                                        >
+                                            {clientErrors?.maxFilesAllowed}
+                                        </motion.p>
                                     </div>
                                     {chatData.status === true ? (
                                         <div className='text-center text-white bg-[rgba(6,6,6,.65)] p-2 rounded-xl'>

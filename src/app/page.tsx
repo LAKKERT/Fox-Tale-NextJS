@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { Header } from "./components/header";
+import { Header } from "@/app/components/header";
 import { Main } from "./components/home/homePage";
 import { Footer } from "./components/footer";
 import { Loader } from "@/app/components/load";

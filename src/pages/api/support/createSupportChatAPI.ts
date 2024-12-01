@@ -5,9 +5,19 @@ import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 
 const validationSchema = Yup.object().shape({
-    title: Yup.string().required('Please enter a title'),
-    description: Yup.string().required('Please explain your problem'),
-})
+    title: Yup.string()
+        .trim()
+        .min(4, 'Title must be at least 4 characters')
+        .max(100, 'Title cannot exceed 100 characters')
+        .required('Please enter a title'),
+    description: Yup.string()
+        .trim()
+        .min(10, 'The description must be at least 10 characters long')
+        .max(400, 'The description should not be longer than 400 characters')
+        .matches(/\S/, 'Description cannot be empty or whitespace')
+        .required('Please explain your problem'),
+    file: Yup.mixed()
+});
 
 export default async function CreateSupportChat(req, res) {
     if (req.method === 'POST') {
@@ -29,13 +39,11 @@ export default async function CreateSupportChat(req, res) {
             const userID = decoded.userId;
             const uniqueRoomID = uuidv4();
             const createdAt = new Date();
-    
-            console.error(decoded);
             
             const conn = await Connect();
 
             try {
-                await conn.query('INSERT INTO chat_room (id, created_at, title, description, files) VALUES ($1, $2, $3, $4, $5)', [uniqueRoomID, createdAt, title, description, fileURL]);
+                await conn.query('INSERT INTO chat_room (id, created_at, title, description, files, author) VALUES ($1, $2, $3, $4, $5, $6)', [uniqueRoomID, createdAt, title, description, fileURL, userID]);
                 await conn.query('INSERT INTO participants (room_id, user_id) VALUES ($1, $2)', [uniqueRoomID, userID]);
 
                 await conn.query('COMMIT');

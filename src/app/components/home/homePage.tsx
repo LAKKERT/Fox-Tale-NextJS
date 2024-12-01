@@ -10,7 +10,7 @@ const MainFont = K2D({
 
 export function Main() {
     return (
-        <div className={`lg:max-w-8xl mx-auto mt-[100px] ${MainFont.className}`}>
+        <div className={`lg:max-w-8xl mx-auto mt-[100px] ${MainFont.className} text-white`}>
             <video width={1280} height={902} controls-none="false" autoPlay muted className="w-full h-auto lg:h-[555px] pointer-events-none">
                 <source src="/home/introduction_logo.mp4" type="video/mp4" />
             </video>

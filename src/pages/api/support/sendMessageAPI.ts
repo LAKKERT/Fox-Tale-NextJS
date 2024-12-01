@@ -38,3 +38,27 @@ export async function saveFile(file: string | any[] | null, imageUrl: string[]) 
         console.error("Error saving file:", error);
     }
 } 
+
+export async function saveNewsFile(files, imageUrls) {
+    try {
+        if (files && imageUrls) {
+            for (let i = 0; i < files.length; i++) {
+                const group = files[i];
+                const urlGroup = imageUrls[i];
+                
+                for (let j = 0; j < group.length; j++) {
+                    const base64Data = group[j].replace(/^data:.+;base64,/, "");
+                    const buffer = Buffer.from(base64Data, "base64");
+                    
+                    const filePath = path.join(process.cwd(), "public", urlGroup[j]);
+                    console.log("File Path:", filePath);
+                    console.log("File saved:", filePath);
+                    
+                    fs.writeFileSync(filePath, buffer);
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Error saving file:", error);
+    }
+}

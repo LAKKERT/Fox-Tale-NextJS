@@ -101,7 +101,7 @@ export function Header() {
                         </div>
                     </Link>
 
-                    <Link href="#">
+                    <Link href="/support">
                         <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out ">
                             Support
                         </div>
@@ -186,7 +186,7 @@ export function Header() {
                         </div>
                     </Link>
 
-                    <Link href="#" className="w-full">
+                    <Link href="/support" className="w-full">
                         <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.7)] transition duration-150 ease-in-out ">
                             Support
                         </div>
