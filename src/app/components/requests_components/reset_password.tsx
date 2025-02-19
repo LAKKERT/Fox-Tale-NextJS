@@ -21,7 +21,6 @@ export function PasswordResetComponent() {
 
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
-    console.log(token);
 
     const { register, handleSubmit, formState: { errors } } = useForm({
         resolver: yupResolver(validationSchema)
@@ -45,7 +44,6 @@ export function PasswordResetComponent() {
                 ...data,
                 token: token
             }
-            console.log(payload);
 
             const response = await fetch('/api/users/userDataReset/resetPasswordAPI', {
                 method: 'POST',
@@ -73,7 +71,7 @@ export function PasswordResetComponent() {
 
     return (
         <div className="w-full">
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 text-balance">
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 text-balance caret-transparent">
                 <motion.p
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: serverMessage ? 1 : 0, height: serverMessage ? 30 : 0 }}
@@ -91,7 +89,7 @@ export function PasswordResetComponent() {
                     >
                         {clientError.password?.message || serverError?.password}
                     </motion.p>
-                    <input type="password" {...register("password")} placeholder="New password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline" />
+                    <input type="password" {...register("password")} placeholder="New password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white" />
                 </div>
 
                 <div className="h-auto flex flex-col text-center">
@@ -103,7 +101,7 @@ export function PasswordResetComponent() {
                     >
                         {clientError.repeatPassword?.message || serverError?.repeatPassword}
                     </motion.p>
-                    <input type="password" {...register("repeatPassword")} placeholder="Repeat new password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline" />
+                    <input type="password" {...register("repeatPassword")} placeholder="Repeat new password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white" />
                 </div>
 
                 <input type="submit" value="Save changes" className="w-full h-11 bg-[#C67E5F] hover:bg-[rgba(198,126,95,.80)] rounded text-white text-center cursor-pointer transition-all duration-150 ease-in-out" />

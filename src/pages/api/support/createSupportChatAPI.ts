@@ -1,4 +1,5 @@
 "use server";
+import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import * as Yup from "yup";
 import { v4 as uuidv4 } from "uuid";
@@ -19,17 +20,16 @@ const validationSchema = Yup.object().shape({
     file: Yup.mixed()
 });
 
-export default async function CreateSupportChat(req, res) {
+export default async function CreateSupportChat(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'POST') {
         try {
             const token = req.body.cookies.auth_token;
-            console.log(token);
             let decoded 
             
             try {
-                decoded = jwt.verify(token, process.env.JWT_SECRET);
-                console.log("Create support chat")
+                decoded = jwt.verify(token, process.env.JWT_SECRET as string);
             } catch (error) {
+                console.error(error);
                 return res.status(401).json({ message: 'Invalid token' });
             }
             

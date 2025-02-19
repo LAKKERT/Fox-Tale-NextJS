@@ -31,7 +31,6 @@ export function AllProfilesTable({ placeholder }: { placeholder: string }) {
                 });
 
                 const users = await response.json();
-                console.log(users);
 
                 if (response.ok) {
                     setUsersData(users.result || []);
@@ -70,7 +69,7 @@ export function AllProfilesTable({ placeholder }: { placeholder: string }) {
     }
 
     return (
-        <div className={`h-[90vh] w-full mt-[100px] pt-8 flex flex-col justify-top items-center gap-5 text-white `}>
+        <div className={`h-[90vh] w-full mt-[100px] pt-8 flex flex-col justify-top items-center gap-5 text-white caret-transparent`}>
             <h1 className="text-4xl">All Users</h1>
             <input
                 className="peer max-w-6xl w-[1070px] h-11 block rounded-md outline-none focus:outline-none transition duration-75 ease-in-out focus:outline-2 focus:outline-white border-0 py-[9px] pl-10 text-lg tracking-wider shadow-[8px_9px_6px_0px_rgba(34,60,80,0.2)] bg-[rgba(6,6,6,.65)] placeholder:text-white"

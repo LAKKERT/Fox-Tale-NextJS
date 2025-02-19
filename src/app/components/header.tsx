@@ -6,8 +6,6 @@ import Link from "next/link";
 import { useCookies } from "react-cookie";
 import Cookies from 'js-cookie';
 
-import { getAllUserData } from "@/pages/api/users/usersAPI";
-
 const MainFont = K2D({
     style: "normal",
     subsets: ["latin"],
@@ -79,7 +77,8 @@ export function Header() {
     }, [cookies]);
 
     return (
-        <div className={`fixed w-full z-50 select-none`}>
+        <div 
+            className={`fixed w-full z-50 select-none`}>
             <div className={`fixed top-0 z-50 h-[100px] w-full px-3 flex lg:justify-between items-center bg-black ${MainFont.className} ${isOptionsMenuOpen ? "outline outline-[rgba(245,136,90,.9)]" : "outline-none"}`}>
 
                 <MobileMode isMenuOpen={isMenuOpen} toggleMenu={toggleMenu} />
@@ -95,7 +94,7 @@ export function Header() {
                         </div>
                     </Link>
 
-                    <Link href="#">
+                    <Link href="/news">
                         <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out ">
                             News
                         </div>

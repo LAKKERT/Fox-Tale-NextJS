@@ -36,7 +36,7 @@ export default function Login() {
     }, []);
 
     return (
-        <div className="w-full h-full mt-[100px] bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden">
+        <div className="w-full min-h-[calc(100vh-100px)] mt-[100px] bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden caret-transparent">
             {isLoading ? (
                 <motion.div
                     initial={{ opacity: 1 }}
@@ -53,6 +53,7 @@ export default function Login() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.3 }}
+
                 >
                     <Header />
                     <div className="flex flex-col justify-center items-center">

@@ -27,22 +27,10 @@ export function SignUpPage() {
     const router = useRouter();
     const [serverMessage, setServerMessage] = useState("");
     const [serverError, setServerError] = useState("");
-    const [clientError, setClientError] = useState({});
 
     const { register, handleSubmit, formState: { errors } } = useForm({
         resolver: yupResolver(validationSchema),
     });
-
-    useEffect(() => {
-        if (errors) {
-            setClientError(errors);
-        } else {
-            const timeout = setTimeout(() => {
-                setClientError(errors);
-                return () => clearTimeout(timeout);
-            }, 300);
-        }
-    }, [errors]);
 
     const onSubmit = async (data) => {
         try {
@@ -85,7 +73,7 @@ export function SignUpPage() {
                             >
                                 {errors.email?.message || serverError?.email || (serverMessage && serverMessage.includes("Email") ? serverMessage : '')}
                             </motion.p>
-                            <input type="email" autoComplete="off" {...register("email")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none" placeholder="Enter email here" />
+                            <input type="email" autoComplete="off" {...register("email")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none caret-white" placeholder="Enter email here" />
                         </div>
                         <div className="flex flex-col text-center">
                             <motion.p
@@ -96,7 +84,7 @@ export function SignUpPage() {
                                 >
                                 {errors.username?.message || serverError?.username || (serverMessage && serverMessage.includes("Username") ? serverMessage : '')}
                             </motion.p>
-                            <input type="text" autoComplete="off" {...register("username")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none" placeholder="Login" />
+                            <input type="text" autoComplete="off" {...register("username")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none caret-white" placeholder="Login" />
                         </div>
                         <div className="flex flex-col text-center">
                             <motion.p
@@ -107,7 +95,7 @@ export function SignUpPage() {
                             >
                                 {errors.password?.message || (serverError?.password && serverError.password)}
                             </motion.p>
-                            <input type="password" autoComplete="off" {...register("password")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none" placeholder="Password" />
+                            <input type="password" autoComplete="off" {...register("password")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none caret-white" placeholder="Password" />
                         </div>
                         <div className="flex flex-col text-center">
                             <motion.p
@@ -118,7 +106,7 @@ export function SignUpPage() {
                             >
                                 {errors.password2?.message || (serverError?.password2 && serverError.password2)}
                             </motion.p>
-                            <input type="password" autoComplete="off" {...register("password2")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none" placeholder="Confirm Password" />
+                            <input type="password" autoComplete="off" {...register("password2")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none caret-white" placeholder="Confirm Password" />
                         </div>
 
                         <input type="submit" value="SIGN UP" className="w-[250px] h-[50px] text-2xl tracking-widest rounded border border-[#F5DEB3] bg-[#C2724F] cursor-pointer transition duration-75 ease-in-out hover:bg-[rgba(194,114,79,.7)]" />

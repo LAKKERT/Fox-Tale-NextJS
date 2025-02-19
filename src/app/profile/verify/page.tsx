@@ -9,7 +9,6 @@ import { useForm } from "react-hook-form";
 import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 
-import { createVerificationCode } from "@/pages/api/profile/verifyUserAPI";
 
 const validationSchema = Yup.object().shape({
     code: Yup.number().min(1000, 'Number must be a 4-digit number').max(9999, 'Number must be a 4-digit number').typeError('Please enter a 4-digit number'),
@@ -18,7 +17,7 @@ const validationSchema = Yup.object().shape({
 export default function VerifyPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [showContent, setShowContent] = useState(false);
-    const [userData, setUserData] = useState(null);
+    const [userEmail, setUserEmail] = useState<string>('');
     const [serverMessage, setServerMessage] = useState("");
     const [serverError, setServerError] = useState({});
     const [clientError, setClientError] = useState({});
@@ -49,17 +48,72 @@ export default function VerifyPage() {
         }
     }, [errors]);
 
+    useEffect(() => {
+        const fetchUserEmail = async () => {
+            try {
+                const response = await fetch('/api/profile/verifyUserAPI', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${cookies.auth_token}`,
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    if (result.redirectUrl) {
+                        router.push(result.redirectUrl);
+                    }
+                    setUserEmail(result.email);
+                } else {
+                    console.error("Failed to fetch user data");
+                }
+
+                const payload = {
+                    cookiesName: 'auth_token',
+                    userEmail: result.email.email,
+                }
+                const createCodeResponse = await fetch(`/api/profile/createVerificationCodeAPI`, {
+                    method: 'POST',
+                    headers: {
+                        'content-type': 'application/json',
+                        'Authorization': `Bearer ${cookies['auth_token']}`,
+                    },
+                    body: JSON.stringify(payload),
+                })
+
+                const codeResponse = await createCodeResponse.json();
+
+
+                if (createCodeResponse.ok) {
+                    if (codeResponse.redirectUrl) {
+                        router.push(codeResponse.redirectUrl)
+                    }
+                }else {
+                    console.error('Server error occurred');
+                }
+
+            }catch (error) {
+                console.log(error);
+                setServerMessage("An unexpected error occurred.");
+            }
+        }
+
+        fetchUserEmail();
+
+    }, [router, cookies])
+
     const onSubmit = async (data) => {
         try {
             const payLoad = await {
                 ...data,
-                cookies
             }
 
             const response = await fetch('/api/profile/verifyUserAPI', {
                 method: 'POST',
                 headers: {
                     'content-Type': 'application/json',
+                    'Authorization': `Bearer ${cookies['auth_token']}`,
                 },
                 body: JSON.stringify(payLoad),
             });
@@ -75,23 +129,10 @@ export default function VerifyPage() {
             }
 
         } catch (error) {
+            console.log(error);
             setServerMessage("An unexpected error occurred.");
         }
     }
-
-    useEffect(() => {
-        const verifyUser = async () => {
-            const verifyData = await createVerificationCode(cookies);
-
-            if (verifyData?.redirectUrl) {
-                router.push(verifyData.redirectUrl);
-            } else {
-                console.error('Error during verification:', verifyData?.error);
-            }
-        };
-
-        verifyUser();
-    }, [cookies, router]);
 
     return (
         <div>
@@ -111,11 +152,11 @@ export default function VerifyPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.3 }}
-                    className="h-[100vh] w-full bg-[url('/signup/bg-signup.png')] flex justify-center items-center object-cover bg-cover bg-center bg-no-repeat overflow-hidden"
+                    className="h-[100vh] w-full bg-[url('/signup/bg-signup.png')] flex justify-center items-center object-cover bg-cover bg-center bg-no-repeat overflow-hidden caret-transparent"
                 >
 
                     <div className="bg-[rgba(6,6,6,.65)] flex flex-col gap-4 py-9 px-5 rounded-lg text-center">
-                        <p>the code was sent to the email: {userData?.email}</p>
+                        <p>the code was sent to the email: {userEmail?.email}</p>
                         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col justify-center items-center text-center gap-6">
                             <div className="flex flex-col text-center">
                                 <motion.p

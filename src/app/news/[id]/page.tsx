@@ -1,22 +1,15 @@
 'use client';
 
 import { Header } from "@/app/components/header";
-import { Loader } from "@/app/components/load";
-import { PostDetailComponent } from "@/app/components/mainNews";
-import Image from "next/image";
-import { K2D } from "next/font/google";
-import styles from "@/app/styles/home/variables.module.scss";
+import { PostDetailComponent } from "@/app/components/news/detailPostPage";
+import { Footer } from "@/app/components/footer";
 
-const MainFont = K2D({
-    style: "normal",
-    subsets: ["latin"],
-    weight: "400",
-});
-
-export default function PostDetail() {
+export default function PostDetail({ params }) {
     return (
-        <div>
-            
+        <div className="w-full min-h-[calc(100vh-100px)] mt-[100px] bg-black object-cover bg-cover bg-center bg-no-repeat overflow-hidden caret-transparent">
+            <Header />
+            <PostDetailComponent postID={params} />
+            <Footer />
         </div>
     )
 }

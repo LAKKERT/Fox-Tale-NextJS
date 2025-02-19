@@ -1,8 +1,8 @@
 'use server';
 import Connect from '@/db/dbConfig';
 import jwt from 'jsonwebtoken';
-
-export default async function closeChat(req, res) {
+import { NextApiRequest, NextApiResponse } from "next";
+export default async function closeChat(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'POST') {
         const { roomID, cookies } = req.body;
 
@@ -18,7 +18,7 @@ export default async function closeChat(req, res) {
     
         let decoded;
         try {
-            decoded = jwt.verify(cookies, process.env.JWT_SECRET);
+            decoded = jwt.verify(cookies, process.env.JWT_SECRET as string);
         } catch (error) {
             console.error('Invalid token:', error);
             return res.status(401).json({ error: 'Invalid token' });

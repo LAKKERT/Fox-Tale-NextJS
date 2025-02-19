@@ -1,9 +1,9 @@
 'use server';
-
+import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import jwt from "jsonwebtoken";
 
-export default async function getAllUserData(req, res) {
+export default async function getAllUserData(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'GET') {
         const authHeader = req.headers['authorization'];
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -15,13 +15,13 @@ export default async function getAllUserData(req, res) {
     
         let decoded;
         try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET);
+            decoded = jwt.verify(token, process.env.JWT_SECRET as string);
         }catch ( error ) {
             console.error('Invalid token:', error);
             res.status(401).json({ error: 'Token is not vailed' });
         }
         
-        const currentUserId = decoded.userId;
+        const currentUserId = decoded?.userId;
         
         const conn = await Connect();
         try {

@@ -29,27 +29,27 @@ export default function SignUp() {
     }, [cookies]);
 
     return (
-        <div>
+        <div className=" caret-transparent">
+            <Header />
             {isLoading ? (
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.3 }}
                     className="h-full w-full bg-[rgba(0,0,0,.65)] rounded-lg flex flex-col items-center justify-center text-white"
-                >
+                    >
                     <Loader />
                 </motion.div>
             ) : null}
 
             {showContent ? (
                 <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    className="h-[90vh] w-full mt-[100px] bg-[url('/signup/bg-signup.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="min-h-[calc(100vh-100px)] w-full flex flex-col justify-center items-center mt-[100px] bg-[url('/signup/bg-signup.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden"
                 >
-                    <Header />
-                    <div className="h-full flex flex-col justify-center items-center">
+                    <div>
                         <SignUpPage />
                     </div>
                 </motion.div>

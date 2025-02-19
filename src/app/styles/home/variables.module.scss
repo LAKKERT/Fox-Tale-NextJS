@@ -3,6 +3,10 @@
     background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 10%, rgba(0,0,0,0) 90%, rgba(0,0,0,1) 100%);
 };
 
+.gradient_for_chat {
+    background: rgb(6,6,6);
+    background: linear-gradient(0deg, rgba(6,6,6,1) 0%, rgba(6,6,6,0.65) 50%, rgba(0,0,0,0) 100%);
+}
 
 .custom_scroll::-webkit-scrollbar {
     width: 10px;

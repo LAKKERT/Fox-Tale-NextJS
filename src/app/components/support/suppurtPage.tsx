@@ -15,7 +15,7 @@ export function SupportPageComponent() {
     const [openCards, setOpenCards] = useState({});
 
     const toggleCard = (id) => {
-        setOpenCards((prev) => ({ 
+        setOpenCards((prev) => ({
             ...prev,
             [id]: !prev[id],
         }))
@@ -41,33 +41,36 @@ export function SupportPageComponent() {
                 'Go to the login page and click on "Forgot Password." Follow the instructions to reset your password via email.',
         },
     ];
- 
+
     return (
-        <div className={`w-full h-[90vh] flex items-center justify-center px-2 mt-[100px] object-cover bg-cover bg-center bg-no-repeat text-white ${MainFont.className}`}>
-            <div className="flex flex-col items-center gap-5 pt-2">
-                <h2 className="text-lg md:text-2xl text-balance text-center">Before contacting support, please read the frequently asked questions.<br/> You might find the answer there.</h2>
-                
+        <div className={`w-full min-h-[calc(100vh-100px)] flex  justify-center px-2 mt-[100px] object-cover bg-cover bg-center bg-no-repeat text-white ${MainFont.className}`}>
+
+            <div className="flex flex-col items-center gap-5 pt-2 my-auto">
+                <h2 className="text-lg md:text-2xl text-balance text-center">Before contacting support, please read the frequently asked questions.<br /> You might find the answer there.</h2>
+
                 <div className="max-w-[1110px] flex flex-col gap-5">
                     {cards.map((card) => (
-                        <div key={card.id} className={`flex flex-col bg-[rgba(6,6,6,.65)] rounded p-2 `}>
-                            <button onClick={() => toggleCard(card.id)}>
+                        <button key={card.id} onClick={() => toggleCard(card.id)}>
+                            <div className={`flex flex-col bg-[rgba(6,6,6,.65)] rounded p-2 `}>
                                 <div className="text-lg md:text-lg flex flex-row justify-between">
                                     <p className="text-lg md:text-xl">{card.title}</p>
-                                        <div className="select-none">
-                                            {openCards[card.id] ? '▲' : '▼' }
-                                        </div>
-                                </div>
-                            </button>
 
-                            <motion.div
-                                initial = {{ height: '0px' }}
-                                animate = {{ height: openCards[card.id] ? 'auto' : '0px'}}
-                                transition={{ duration: .3 }}
-                                className="overflow-hidden text-md md:text-lg select-text"
-                            >
-                                {card.content}
-                            </motion.div>
-                        </div>
+                                    <div className={`select-none transform duration-300 ${openCards[card.id] ? 'rotate-180' : 'rotate-360'}`}>
+                                        {/* {openCards[card.id] ? '▲' : '▼'} */}
+                                        <p>▼</p>
+                                    </div>
+                                </div>
+                                <motion.div
+                                    initial={{ height: '0px' }}
+                                    animate={{ height: openCards[card.id] ? 'auto' : '0px' }}
+                                    transition={{ duration: .3 }}
+                                    className="overflow-hidden text-md md:text-lg select-text text-left"
+                                >
+                                    {card.content}
+                                </motion.div>
+
+                            </div>
+                        </button>
                     ))}
                 </div>
 

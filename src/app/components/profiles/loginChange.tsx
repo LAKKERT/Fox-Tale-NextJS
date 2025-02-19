@@ -64,7 +64,7 @@ export function ChangeLogin({ userData }) {
     }
 
     return (
-        <div className="w-full flex flex-col lg:flex-row justify-center items-center py-3 lg:py-6  px-4 lg:px-6 gap-3 bg-[#272727] text-center text-white text-lg lg:text-lg text-balance rounded-md lg:rounded-xl">
+        <div className="w-full flex flex-col lg:flex-row justify-center items-center py-3 lg:py-6  px-4 lg:px-6 gap-3 bg-[#272727] text-center text-white text-lg lg:text-lg text-balance rounded-md lg:rounded-xl caret-transparent">
             <div>
                 <p>If you want to change your username, fill out the form</p>
             </div>
@@ -80,7 +80,7 @@ export function ChangeLogin({ userData }) {
                     >
                         {clientError.login?.message || serverError?.login || serverMessage}
                     </motion.p>
-                    <input type="text" {...register("login")} placeholder="Your new username" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline" />
+                    <input type="text" {...register("login")} placeholder="Your new username" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white" />
                     <input type="submit" value="Save changes" className="w-full h-11 bg-[#C67E5F] hover:bg-[rgba(198,126,95,.80)] rounded text-white text-center cursor-pointer transition-all duration-150 ease-in-out" />
                 </form>
             </div>

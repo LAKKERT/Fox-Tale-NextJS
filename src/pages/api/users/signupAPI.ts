@@ -1,4 +1,5 @@
 "use server";
+import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import * as Yup from "yup";
 import { v4 as uuidv4 } from "uuid";
@@ -33,7 +34,7 @@ async function checkEmailandLoginExists(email, username) {
 
 }
 
-export default async function CreateUser(req, res) {
+export default async function CreateUser(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === "POST") {
         try {
             const { email, username, password } = await schema.validate(req.body, { abortEarly: false });
@@ -64,7 +65,7 @@ export default async function CreateUser(req, res) {
                 await conn.end();
             }
 
-            const token = jwt.sign({ userID: uniqueID, email: email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+            const token = jwt.sign({ userID: uniqueID, email: email }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
 
             const serializedCookie = serialize('regToken', token, {
                 httpOnly: false,
@@ -84,7 +85,6 @@ export default async function CreateUser(req, res) {
                     const fieldName = err.path;
                     fieldErrors[fieldName] = err.message;
                 });
-                console.log(fieldErrors);
                 res.status(400).json({ message: "Validation error", errors: fieldErrors });
             } else {
                 res.status(400).json({ message: (error as Error).message });

@@ -1,8 +1,8 @@
 'use server';
-
+import { NextApiRequest, NextApiResponse } from "next";
 import Connect from '@/db/dbConfig';
 
-export default async function getChatRoom(req, res) {
+export default async function getChatRoom(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'GET') {
         const roomID = req.query.roomID;
         if (!roomID) {

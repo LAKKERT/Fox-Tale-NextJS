@@ -188,7 +188,7 @@ export default function CreateSupportChat() {
     }
 
     return (
-        <div className={`w-full h-[90vh] mt-[100px] bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat ${MainFont.className} text-white `}>
+        <div className={`w-full h-[90vh] mt-[100px] bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat ${MainFont.className} text-white caret-transparent`}>
             {isLoading ? (
                 <motion.div
                     initial={{ opacity: 1 }}

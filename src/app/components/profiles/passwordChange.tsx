@@ -5,6 +5,22 @@ import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
 import { motion } from 'framer-motion';
 
+type FormData = {
+    password1: string;
+    password2: string;
+    repeatPassword2: string;
+};
+
+type ServerErrors = {
+    password1?: string;
+    password2?: string;
+    repeatPassword2?: string;
+};
+
+type UserData = {
+    id: string | number;
+};
+
 const validationSchema = Yup.object().shape({
     password1: Yup.string().min(6, 'Old password must be at least 6 characters').required('Enter your password'),
     password2: Yup.string().min(6, 'New password must be at least 6 characters').required('Enter your new password'),
@@ -14,8 +30,8 @@ const validationSchema = Yup.object().shape({
 export function ChangePassword({ userData }) {
     const [successMessage, setSuccessMessage] = useState("");
     const [serverMessage, setServerMessage] = useState("");
-    const [serverError, setServerError] = useState({});
-    const [clientError, setClientError] = useState({});
+    const [serverError, setServerError] = useState<ServerErrors>({});
+    const [clientError, setClientError] = useState<ServerErrors>({});
 
     const { register, handleSubmit, reset, formState: { errors } } = useForm({
         resolver: yupResolver(validationSchema)
@@ -51,6 +67,7 @@ export function ChangePassword({ userData }) {
 
             if (response.ok) {
                 setSuccessMessage(result.message);
+                setServerMessage('');
                 reset();
             } else {
                 console.error("Failed to change password");
@@ -61,9 +78,9 @@ export function ChangePassword({ userData }) {
             console.error('Error changing password:', error);
         }
     }
-
+    
     return (
-        <div className="w-full flex flex-col lg:flex-row justify-center items-center py-3 lg:py-6  px-4 lg:px-6 gap-3 bg-[#272727] text-center text-white text-lg lg:text-lg text-balance rounded-md lg:rounded-xl">
+        <div className="w-full flex flex-col lg:flex-row justify-center items-center py-3 lg:py-6  px-4 lg:px-6 gap-3 bg-[#272727] text-center text-white text-lg lg:text-lg text-balance rounded-md lg:rounded-xl caret-transparent">
             <div>
                 <p>If you want to change your password, fill out the form</p>
             </div>
@@ -83,24 +100,25 @@ export function ChangePassword({ userData }) {
                     <div className="flex flex-col gap-2">
                         <motion.p
                             initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: errors.password1 || serverError.password1 || serverMessage ? 1 : 0, height: errors.password1 || serverError.password1 || serverMessage ? 30 : 0 }}
+                            animate={{ opacity: errors.password1 || serverError?.password1 || serverMessage ? 1 : 0, height: errors.password1 || serverError?.password1 || serverMessage ? 30 : 0 }}
                             transition={{ duration: 0.3 }}
                             className="text-orange-300 text-[13px] sm:text-[18px]"
                         >
                             {clientError.password1?.message || serverError?.password1 || serverMessage}
                         </motion.p>
-                        <input type="password" {...register("password1")} placeholder="Current password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline" />
+                        <input type="password" {...register("password1")} placeholder="Current password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white" />
                     </div>
+
                     <div className="flex flex-col gap-2">
                         <motion.p
                             initial={{ opacity: 0, heigth: 0 }}
-                            animate={{ opacity: errors.password2 || serverError.password2 || serverMessage ? 1 : 0, height: errors.password2 || serverError.password2 || serverMessage ? 30 : 0 }}
+                            animate={{ opacity: errors.password2 || serverError?.password2 ? 1 : 0, height: errors.password2 || serverError?.password2 ? 30 : 0 }}
                             transition={{ duration: 0.3 }}
                             className="text-orange-300 text-[13px] sm:text-[18px]"
                         >
-                            {clientError.password2?.message || serverError?.password2 || serverMessage}
+                            {clientError.password2?.message || serverError?.password2}
                         </motion.p>
-                        <input type="password" {...register("password2")} placeholder="New password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline" />
+                        <input type="password" {...register("password2")} placeholder="New password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white" />
                     </div>
                     <div className="flex flex-col gap-2">
                         <motion.p
@@ -111,7 +129,7 @@ export function ChangePassword({ userData }) {
                         >
                             {errors.repeatPassword2?.message || serverError?.repeatPassword2}
                         </motion.p>
-                        <input type="password" {...register("repeatPassword2")} placeholder="Repeat new password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline" />
+                        <input type="password" {...register("repeatPassword2")} placeholder="Repeat new password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white" />
                     </div>
                     <input type="submit" value="Save changes" className="w-full h-11 bg-[#C67E5F] hover:bg-[rgba(198,126,95,.80)] rounded text-white text-center cursor-pointer transition-all duration-150 ease-in-out" />
                 </form>

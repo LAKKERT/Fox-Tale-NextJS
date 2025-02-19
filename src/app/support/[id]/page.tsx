@@ -17,7 +17,7 @@ const MAX_FILES_ALLOWED = 3;
 const MainFont = K2D({
     style: "normal",
     subsets: ["latin"],
-    weight: "300",
+    weight: ["300", "600" ,"800"],
 });
 
 type UsersData = {
@@ -71,6 +71,7 @@ const reducer = (state, action) => {
 export default function SupportChatRoom(params: { params: { id: number; }; }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isChatClose, setIsChatClose] = useState(false);
+    const [confirmClose, setConfirmClose] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [clientErrors, setClientErrors] = useState({});
     const [showImage, setShowImage] = useState<string | null>(null);
@@ -96,6 +97,25 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     const scrollToBottom = useCallback(() => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, []);
+
+    useEffect(() => {
+        if (!socket) {
+            const socketInstance = io("http://localhost:3000", { path: "/api/support/socket" })
+            setSocket(socketInstance);
+
+            socketInstance.on("message", (msg) => {
+                setMessages((prev) => [...prev, msg]);
+            });
+
+            socketInstance.on("participants", (participant) => {
+                setUsersData([...participant.participants]);
+            })
+
+            return () => {
+                socketInstance.disconnect();
+            }
+        }
+    }, [])
 
     useEffect(() => {
         const handleUnloadOrPopState = async (event) => {
@@ -153,7 +173,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ cookies: cookies.auth_token, roomID: params.params.id})
+                    body: JSON.stringify({ cookies: cookies.auth_token, roomID: params.params.id })
                 })
                 const chatRoomDataPromise = fetch(`/api/support/getChatRoomAPI?roomID=${params.params.id}`).then((res) => res.json());
                 const messagesPromise = fetch(`/api/support/getMessagesAPI?roomID=${params.params.id}`).then((res) => res.json());
@@ -165,6 +185,14 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                 ])
 
                 if (!isMounted) return;
+
+                if (socket) {
+                    const participantsList = {
+                        participants: chatData.usersData
+                    }
+
+                    socket.emit('participants' , participantsList)
+                }
 
                 setCurrentUser(currentUserId);
                 setIsLoading(false);
@@ -188,7 +216,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
             isMounted = false;
         }
 
-    }, [cookies, params.params.id, router, isChatClose]);
+    }, [cookies, params.params.id, router, isChatClose, socket]);
 
     useEffect(() => {
         const fetchLastSeenMessage = async () => {
@@ -196,7 +224,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                 console.error('User ID or Chat Data ID is undefined');
                 return;
             }
-    
+
             try {
                 const lastSeenMessage = await fetch(`/api/support/lastMessageAPI?userID=${currentUser.userID}&roomID=${chatData.id}`, {
                     method: 'GET',
@@ -209,7 +237,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                     console.warn('No last seen message found for this user and room');
                     return;
                 }
-    
+
                 const lastSeenMessageData = await lastSeenMessage.json();
 
                 if (lastSeenMessage.ok && lastSeenMessageData.last_message_id !== undefined) {
@@ -221,48 +249,32 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                 console.error('Error fetching last seen message:', error);
             }
         };
-    
+
         if (currentUser.userID && chatData.id) {
             fetchLastSeenMessage();
         }
     }, [usersData, chatData, currentUser.userID, chatData.id]);
-    
-
-    useEffect(() => {
-        if (!socket) {
-            const socketInstance = io("http://localhost:3000", { path: "/api/support/socket" })
-            setSocket(socketInstance);
-    
-            socketInstance.on("message", (msg) => {
-                setMessages((prev) => [...prev, msg]);
-            });
-    
-            return () => {
-                socketInstance.disconnect();
-            }
-        }
-    }, [])
 
     function getFile(selectedFiles: string | any[] | FileList) {
         const fileProperty = [];
         for (let i = 0; i < selectedFiles.length; i++) {
             const fileName = selectedFiles[i].name;
             const lastDotIndex = fileName.lastIndexOf('.');
-    
+
             const name = lastDotIndex !== -1 ? fileName.substring(0, lastDotIndex) : fileName;
             const extension = lastDotIndex !== -1 ? fileName.substring(lastDotIndex + 1) : '';
-    
+
             fileProperty[i] = {
                 name: name,
                 extension: extension,
                 size: selectedFiles[i].size,
             };
         }
-    
+
         return fileProperty;
     }
 
-    const readFileAsDataURL = (file: file): Promise<string | ArrayBuffer | null> => {
+    const readFileAsDataURL = (file: File): Promise<string | ArrayBuffer | null> => {
         return new Promise((resolve, rejects) => {
             const reader = new FileReader();
             reader.onloadend = () => resolve(reader.result);
@@ -273,7 +285,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
 
     const processFiles = async (files: FileList | null): Promise<string | ArrayBuffer | null> => {
         if (!files || files.length === 0) return [];
-        const filePromises = Array.from(files).map((file) => readFileAsDataURL(file))
+        const filePromises = Array.from(files).map((file) => readFileAsDataURL(file));
         return await Promise.all(filePromises);
     }
 
@@ -383,7 +395,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     };
 
     useEffect(() => {
-        if (state.isAtBottom) {
+        if (state.isAtBottom ) {
             scrollToBottom();
         }
     }, [messages, state.isAtBottom]);
@@ -391,7 +403,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     const handleScrollAndMessages = useCallback(() => {
         const element = scrollContainerRef.current;
         if (element) {
-            const isBottom = Math.ceil(element.scrollTop + element.clientHeight) >= element.scrollHeight;
+            const isBottom = Math.ceil(element.scrollTop + element.clientHeight) >= element.scrollHeight - 150;
             dispatch({ type: 'SCROLL_TO_BOTTOM', payload: isBottom });
 
             if (isBottom) {
@@ -404,7 +416,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
             }
         }
 
-        const timeout = setTimeout(() => {  
+        const timeout = setTimeout(() => {
             const hasUnreadMessages = messages.some((msg) => msg.unreaded === true);
             if (hasUnreadMessages) {
                 dispatch({ type: 'SET_NEW_MESSAGE' });
@@ -436,10 +448,16 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     const scrollToUnreadMessage = useCallback(() => {
 
         const firstUnreadIndex = messages.findIndex((msg) => msg.unreaded === true);
-        if (firstUnreadIndex !== -1 && messageRefs.current[firstUnreadIndex]) {
+        const lastMessageIndex = messages.length - 1
+
+        
+        if (messageRefs.current[firstUnreadIndex]) {
             messageRefs.current[firstUnreadIndex].scrollIntoView({ behavior: "smooth" });
+        }else if (!state.isAtBottom && !messageRefs.current[firstUnreadIndex]) {
+            messageRefs.current[lastMessageIndex].scrollIntoView({ behavior: "smooth" });
         }
-    }, [messages]);
+
+    }, [messages, state.isAtBottom]);
 
     useEffect(() => {
         let messageIndex = 0;
@@ -447,12 +465,12 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
             entries.forEach((entry) => {
                 if (entry.isIntersecting) {
                     const messageId = parseInt(entry.target.getAttribute("data-id"), 10);
-                    
+
                     if (messageId > messageIndex) {
                         messageIndex = messageId;
                         dispatch({ type: 'SET_LAST_SEEN_MESSAGE', payload: messageIndex });
                     }
-    
+
                     for (let i = 0; i <= messageId; i++) {
                         if (messages[i]?.unreaded === true) {
                             messages[i].unreaded = false;
@@ -482,7 +500,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
         }
     }
 
-    const closeChatRoom = async() => {
+    const closeChatRoom = async () => {
         await fetch(`/api/support/closeChatAPI`, {
             method: 'POST',
             headers: {
@@ -498,9 +516,9 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     };
 
     return (
-        <div className={`w-full h-[90vh] bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat ${MainFont.className} text-white `}>
+        <div className={`w-full bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat ${MainFont.className} text-white caret-transparent`}>
             <Header />
-            <div className='h-full mt-[100px] flex flex-col justify-center items-center'>
+            <div className='min-h-[calc(100vh-100px)] mt-[100px] flex flex-col justify-center items-center'>
 
                 {isLoading ? (
                     <motion.div
@@ -515,7 +533,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
 
                     <div className='w-full flex flex-row justify-center sm:min-w-[500px] md:min-w-[750px]'>
                         {currentUser.userRole === 'admin' ? (
-                            <div className='flex flex-col justify-between bg-[rgba(6,6,6,.65)] rounded-xl px-3 py-5 h-1/2 w-[250px]'>
+                            <div className='flex flex-col justify-between bg-[rgba(6,6,6,.65)] rounded-xl px-3 py-3 h-1/2 w-[250px]'>
                                 <div className={`h-full pb-4 overflow-auto overflow-x-hidden ${styles.custom_chat_scroll}`}>
                                     <p className='uppercase text-center'>participants</p>
                                     {usersData.map((user) => (
@@ -527,8 +545,22 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                 {chatData.status === true ? (
                                     null
                                 ) : (
-                                    <button onClick={closeChatRoom} className="w-full h-11 bg-[#C67E5F] hover:bg-[rgba(198,126,95,.80)] rounded text-white text-center cursor-pointer transition-all duration-150 ease-in-out">problem is solved</button>
+                                    <button onClick={() => setConfirmClose(prev => !prev)} className="w-full h-11 bg-[#C67E5F] hover:bg-[rgba(198,126,95,.80)] rounded text-white text-center cursor-pointer transition-all duration-150 ease-in-out">Problem is solved</button>
                                 )}
+
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0}}
+                                    animate={{ opacity: confirmClose ? 1 : 0,  height: confirmClose? 38 : 0 }}
+                                    className={`flex flex-row justify-evenly items-center text-lg ${chatData.status ? 'hidden' : 'block'}`}
+                                >
+                                    <button onClick={closeChatRoom}>
+                                        Yes
+                                    </button>
+
+                                    <button onClick={() => setConfirmClose(prev => !prev)}>
+                                        No
+                                    </button>
+                                </motion.div>
                             </div>
                         ) : (
                             null
@@ -541,9 +573,10 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                 transition={{ duration: .3 }}
                                 className='relative w-full flex flex-col gap-4 px-4 mx-auto max-w-[750px]'
                             >
-                                <button onClick={scrollToUnreadMessage} className={`absolute right-5 bottom-20 ${state.newMessage === true ? null : 'hidden'}`}>
-                                    Unreaded messages
+                                <button onClick={scrollToUnreadMessage} className={`w-10 h-10 mr-4 rounded-full bg-[#ebebeb] absolute right-5 bottom-20 duration-100 ease-in-out hover:bg-[#c5c5c5] ${!state.isAtBottom || state.newMessage === true ? null : 'hidden'}`}>
+                                     {state.newMessage ?  <p className={`text-[#C67E5F] text-center font-semibold ${MainFont.className}`}>NEW</p> : <Image alt='down' src={'/support/icons/down.svg'} width={50} height={50} className='m-auto'/>}
                                 </button>
+
                                 <div ref={scrollContainerRef} className={`w-full h-[600px] sm:w-auto sm:min-w-[400px] md:min-w-[650px] sm:max-w-[750px] bg-[rgba(6,6,6,.65)] flex flex-col gap-3 items-center rounded-xl px-3 sm:px-5 py-5 overflow-scroll overflow-x-hidden ${styles.custom_chat_scroll}`}>
 
                                     <div className='text-base sm:text-xl font-extralight tracking-[5px] text-balance'>
@@ -567,18 +600,18 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                                         height={80}
                                                         className={`rounded cursor-pointer`}
                                                         loading='lazy'
-                                                        />
+                                                    />
                                                 </div>
                                             ))}
                                     </div>
 
-                                    <div className='w-full h-full text-base sm:text-lg flex flex-col justify-between gap-3 font-extralight tracking-[1px] text-balance'>
+                                    <div className='w-full h-full text-base sm:text-lg flex flex-col gap-3 pb-5 font-extralight tracking-[1px] text-balance'>
                                         {messages.map((msg, index) => {
                                             const isFirstMessageInSequence = index === 0 || messages[index - 1]?.user_id !== msg.user_id;
                                             return (
                                                 <motion.div
                                                     key={index}
-                                                    className={`flex flex-col w-full ${currentUser.userID === msg.userID || currentUser.userID === msg.user_id
+                                                    className={`flex flex-col w-full last:pb-5 ${currentUser.userID === msg.userID || currentUser.userID === msg.user_id
                                                         ? 'items-end'
                                                         : 'items-start'
                                                         }`}
@@ -620,55 +653,55 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                                 </motion.div>
                                             );
                                         })}
-                                            {showImage && (
+                                        {showImage && (
+                                            <motion.div
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: timing ? 0 : 1 }}
+                                                transition={{ duration: 0.3 }}
+                                                onClick={closeImage}
+                                                className="fixed inset-0 flex items-center justify-center bg-[rgba(0,0,0,0.02)] bg-opacity-70 z-50 px-3"
+                                            >
                                                 <motion.div
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: timing ? 0 : 1 }}
+                                                    initial={{ scale: 0.5 }}
+                                                    animate={{ scale: timing ? 0 : 1 }}
                                                     transition={{ duration: 0.3 }}
-                                                    onClick={closeImage}
-                                                    className="fixed inset-0 flex items-center justify-center bg-[rgba(0,0,0,0.02)] bg-opacity-70 z-50 px-3"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="relative"
                                                 >
-                                                    <motion.div
-                                                        initial={{ scale: 0.5 }}
-                                                        animate={{ scale: timing ? 0 : 1 }}
-                                                        transition={{ duration: 0.3 }}
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        className="relative"
+                                                    <Image
+                                                        src={showImage}
+                                                        alt="Scaled image"
+                                                        width={600}
+                                                        height={600}
+                                                        className="rounded"
+                                                    />
+                                                    <button
+                                                        onClick={closeImage}
+                                                        className="absolute top-2 right-2 bg-[rgba(194,114,79,1)] text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-500 transition"
                                                     >
-                                                        <Image
-                                                            src={showImage}
-                                                            alt="Scaled image"
-                                                            width={600}
-                                                            height={600}
-                                                            className="rounded"
-                                                        />
-                                                        <button
-                                                            onClick={closeImage}
-                                                            className="absolute top-2 right-2 bg-[rgba(194,114,79,1)] text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-500 transition"
-                                                        >
-                                                            ✕
-                                                        </button>
-                                                    </motion.div>
+                                                        ✕
+                                                    </button>
                                                 </motion.div>
-                                            )}
-                                        </div>
-                                        <motion.p
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: clientErrors?.maxFilesAllowed ? 1 : 0, height: clientErrors?.maxFilesAllowed ? 30 : 0 }}
-                                            transition={{ duration: .3 }}
-                                            className="text-orange-300 text-[13px] sm:text-[18px]"
-                                        >
-                                            {clientErrors?.maxFilesAllowed}
-                                        </motion.p>
+                                            </motion.div>
+                                        )}
                                     </div>
-                                    {chatData.status === true ? (
-                                        <div className='text-center text-white bg-[rgba(6,6,6,.65)] p-2 rounded-xl'>
-                                            <p>problem has been solved</p>
-                                        </div>
-                                    ) : (
-                                    <div className={`flex flex-col ${ selectedFiles?.length === 0 || selectedFiles === null ? null : 'gap-2' } bg-[rgba(6,6,6,.65)] p-2 rounded-xl`}>
+                                    <motion.p
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: clientErrors?.maxFilesAllowed ? 1 : 0, height: clientErrors?.maxFilesAllowed ? 30 : 0 }}
+                                        transition={{ duration: .3 }}
+                                        className="text-orange-300 text-[13px] sm:text-[18px]"
+                                    >
+                                        {clientErrors?.maxFilesAllowed}
+                                    </motion.p>
+                                </div>
+                                {chatData.status === true ? (
+                                    <div className='text-center text-white bg-[rgba(6,6,6,.65)] p-2 rounded-xl'>
+                                        <p>problem has been solved</p>
+                                    </div>
+                                ) : (
+                                    <div className={`flex flex-col ${selectedFiles?.length === 0 || selectedFiles === null ? null : 'gap-2'} bg-[rgba(6,6,6,.65)] p-2 rounded-xl`}>
                                         <div className='flex flex-row gap-2 items-center select-none'>
-                                            <textarea value={message} rows={1} onChange={handleInputChange} onKeyDown={handleKeyDown} autoFocus maxLength={1000} placeholder='WRITE A MESSAGE...' className={`w-full bg-transparent outline-none font-extralight tracking-[1px] text-balance resize-none ${styles.custom_scroll}`} />
+                                            <textarea value={message} rows={1} onChange={handleInputChange} onKeyDown={handleKeyDown} autoFocus maxLength={1000} placeholder='WRITE A MESSAGE...' className={`w-full bg-transparent outline-none font-extralight tracking-[1px] text-balance resize-none ${styles.custom_scroll} caret-white`} />
 
                                             <label>
                                                 <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple accept='image/*,video/*' className='hidden' />
@@ -701,9 +734,11 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                                 </ul>
                                             )}
                                         </div>
+
                                     </div>
                                 )}
                             </motion.div>
+
                         </div>
                     </div>
                 )}

@@ -1,6 +1,6 @@
 "use server";
+
 import Connect from "@/db/dbConfig";
-import jwt from "jsonwebtoken";
 import fs from "fs";
 import path from "path";
 

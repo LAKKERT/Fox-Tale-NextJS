@@ -1,9 +1,9 @@
 'use server';
-
+import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import jwt from "jsonwebtoken";
 
-export default async function getUserProfile(req, res) {
+export default async function getUserProfile(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'GET') {
         const authHeader = req.headers['authorization'];
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -15,16 +15,16 @@ export default async function getUserProfile(req, res) {
 
         let decoded;
         try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET);
+            decoded = jwt.verify(token, process.env.JWT_SECRET as string);
         } catch ( error ) {
             console.error('Invalid token', error);
             return res.status(401).json({ error: 'Unauthorized' });
         }
         
-        const { userID } = req.query
+        const { userID } = req.query;
         const currentUser = decoded.userId;
         const currentUserRole = decoded.userRole;
-        const accessProfile = decoded.accessProfile;
+        const accessProfile = decoded.profileAccess;
 
         if (currentUserRole === 'admin' || currentUser === userID) {
             const conn = await Connect();

@@ -13,7 +13,7 @@ const MainFont = K2D({
 
 export default function RequestsHistoryPage() {
     return (
-        <div className={`w-full h-full bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden ${MainFont.className}`}>
+        <div className={`w-full h-full bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden ${MainFont.className} caret-transparent`}>
             <Header />
             <RequestsHistoryComponent />
         </div>

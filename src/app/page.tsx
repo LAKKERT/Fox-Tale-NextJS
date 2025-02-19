@@ -21,7 +21,7 @@ export default function Home() {
     }, []);
 
     return (
-        <div className="bg-black">
+        <div className="bg-black caret-transparent">
             {isLoading ? (
                 <motion.div
                     initial={{ opacity: 1 }}

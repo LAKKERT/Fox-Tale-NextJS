@@ -82,13 +82,11 @@ export default function SendRequest() {
     }
 
     const onSubmit = async (data) => {
-        console.log(data);
         try {
             const payload = {
                 ...data,
                 clientChoice: clientChoice
             }
-            console.log(payload);
 
             const response = await fetch('/api/users/userDataReset/userDataResetAPI', {
                 method: 'POST',
@@ -103,7 +101,6 @@ export default function SendRequest() {
             if (response.ok) {
                 setServerMessage(result.message);
                 reset();
-                console.log("Email sent successfully");
             } else {
                 setServerError(result.errors)
                 console.error("Failed to send email");
@@ -115,7 +112,7 @@ export default function SendRequest() {
     }
 
     return (
-        <div>
+        <div className="caret-transparent">
             {isLoading ? (
                 <motion.div
                     initial={{ opacity: 1 }}
@@ -160,25 +157,29 @@ export default function SendRequest() {
 
                     }}
                     transition={{ duration: 1 }}
-                    className="absolute w-[290px] h-[320px] sm:w-[500px] sm:h-[300px] md:w-[730px] md:h-[330px] flex flex-col items-center  gap-6 px-6 py-5 md:px-[50px] bg-[rgba(6,6,6,.65)] rounded-lg select-none text-white"
+                    className="absolute w-[290px] h-[320px] sm:w-[500px] sm:h-[300px] md:w-[730px] md:h-[330px] flex flex-col items-center  gap-3 px-6 py-5 md:px-[50px] bg-[rgba(6,6,6,.65)] rounded-lg select-none text-white"
                 >
                     <div className="relative w-full text-center text-balance flex flex-col gap-3">
-                        <button className="absolute hidden sm:block top-2 left-0" onClick={backFunc}><Image src={"/recovery/back_arrow.svg"} alt="back" width={25} height={20}></Image></button>
-                        <h2 className="text-xl md:text-2xl tracking-wider uppercase">- {clientChoice === 'forgetPassword' ? "Password recovery" : "Login recovery"} -</h2>
+                        <button className="absolute hidden sm:block top-2 left-0" onClick={backFunc}>
+                            <Image src={"/recovery/back_arrow.svg"} alt="back" width={25} height={20}></Image>
+                        </button>
+
+                        <h2 className="text-nowrap text-base md:text-2xl tracking-wider uppercase">- {clientChoice === 'forgetPassword' ? "Password recovery" : "Login recovery"} -</h2>
+                        
                         <p className="md:text-lg">Enter the email address linked to your account, and check your inbox</p>
                     </div>
 
                     <div className="w-full px-4">
-                        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5 text-balance">
+                        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3 text-balance">
                             <motion.p
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: clientError.email?.message || serverError?.email || serverMessage ? 1 : 0, height: clientError.email?.message || serverError?.email || serverMessage ? 30 : 0 }}
                                 transition={{ duration: .3 }}
-                                className="text-center text-orange-300 text-[13px] sm:text-[18px]"
+                                className="text-center text-orange-300 text-base sm:text-[18px]"
                             >
                                 {clientError.email?.message || serverError?.email || serverMessage}
                             </motion.p>
-                            <input type="email" disabled={!clientChoice} {...register("email")} placeholder="Your email" className={`w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline `} />
+                            <input type="email" disabled={!clientChoice} {...register("email")} placeholder="Your email" className={`w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white`} />
                             <input type="submit" disabled={!clientChoice} value="submit" className={`w-full h-11 bg-[#C67E5F] hover:bg-[rgba(198,126,95,.80)] rounded text-white text-center cursor-pointer transition-all duration-150 ease-in-out uppercase ${!clientChoice ? "pointer-events-none" : "pointer-events-auto"}`} />
                         </form>
                     </div>

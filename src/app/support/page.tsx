@@ -16,7 +16,7 @@ export default function SupportPage() {
     }, []);
 
     return (
-        <div className="w-full h-full bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden">
+        <div className="w-full min-h-[calc(100vh - 100px)] bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden caret-transparent">
             {isLoading ? (
                 <motion.div
                     initial={{ opacity: 1 }}
@@ -32,7 +32,6 @@ export default function SupportPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: isLoading ? 0 : 1 }}
                         transition={{ duration: .3 }}
-                        className="h-full flex items-center"
                     >
                         <Header />
                         <SupportPageComponent />

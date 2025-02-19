@@ -1,4 +1,5 @@
 "use server";
+import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import { compare } from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -10,7 +11,7 @@ const validationSchema = Yup.object().shape({
     password: Yup.string().min(6, 'Password must be at least 6 characters').required('Enter your password'),
 });
 
-export default async function Login(req, res) {
+export default async function Login(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === "POST") {
         try {
             const {username, password} = await validationSchema.validate(req.body, {abortEarly: false});
@@ -29,7 +30,7 @@ export default async function Login(req, res) {
                     return res.status(401).json({ message: "Invalid username or password" });
                 }
     
-                const token = jwt.sign({userId: userData.id, userRole: userData.role, profileAccess: false}, process.env.JWT_SECRET);
+                const token = jwt.sign({userId: userData.id, userRole: userData.role, profileAccess: false}, process.env.JWT_SECRET as string);
                 const serializedCookie = serialize('auth_token', token, {
                     httpOnly: false,
                     sameSite: 'strict',
@@ -40,7 +41,7 @@ export default async function Login(req, res) {
                 res.setHeader('Set-cookie', serializedCookie);
                 res.status(200).json({ message: 'Login successful', redirectUrl: '/' });
             }catch (error) {
-                console.error(error.stack);
+                console.error(error);
                 return res.status(500).json({ message: "Internal server error" });
             }finally {
                 await conn.end();
@@ -49,11 +50,9 @@ export default async function Login(req, res) {
         }catch (error) {
             if (error instanceof Yup.ValidationError) {
                 const fieldErrors: Record<string, string> = {};
-                error.inner.forEach((err) => {
-                    const fieldName = err.path;
-                    fieldErrors[fieldName] = err.message;
+                error.inner.forEach((err, idx) => {
+                    fieldErrors[idx] = err.message;
                 });
-                console.log(fieldErrors);
                 res.status(400).json({ message: "Validation error", errors: fieldErrors });
             } else {
                 res.status(400).json({ message: (error as Error).message });

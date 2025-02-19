@@ -1,4 +1,5 @@
 "use server";
+import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import * as Yup from "yup";
 
@@ -9,17 +10,15 @@ const validationSchema = Yup.object().shape({
     repeatPassword: Yup.string().oneOf([Yup.ref('password'), null], 'Passwords must match').required('Confirm your password')
 })
 
-export default async function resetPassword(req, res) {
+export default async function resetPassword(req: NextApiRequest, res: NextApiResponse) {
     try {
         const { token, password } = await validationSchema.validate(req.body, {abortEarly: false});
-        console.log("token",token);
         if (!token) {
             return res.status(401).json({ message: "Token is not exist" });
         }
         
         const conn = await Connect();
         const result = await conn.query('SELECT user_id, expires_at FROM password_reset WHERE token = $1', [token]);
-        console.log("result",result);
 
         if (!result.rows.length || new Date() > result.rows[0].expires_at) {
             console.error("token expired");
@@ -42,7 +41,6 @@ export default async function resetPassword(req, res) {
                 const fieldName = err.path;
                 fieldErrors[fieldName] = err.message;
             });
-            console.log(fieldErrors);
             res.status(400).json({ message: "Validation error", errors: fieldErrors });
         } else {
             res.status(400).json({ message: (error as Error).message });

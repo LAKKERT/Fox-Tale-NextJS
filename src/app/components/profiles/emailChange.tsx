@@ -59,7 +59,8 @@ export function EmailChange({ userData }) {
         try {
             const payload = {
                 ...data,
-                id: userData.id
+                id: userData.id,
+                currentEmail: userData.email
             }
             
             const response = await fetch('/api/profile/changeEmailAPI', {
@@ -75,7 +76,7 @@ export function EmailChange({ userData }) {
             if (response.ok) {
                 setIsCodeGenerated(true);
                 setServerMessage('');
-                setNewEmail(result.email);
+                setNewEmail(data.newEmail);
             } else {
                 setServerMessage(result.emailExistMessage);
                 console.error("Failed to change email");
@@ -87,12 +88,13 @@ export function EmailChange({ userData }) {
     }
 
     const onSubmitSecondForm = async (data) => {
-        const payload = {
-            ...data,
-            id: userData.id,
-            newEmail
-        }
         try {
+            const payload = {
+                ...data,
+                id: userData.id,
+                newEmail: newEmail
+            }
+            
             const response = await fetch('/api/profile/changeEmailAPI', {
                 method: 'POST',
                 headers: {
@@ -104,6 +106,7 @@ export function EmailChange({ userData }) {
             const result = await response.json();
 
             if (response.ok) {
+                window.location.reload();
                 setSuccessMessage(result.successMessage);
                 setIsCodeGenerated(false);
                 reset();
@@ -123,7 +126,7 @@ export function EmailChange({ userData }) {
     }
 
     return (
-        <div className="w-full flex flex-col lg:flex-row justify-center items-center py-3 lg:py-6  px-4 lg:px-6 gap-3 bg-[#272727] text-center text-lg lg:text-lg text-balance rounded-md lg:rounded-xl">
+        <div className="w-full flex flex-col lg:flex-row justify-center items-center py-3 lg:py-6  px-4 lg:px-6 gap-3 bg-[#272727] text-center text-lg lg:text-lg text-balance rounded-md lg:rounded-xl caret-transparent">
             <div>
                 <p>If you want to change your Email, fill out the form</p>
             </div>
@@ -147,7 +150,7 @@ export function EmailChange({ userData }) {
                     >
                         {clientError.newEmail?.message || serverError?.newEmail || serverMessage }
                     </motion.p>
-                    <input type="email" {...register("newEmail")} placeholder="New email" disabled={isCodeGenerated} className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline" />
+                    <input type="email" {...register("newEmail")} placeholder="New email" disabled={isCodeGenerated} className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white" />
                     <motion.input
                         initial={{ height: 44 }}
                         animate={{ height: isCodeGenerated ? 0 : 44}}
@@ -177,7 +180,7 @@ export function EmailChange({ userData }) {
                             { errorsCode.code?.message || serverError?.code || codeIncorrect }
                         </motion.p>
                         
-                        <input type="text" {...registerCode("code")} maxLength={4} placeholder="Code" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline" />
+                        <input type="text" {...registerCode("code")} maxLength={4} placeholder="Code" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white" />
                         <input type="submit" value="Save changes" className="w-full h-11 bg-[#C67E5F] hover:bg-[rgba(198,126,95,.80)] rounded text-white text-center cursor-pointer transition-all duration-150 ease-in-out" />
                     </form>
                 </motion.div>

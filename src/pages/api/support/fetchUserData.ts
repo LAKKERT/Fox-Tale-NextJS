@@ -1,8 +1,8 @@
 "use server";
-
+import { NextApiRequest, NextApiResponse } from "next";
 import jwt from "jsonwebtoken";
 
-export default async function getUserDataByCookie(req, res) {
+export default async function getUserDataByCookie(req: NextApiRequest, res: NextApiResponse) {
 
     const token = req.cookies.auth_token;
     

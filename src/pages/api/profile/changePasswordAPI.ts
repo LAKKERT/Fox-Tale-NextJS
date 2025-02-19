@@ -1,6 +1,6 @@
 "use server";
+import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
-import { Cookies } from "react-cookie";
 import { compare } from "bcrypt";
 import * as Yup from "yup";
 
@@ -34,8 +34,9 @@ async function checkPassword(userID, password) {
     }
 }
 
-export default async function ChangePassword(req, res) {
+export default async function ChangePassword(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === "POST") {
+        const conn = await Connect();
         try {
             const { password1, password2, repeatPassword2 } = await schema.validate(req.body, {abortEarly: false});
             
@@ -48,9 +49,7 @@ export default async function ChangePassword(req, res) {
 
             const hashedNewPassword = await bcrypt.hash(password2, 10)
             
-            const conn = await Connect();
-            const result = await conn.query(`UPDATE users SET password = $1 WHERE id = $2`, [hashedNewPassword, req.body.id]);
-            await conn.end();
+            await conn.query(`UPDATE users SET password = $1 WHERE id = $2`, [hashedNewPassword, req.body.id]);
 
             return res.status(200).json({message: "Password updated successfully"});
         }catch (error) {
@@ -62,6 +61,8 @@ export default async function ChangePassword(req, res) {
                 })
                 res.status(400).json({ errors: fieldErrors });
             }
+        }finally {
+            await conn.end();
         }
     }else {
         return res.status(405).json({message: "method not allowed"});

@@ -1,6 +1,16 @@
+"use client";
+import { useState, useEffect } from 'react';
 import Image from "next/image";
+import { PT_Serif } from "next/font/google";
 import { K2D } from "next/font/google";
 import styles from "@/app/styles/home/variables.module.scss";
+import Link from "next/link";
+
+const introductionFont = PT_Serif({
+    style: "normal",
+    subsets: ["latin"],
+    weight: "400",
+})
 
 const MainFont = K2D({
     style: "normal",
@@ -8,62 +18,91 @@ const MainFont = K2D({
     weight: "400",
 });
 
+type NewsItems = {
+    id: number;
+    title: string | null;
+    description: string | null;
+    add_at: string;
+}
+
+
 export function Main() {
+    const [newsItems, setNewsItems] = useState<NewsItems[]>([]);
+
+    useEffect(() => {
+        const fetchNews = async () => {
+            try {
+                const response = await fetch(`/api/news/fetchLatestNews`, {
+                    method: "GET",
+                    headers: {
+                        'Content-type': 'application/json'
+                    }
+                })
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    setNewsItems(result.result);
+                } else {
+                    console.error("Failed to fetch news");
+                }
+
+            } catch (error) {
+                console.error("Error fetching news:", error);
+            }
+        }
+
+        fetchNews();
+    }, [])
+
     return (
         <div className={`lg:max-w-8xl mx-auto mt-[100px] ${MainFont.className} text-white`}>
             <video width={1280} height={902} controls-none="false" autoPlay muted className="w-full h-auto lg:h-[555px] pointer-events-none">
                 <source src="/home/introduction_logo.mp4" type="video/mp4" />
             </video>
 
-            <div className="w-full bg-[#f5885a]">
+            <div className="w-full min-h-[364px] bg-[#f5885a]">
                 <div className="uppercase text-3xl py-2 text-white text-center">- MAIN NEWS -</div>
+
                 <div className={`flex flex-col items-center md:flex-row gap-8 sm:mx-auto md:w-[732px] xl:w-auto xl:justify-center overflow-x-auto ${styles.custom_scroll}`}>
 
-                    <div className="relative py-2 px-4 sm:p-4 w-[320px] h-[190px] sm:w-[350px] sm:h-[220px]">
-                        <Image src="/home/outline_card.svg" alt="outline" width={100} height={100} className="absolute inset-0 w-full h-full pointer-events-none z-[1]" />
-                        <div className="relative bg-[#d8b5a3] h-full z-[0] rounded">
-                            <div className="text-center uppercase py-2 text-lg font-light">Title</div>
-                            <div className="text-base p-2 h-auto truncate">
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et massa mi. Aliquam in hendrerit urna.
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et massa mi. Aliquam in hendrerit urna.
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et massa mi. Aliquam in hendrerit urna.
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et massa mi. Aliquam in hendrerit urna.
+                    {newsItems.map((item, item_id) => (
+                        <div key={item_id} className="relative py-2 px-4 sm:p-4 w-[320px] h-[190px] sm:w-[350px] sm:h-[220px]">
+                            <Image src="/home/outline_card.svg" alt="outline" width={100} height={100} className="absolute inset-0 w-full h-full pointer-events-none z-[1] " />
+                            <div className="relative flex flex-col bg-[#d8b5a3] md:min-w-[318px] h-full z-[0] rounded">
+                                <div className="text-center uppercase py-2 text-lg font-light">{item?.title}</div>
+                                <div className="text-base px-2 h-auto">
+                                    <p className='line-clamp-4 sm:line-clamp-5'>{item?.description}</p>
+                                </div>
+                                <div className="flex justify-between items-end mt-auto px-2 pb-2">
+                                    <p className="text-sm">
+                                        {new Date(item?.add_at).toLocaleString("ru-RU", {
+                                            dateStyle: 'short'
+                                        })}
+                                    </p>
+                                    <Link
+                                        href={`/news/${item.id}`}
+                                        className="uppercase flex items-center gap-1"
+                                    >
+                                        more •
+                                        <Image
+                                            src="/home/Arrow.svg"
+                                            alt="arrow"
+                                            width={25}
+                                            height={25}
+                                            className="mt-[2px]"
+                                        />
+                                    </Link>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
-                    <div className="relative py-2 px-4 sm:p-4 w-[320px] h-[190px] sm:w-[350px] sm:h-[220px]">
-                        <Image src="/home/outline_card.svg" alt="outline" width={100} height={100} className="absolute inset-0 w-full h-full pointer-events-none z-[1]" />
-                        <div className="relative bg-[#d8b5a3] h-full z-[0] rounded">
-                            <div className="text-center uppercase py-2 text-lg font-light">Title</div>
-                            <div className="text-base p-2 h-auto truncate">
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et massa mi. Aliquam in hendrerit urna.
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et massa mi. Aliquam in hendrerit urna.
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et massa mi. Aliquam in hendrerit urna.
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et massa mi. Aliquam in hendrerit urna.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="relative py-2 px-4 sm:p-4 w-[320px] h-[190px] sm:w-[350px] sm:h-[220px]">
-                        <Image src="/home/outline_card.svg" alt="outline" width={100} height={100} className="absolute inset-0 w-full h-full pointer-events-none z-[1]" />
-                        <div className="relative bg-[#d8b5a3] h-full z-[0] rounded">
-                            <div className="text-center uppercase py-2 text-lg font-light">Title</div>
-                            <div className="text-base p-2 h-auto truncate">
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et massa mi. Aliquam in hendrerit urna.
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et massa mi. Aliquam in hendrerit urna.
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et massa mi. Aliquam in hendrerit urna.
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et massa mi. Aliquam in hendrerit urna.
-                            </div>
-                        </div>
-                    </div>
-
+                    ))}
                 </div>
                 <div className="flex flex-row items-center justify-end">
-                    <a href="#" className="flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 mr-4 mt-4 mb-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out">
+                    <Link href="/news" className="flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 mr-4 mt-4 mb-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out">
                         All news •
                         <Image src="/home/Arrow.svg" alt="arrow" width={25} height={25} className="mt-1" />
-                    </a>
+                    </Link>
                 </div>
             </div>
 
@@ -75,9 +114,9 @@ export function Main() {
 
                 <div className={`${styles.gradient} absolute inset-0 z-10`} />
 
-                <div className="relative md:absolute h-full top-0 gap-5 py-6 px-10 flex flex-col items-center justify-center text-[#F5DEB3] z-20">
-                    <h2 className="text-2xl sm:text-5xl">THE FOX TEMPLE</h2>
-                    <div className="flex flex-col justify-center items-center md:my-auto xl:justify-between xl:items-center xl:flex-row text-base md:text-3xl text-balance ">
+                <div className={`relative md:absolute h-full top-0 gap-5 py-6 px-10 flex flex-col items-center justify-center text-[#F5DEB3] z-20 ${introductionFont.className}`}>
+                    <h2 className="text-2xl sm:text-5xl tracking-widest">THE FOX TEMPLE</h2>
+                    <div className={`flex flex-col justify-center items-center md:my-auto xl:justify-between xl:items-center xl:flex-row text-base md:text-3xl text-balance`}>
                         <div className="text-center xl:text-left xl:w-1/4">
                             <p>Fox Tale immerses you in the world of foxes and their exploits. You will assume the role of a lone little fox living in a fantastical setting.
                                 Your main objectives are to travel the world in search of food, to stay safe, and to learn more about your ancestors.</p>

@@ -1,6 +1,7 @@
 "use server";
 import * as Yup from "yup";
 import Connect from "@/db/dbConfig";
+import { NextApiRequest, NextApiResponse } from "next";
 
 const validationSchema = Yup.object().shape({
     login: Yup.string().min(4, "Login must be at least 4 characters").required("Enter your new login")
@@ -24,7 +25,7 @@ async function checkLoginExists(login) {
     }
 }
 
-export default async function ChangeLogin(req, res) {
+export default async function ChangeLogin(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === "POST") {
         try {
             const { login } = await validationSchema.validate(req.body, {abortEarly: false});

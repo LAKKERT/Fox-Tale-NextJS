@@ -1,4 +1,5 @@
 "use server";
+import { NextApiRequest, NextApiResponse } from "next";
 import * as Yup from "yup";
 import Connect from "@/db/dbConfig";
 import transporter from "@/helpers/nodeMailerConfig";
@@ -9,7 +10,7 @@ const validationSchema = Yup.object().shape({
     email: Yup.string().email('Email is not correct').required('Enter your EMAIL'),
 });
 
-export default async function sendToken(req, res) {
+export default async function sendToken(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'POST') {
         if (!req.body.clientChoice || req.body.clientChoice === "") {
             res.status(401).json({ message: "Invailed choice" });

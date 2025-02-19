@@ -1,9 +1,9 @@
 "use server";
-
+import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import jwt from "jsonwebtoken";
 
-export default async function addNewParticipant(req, res) {
+export default async function addNewParticipant(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === "POST") {
         const { cookies, roomID } = req.body;
 
@@ -16,11 +16,12 @@ export default async function addNewParticipant(req, res) {
         let decoded;
 
         try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET);
+            decoded = jwt.verify(token, process.env.JWT_SECRET as string);
         } catch (errors) {
             console.error("Invalid token:", errors);
             return res.status(401).json({ error: "Invalid token" });
         }
+
 
         const conn = await Connect();
 

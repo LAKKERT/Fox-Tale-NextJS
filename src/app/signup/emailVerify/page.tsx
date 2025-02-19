@@ -9,17 +9,19 @@ import { useCookies } from "react-cookie";
 import Cookies from "js-cookie";
 import { motion } from "framer-motion";
 
-import { getRegistrationUserData } from "@/pages/api/profile/verifyUserAPI";
-import { createVerificationCode } from "@/pages/api/profile/verifyUserAPI";
 
 const validationCode = Yup.object().shape({
     code: Yup.number().min(1000, 'Number must be a 4-digit number').max(9999, 'Number must be a 4-digit number').typeError('Please enter a 4-digit number'),
 })
 
+type userData = {
+    email: string
+}
+
 export default function EmailVerification() {
     const [isLoading, setIsLoading] = useState(true);
     const [showContent, setShowContent] = useState(false);
-    const [userData, setUserData] = useState(null);
+    const [userData, setUserData] = useState<userData>();
     const [serverError, setServerError] = useState(null);
     const [clientError, setClientError] = useState({});
     const [cookies] = useCookies(['regToken'])
@@ -67,7 +69,7 @@ export default function EmailVerification() {
             const result = await response.json();
 
             if (response.ok) {
-                router.push(result.redirectUrl);
+                router.push('/login');
             } else {
                 setServerError(result.message);
                 console.error('Error:', result.message);
@@ -81,17 +83,34 @@ export default function EmailVerification() {
     useEffect(() => {
         const verifyAndFetchData = async () => {
             if (cookies.regToken) {
+
                 try {
-                    await createVerificationCode(cookies);
-                    const data = await getRegistrationUserData(cookies);
-                    setUserData(data)
-                } catch (error) {
-                    console.error('Error creating verification code:', error);
+                    const payload = {
+                        cookiesName: 'regToken'
+                    }
+                    const response = await fetch(`/api/profile/createVerificationCodeAPI`, {
+                        method: 'POST',
+                        headers: {
+                            'content-type': 'application/json',
+                            'Authorization': `Bearer ${cookies['regToken']}`,
+                        },
+                        body: JSON.stringify(payload),
+                    })
+    
+                    const result = await response.json();
+    
+                    if (response.ok) {
+                        setUserData(result);
+                    } else {
+                        console.error('Error:', result.message);
+                    }
+                }catch (error) {
+                    console.error('Error:', error);
                 }
-            } else {
+            }else {
                 router.push('/');
             }
-        };
+        }
 
         verifyAndFetchData();
 
@@ -155,8 +174,9 @@ export default function EmailVerification() {
         }
     }, [cookies, router]);
 
+
     return (
-        <div>
+        <div className="caret-transparent">
             {isLoading ? (
                 <motion.div
                     initial={{ opacity: 0 }}

@@ -1,7 +1,8 @@
 "use server";
+import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 
-export default async function lastSeenMessage(req, res) {
+export default async function lastSeenMessage(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === "POST") {
         const conn = await Connect();
 
@@ -23,7 +24,6 @@ export default async function lastSeenMessage(req, res) {
     } else if (req.method === "GET") {
 
         const { userID, roomID } = req.query;
-        console.log(userID, roomID);
 
         if (!userID || !roomID) {
             return res.status(400).json({ error: 'Missing userID or roomID' });

@@ -1,7 +1,8 @@
 "use server";
+import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 
-export default async function GetMessages(req, res) {
+export default async function GetMessages(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === "GET") {
         const roomID = req.query.roomID
 
