@@ -1,7 +1,7 @@
 "use server";
 import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 
 const normalizeArray = (arr, dimensions: number) => {
     const normalize = (array, currentDepth: number) => {
@@ -115,12 +115,16 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
 
             const paragraphHeaders: (string | null)[] = [];
             const paragraphCovers: (string | null)[] = [];
+            const verticalPosition: (number | null)[] = [];
+            const horizontalPosition: (number | null)[] = [];
             const paragraphContents: (string | null)[][] = [];
             const paragraphImages: (string | null)[][] = [];
 
             data.paragraphs.forEach((paragraph) => {
                 paragraphHeaders.push(paragraph.heading || null);
                 paragraphCovers.push(paragraph.cover || null);
+                verticalPosition.push(paragraph.verticalPosition || null);
+                horizontalPosition.push(paragraph.horizontalPosition || null);
 
                 const contentTexts: (string | null)[] = [];
                 const contentImages: (string | null)[] = [];
@@ -146,14 +150,18 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
                             covers, 
                             images, 
                             content, 
-                            author
+                            author,
+                            covers_vertical_position,
+                            covers_horizontal_position
                         ) VALUES (
                             $1, $2, NOW(), 
                             $3::text[], 
                             $4::text[], 
                             $5::text[][], 
                             $6::text[][], 
-                            $7
+                            $7,
+                            $8::numeric[],
+                            $9::numeric[]
                         )`,
                         [
                             data.title,
@@ -162,7 +170,9 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
                             formatPGArray(paragraphCovers, 1),
                             formatPGArray(paragraphImages, 2),
                             formatPGArray(paragraphContents, 2),
-                            userID
+                            userID,
+                            formatPGArray(verticalPosition, 1),
+                            formatPGArray(horizontalPosition, 1)
                         ]
                     );
                     res.status(200).json({ redirectUrl: '/' });
@@ -174,8 +184,10 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
                             paragraph_heading = $3::text[], 
                             covers = $4::text[], 
                             images = $5::text[][], 
-                            content = $6::text[][] 
-                        WHERE id = $7`,
+                            content = $6::text[][],
+                            covers_vertical_position = $7::numeric[],
+                            covers_horizontal_position = $8::numeric[]
+                        WHERE id = $9`,
                         [
                             data.title,
                             data.description || null,
@@ -183,6 +195,8 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
                             formatPGArray(paragraphCovers, 1),
                             formatPGArray(paragraphImages, 2),
                             formatPGArray(paragraphContents, 2),
+                            formatPGArray(verticalPosition, 1),
+                            formatPGArray(horizontalPosition, 1),
                             postID
                         ]
                     );
@@ -201,5 +215,4 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
             return res.status(405).json({ message: "Method not allowed" });
         }
     }
-
 }

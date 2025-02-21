@@ -1,13 +1,16 @@
 'use client'
 import { Loader } from "@/app/components/load";
 import Image from "next/image";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Slider } from "react-semantic-ui-range";
+
 import { useCookies } from "react-cookie";
 import { K2D } from "next/font/google";
 import { motion, AnimatePresence } from "framer-motion";
 import { v4 as uuidv4 } from "uuid";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as Yup from "yup";
+import _ from "lodash";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { saveFile } from "@/pages/api/news/saveImagesAPI";
 import styles from "@/app/styles/home/variables.module.scss";
@@ -26,6 +29,8 @@ type FormValues = {
         id: string;
         heading: string;
         cover: File | string | null;
+        horizontalPosition: number;
+        verticalPosition: number;
         contents: {
             id: string;
             text: string;
@@ -64,6 +69,28 @@ export function PostDetailComponent({ postID }) {
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
 
+    const imgRef = useRef([]);
+
+    
+    const [verticalAlign, setVerticalAlign] = useState<number[]>([]);
+    const [horizontalAlign, setHorizontalAlign] = useState<number[]>([]);
+
+    const debouncedUpdate = useRef(
+        _.debounce((paragraphIndex, h, v) => {
+          setVerticalAlign(prev => {
+            const newArr = [...prev];
+            newArr[paragraphIndex] = v;
+            return newArr;
+          });
+      
+          setHorizontalAlign(prev => {
+            const newArr = [...prev];
+            newArr[paragraphIndex] = h;
+            return newArr;
+          });
+        })
+      ).current;
+
     const {
         register, control, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
             resolver: yupResolver(validationSchema),
@@ -94,8 +121,11 @@ export function PostDetailComponent({ postID }) {
             if (response.ok) {
 
                 const formattedData = result.result[0].paragraph_heading.map((heading: string, index: number) => ({
+                    id: uuidv4(),
                     heading,
                     cover: result.result[0].covers[index],
+                    horizontalPosition: Number(result.result[0].covers_horizontal_position[index]),
+                    verticalPosition: Number(result.result[0].covers_vertical_position[index]),
                     contents: formedResult[index].map((text: string, contentIndex: number) => ({
                         id: uuidv4(),
                         text,
@@ -103,13 +133,14 @@ export function PostDetailComponent({ postID }) {
                     }))
                 }));
 
-
                 reset({
                     title: result.result[0].title,
                     description: result.result[0].description,
                     paragraphs: formattedData
                 });
 
+                setHorizontalAlign(result.result[0].covers_horizontal_position);
+                setVerticalAlign(result.result[0].covers_vertical_position);
                 setPostData(result);
                 setCurrentUserRole(result.userRole);
                 setIsLoading(false);
@@ -150,9 +181,14 @@ export function PostDetailComponent({ postID }) {
         append({
             id: uuidv4(),
             heading: '',
+            horizontalPosition: 50,
+            verticalPosition: 50,
             cover: null,
             contents: [{ id: uuidv4(), text: '', image: null }]
         });
+
+        setHorizontalAlign(prev => [...prev, 50]);
+        setVerticalAlign(prev => [...prev, 50]);
     };
 
     const addContentBlock = (paragraphIndex: number) => {
@@ -266,7 +302,6 @@ export function PostDetailComponent({ postID }) {
 
             await saveFile(processedImages, imagesURL);
 
-
             const payload = {
                 data,
                 postID: postID.id,
@@ -284,6 +319,8 @@ export function PostDetailComponent({ postID }) {
             if (response.ok) {
                 setEditModeActive(false);
                 fetchPostData();
+            }else {
+                console.error('Error adding new post:');
             }
         } catch (error) {
             console.error('Error updating post:', error);
@@ -312,6 +349,22 @@ export function PostDetailComponent({ postID }) {
         } catch (error) {
             console.error('Error deleting post:', error);
         }
+    }
+
+    const handlePositionChange = (paragraphIndex: number, hValue: number, vValue: number) => {
+        if (imgRef.current) {
+            imgRef.current[paragraphIndex].style.objectPosition = `${hValue}% ${vValue}%`;
+        }
+    }
+
+    const handleSliderChange = (paragraphIndex: number, isHorizontal: boolean, e) => {
+        const value = Number(e.target.value);
+
+        const newH = isHorizontal ? value : horizontalAlign[paragraphIndex];
+        const newV = !isHorizontal ? value : verticalAlign[paragraphIndex];
+
+        handlePositionChange(paragraphIndex, newH, newV);
+        debouncedUpdate(paragraphIndex, newH, newV)
     }
 
     return (
@@ -372,7 +425,7 @@ export function PostDetailComponent({ postID }) {
                                     exit={{ opacity: 0, y: -20, height: 0 }}
                                     transition={{ duration: .3 }}
                                     {...register('description')}
-                                    className={`text-base text-center md:text-lg w-full h-[150px] border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll} ${editModeActive ? 'block' : 'hidden'}`}
+                                    className={`text-base text-center text-[#F5DEB3] md:text-lg w-full h-[150px] border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll} ${editModeActive ? 'block' : 'hidden'}`}
                                 />
 
                                 <motion.p
@@ -412,8 +465,8 @@ export function PostDetailComponent({ postID }) {
                             </motion.div>
 
                             <AnimatePresence mode="popLayout">
-                                {paragraphs.map((paragraph, paragraphIndex) => (
-                                    <motion.div
+                                {paragraphs.map((paragraph, paragraphIndex) => {
+                                    return(<motion.div
                                         layout
                                         key={paragraph.id}
                                         initial={{ opacity: 0, scale: 0.8 }}
@@ -456,12 +509,14 @@ export function PostDetailComponent({ postID }) {
                                         {paragraph.cover && (
                                             <div className="w-full h-64 relative mb-4">
                                                 <Image
+                                                    ref={e => imgRef.current[paragraphIndex] = e}
                                                     src={typeof paragraph.cover === 'string'
                                                         ? `http://localhost:3000/${paragraph.cover}`
                                                         : URL.createObjectURL(paragraph.cover)}
                                                     alt="cover"
                                                     fill
-                                                    className="rounded object-cover"
+                                                    className={`rounded object-cover`}
+                                                    style={{ objectPosition: `${paragraph.horizontalPosition}% ${paragraph.verticalPosition}%` }}
                                                     sizes="(max-width: 768px) 100vw, 50vw"
                                                     quality={80}
                                                     onError={(e) => {
@@ -477,6 +532,7 @@ export function PostDetailComponent({ postID }) {
                                             className="hidden"
                                             id={`cover-${paragraphIndex}`}
                                         />
+
                                         <motion.label
                                             layout={"position"}
                                             initial={{ opacity: 0, y: 20 }}
@@ -488,7 +544,10 @@ export function PostDetailComponent({ postID }) {
                                         >
                                             {paragraph.cover ? 'Change Cover' : 'Upload Cover'}
                                         </motion.label>
-
+                                        
+                                        <input type="range" {...register(`paragraphs.${paragraphIndex}.horizontalPosition`, {valueAsNumber: true})} onChange={(e) => handleSliderChange(paragraphIndex ,true, e)}  min="0" max="100" className={`${editModeActive ? 'block' : 'hidden'}`} />
+                                        <input type="range" {...register(`paragraphs.${paragraphIndex}.verticalPosition`, {valueAsNumber: true})} onChange={(e) => handleSliderChange(paragraphIndex ,false, e)}  min="0" max="100" className={`${editModeActive ? 'block' : 'hidden'}`} />
+                                        
                                         <div className="w-full relative flex-col flex gap-4">
                                             <AnimatePresence mode="popLayout">
                                                 {paragraph.contents.map((content, contentIndex) => {
@@ -526,6 +585,7 @@ export function PostDetailComponent({ postID }) {
                                                                 className="hidden"
                                                                 id={`image-${paragraphIndex}-${contentIndex}`}
                                                             />
+                                                            
                                                             <motion.label
                                                                 htmlFor={`image-${paragraphIndex}-${contentIndex}`}
                                                                 className={`min-w-[185px] text-center py-2 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3] transition-colors duration-75 hover:bg-[#c2724f91] ${editModeActive ? 'block' : 'hidden'}`}
@@ -536,10 +596,11 @@ export function PostDetailComponent({ postID }) {
                                                             <p className={`text-left text-sm md:text-base text-balance ${editModeActive ? 'hidden' : 'block'}`}>
                                                                 {content.text}
                                                             </p>
+
                                                             <motion.textarea
                                                                 transition={{ duration: .3 }}
                                                                 {...register(`paragraphs.${paragraphIndex}.contents.${contentIndex}.text`)}
-                                                                className={`text-left text-sm md:text-base text-balance text-white w-full h-[150px] border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll} ${editModeActive ? 'block' : 'hidden'}`}
+                                                                className={`text-left text-sm md:text-base text-balance text-[#F5DEB3] w-full h-[150px] border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll} ${editModeActive ? 'block' : 'hidden'}`}
                                                             />
 
                                                             <motion.p
@@ -579,8 +640,10 @@ export function PostDetailComponent({ postID }) {
                                         >
                                             Delete Paragraph
                                         </button>
-                                    </motion.div>
-                                ))}
+                                    </motion.div>)
+                                }
+                                    
+                                )}
                             </AnimatePresence>
 
                             <button

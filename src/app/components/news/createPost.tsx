@@ -1,13 +1,14 @@
 'use client'
 import { Loader } from "@/app/components/load";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as Yup from "yup";
 import { v4 as uuidv4 } from 'uuid';
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useCookies } from "react-cookie";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import _ from "lodash"
 import { saveFile } from "@/pages/api/news/saveImagesAPI";
 import { K2D } from "next/font/google";
 import styles from "@/app/styles/home/variables.module.scss";
@@ -26,6 +27,8 @@ type FormValues = {
         id: string,
         heading: string;
         cover: File | Blob | string | null;
+        horizontalPosition: number;
+        verticalPosition: number;
         contents: {
             id: string;
             text: string;
@@ -62,6 +65,10 @@ export function CreatePostComponent() {
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
 
+    const [verticalAlign, setVerticalAlign] = useState(50);
+    const [horizontalAlign, setHorizontalAlign] = useState(50);
+    const imgRef = useRef([]);
+
     const { register, control, handleSubmit, formState: { errors } } = useForm<FormValues>({
         resolver: yupResolver(validationSchema),
     });
@@ -71,6 +78,13 @@ export function CreatePostComponent() {
         name: "paragraphs",
         keyName: uuidv4(),
     })
+
+    const debouncedUpdate = useRef(
+        _.debounce((h, v) => {
+            setHorizontalAlign(h);
+            setVerticalAlign(v);
+        }, 100)
+    ).current;
 
     useEffect(() => {
         if (!cookies.auth_token) router.push('/');
@@ -112,6 +126,8 @@ export function CreatePostComponent() {
             id: uuidv4(),
             heading: '',
             cover: null,
+            horizontalPosition: 50,
+            verticalPosition: 50,
             contents: [{ id: uuidv4(), text: '', image: null }]
         });
     };
@@ -262,6 +278,22 @@ export function CreatePostComponent() {
         );
     }
 
+    const handlePositionChange = (paragraphIndex: number, hValue: number, vValue: number) => {
+        if (imgRef.current) {
+            imgRef.current[paragraphIndex].style.objectPosition = `${hValue}% ${vValue}%`;
+        }
+    }
+
+    const handleSliderChange = (paragraphIndex: number, isHorizontal: boolean, e) => {
+        const value = Number(e.target.value);
+
+        const newH = isHorizontal ? value : horizontalAlign;
+        const newV = !isHorizontal ? value : verticalAlign;
+
+        handlePositionChange(paragraphIndex, newH, newV);
+        debouncedUpdate(newH, newV);
+    }
+
     return (
         <div className={`max-w-[768px] xl:max-w-[1110px] flex flex-col items-center gap-0 lg:max-w-8xl mx-auto mt-[100px] ${MainFont.className} text-[#F5DEB3] caret-transparent pt-4 pb-8`}>
             {isLoading ? (
@@ -316,7 +348,7 @@ export function CreatePostComponent() {
                                     transition={{ duration: .3 }}
                                     placeholder="DESCRIPTION"
                                     {...register('description')}
-                                    className={`text-base text-center md:text-lg w-full h-[150px] border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll}`}
+                                    className={`text-base text-center md:text-lg w-full h-[150px] border-2 bg-transparent outline-none resize-none rounded border-white caret-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll}`}
                                 />
 
                                 <motion.p
@@ -357,21 +389,26 @@ export function CreatePostComponent() {
                                             </motion.p>
 
                                             {paragraph.cover && (
-                                            <div className="w-full h-64 relative mb-4">
+                                            <motion.div
+                                                layout={'position'}
+                                                className="w-full h-64 relative mb-4"
+                                            >
                                                 <Image
+                                                    ref={e => imgRef.current[paragraphIndex] = e}
                                                     src={typeof paragraph.cover === 'string'
                                                         ? `http://localhost:3000/${paragraph.cover}`
                                                         : URL.createObjectURL(paragraph.cover)}
                                                     alt="cover"
                                                     fill
-                                                    className="rounded object-cover"
+                                                    className={`rounded object-cover`}
+                                                    style={{ objectPosition: '50% 50%' }}
                                                     sizes="(max-width: 768px) 100vw, 50vw"
                                                     quality={80}
                                                     onError={(e) => {
                                                         e.target.style.display = 'none'
                                                     }}
                                                 />
-                                            </div>
+                                            </motion.div>
                                             )}
 
                                             <input
@@ -380,6 +417,7 @@ export function CreatePostComponent() {
                                                 className="hidden"
                                                 id={`cover-${paragraphIndex}`}
                                             />
+
                                             <motion.label
                                                 layout={'position'}
                                                 htmlFor={`cover-${paragraphIndex}`}
@@ -387,6 +425,9 @@ export function CreatePostComponent() {
                                             >
                                                 {paragraph.cover ? 'Change Cover' : 'Upload Cover'}
                                             </motion.label>
+
+                                            <input type="range" {...register(`paragraphs.${paragraphIndex}.horizontalPosition`)} onChange={(e) => handleSliderChange(paragraphIndex ,true, e)}  min="0" max="100" />
+                                            <input type="range" {...register(`paragraphs.${paragraphIndex}.verticalPosition`)} onChange={(e) => handleSliderChange(paragraphIndex ,false, e)}  min="0" max="100" />
 
                                             <div className="w-full relative flex-col flex gap-4">
 
@@ -431,7 +472,7 @@ export function CreatePostComponent() {
                                                                     placeholder={`Content ${contentIndex + 1}`}
                                                                     {...register(`paragraphs.${paragraphIndex}.contents.${contentIndex}.text`)}
 
-                                                                    className={`text-left text-sm md:text-base text-balance text-white w-full h-[150px] border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll}`}
+                                                                    className={`text-left text-sm md:text-base text-balance text-white w-full h-[150px] border-2 bg-transparent outline-none resize-none rounded border-white caret-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll}`}
                                                                 />
 
                                                                 <motion.p
