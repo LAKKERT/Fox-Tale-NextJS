@@ -42,3 +42,70 @@
     background-clip: padding-box;
     
 }
+
+
+.custom_input_range {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 50%;
+    height: 6px;
+    background: transparent;
+  }
+  
+  .custom_input_range::-webkit-slider-runnable-track {
+    height: 4px;
+    background: #ddd;
+    border-radius: 2px;
+  }
+  
+  .custom_input_range::-moz-range-track {
+    height: 4px;
+    background: #ddd;
+    border-radius: 2px;
+  }
+
+  .custom_input_range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: coral;
+    border-radius: 50%;
+    margin-top: -8px; /* Центрирование относительно трека */
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  
+  .custom_input_range::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: coral;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  
+  .custom_input_range::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+  }
+  
+  .custom_input_range::-moz-range-thumb:hover {
+    transform: scale(1.1);
+  }
+
+  .custom_input_range::-webkit-slider-container {
+    height: 4px;
+  }
+  
+  .custom_input_range::-webkit-progress-value {
+    background: coral;
+    border-radius: 2px;
+  }
+  
+  .custom_input_range::-moz-range-progress {
+    background: coral;
+    height: 4px;
+    border-radius: 2px;
+  }

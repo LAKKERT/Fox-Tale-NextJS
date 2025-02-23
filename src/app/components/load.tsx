@@ -11,12 +11,12 @@ export function Loader() {
     useEffect(() => {
         const animate = () => {
             setOffset((prevOffset) => ({
-                x: lerp(prevOffset.x, targetOffset.current.x, 0.1), // интерполяция для плавности
+                x: lerp(prevOffset.x, targetOffset.current.x, 0.1),
                 y: lerp(prevOffset.y, targetOffset.current.y, 0.1),
             }));
             requestAnimationFrame(animate);
         };
-        animate(); // запускаем анимацию
+        animate();
     }, []);
 
     // Обрабатываем движение мыши

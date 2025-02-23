@@ -17,7 +17,7 @@ const MAX_FILES_ALLOWED = 3;
 const MainFont = K2D({
     style: "normal",
     subsets: ["latin"],
-    weight: ["300", "600" ,"800"],
+    weight: ["300", "600", "800"],
 });
 
 type UsersData = {
@@ -49,6 +49,10 @@ type Message = {
     unreaded: boolean;
 };
 
+type ClientErrors = {
+    maxFilesAllowed: string;
+}
+
 const initialState = {
     isAtBottom: false,
     newMessage: false,
@@ -72,15 +76,16 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isChatClose, setIsChatClose] = useState(false);
     const [confirmClose, setConfirmClose] = useState(false);
-    const [selectedFiles, setSelectedFiles] = useState([]);
-    const [clientErrors, setClientErrors] = useState({});
+    const [selectedFiles, setSelectedFiles] = useState<FileList>([]);
+    const [clientErrors, setClientErrors] = useState<ClientErrors>({});
     const [showImage, setShowImage] = useState<string | null>(null);
     const [chatData, setChatData] = useState<ChatData>({} as ChatData);
     const [usersData, setUsersData] = useState<UsersData[]>([]);
     const [currentUser, setCurrentUser] = useState<User>({} as User);
     const [cookies] = useCookies(['auth_token']);
+
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const messageRefs = useRef([]);
+    const messageRefs = useRef<HTMLElement[]>([]);
     const observer = useRef<IntersectionObserver | null>(null);
     const chatEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -167,40 +172,42 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
             }
 
             try {
-                const currentUserPromise = fetch(`/api/support/fetchUserData?cookies=${cookies}`).then((res) => res.json());
-                const addParticipantPromise = fetch(`/api/support/addNewParticipantAPI`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ cookies: cookies.auth_token, roomID: params.params.id })
-                })
-                const chatRoomDataPromise = fetch(`/api/support/getChatRoomAPI?roomID=${params.params.id}`).then((res) => res.json());
-                const messagesPromise = fetch(`/api/support/getMessagesAPI?roomID=${params.params.id}`).then((res) => res.json());
-                const [currentUserId, , chatData, result] = await Promise.all([
-                    currentUserPromise,
-                    addParticipantPromise,
-                    chatRoomDataPromise,
-                    messagesPromise,
-                ])
 
-                if (!isMounted) return;
-
-                if (socket) {
-                    const participantsList = {
-                        participants: chatData.usersData
-                    }
-
-                    socket.emit('participants' , participantsList)
+                const payload = {
+                    roomID: params.params.id,
                 }
 
-                setCurrentUser(currentUserId);
-                setIsLoading(false);
+                const response = await fetch(`/api/support/getChatRoomAPI`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${cookies.auth_token}`
+                    },
+                    body: JSON.stringify(payload)
+                })
 
-                if (chatData && result) {
-                    setChatData(chatData.chatData);
-                    setUsersData(chatData.usersData || []);
-                    setMessages(result.messages || []);
+                const result = await response.json();
+                
+                if (!isMounted) return;
+                
+                if (socket) {
+                    const participantsList = {
+                        participants: result.usersData
+                    }
+
+                    socket.emit('participants', participantsList)
+                }
+                
+                if (response.ok) {
+                    setIsLoading(false);
+                    setChatData(result.chatData)
+                    setUsersData(result.usersData);
+                    setCurrentUser(result.currentUserId);
+                    setMessages(result.messages);
+
+                }else {
+                    console.error('Error fetching chat room data');
+                    router.push('/');
                 }
 
 
@@ -253,7 +260,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
         if (currentUser.userID && chatData.id) {
             fetchLastSeenMessage();
         }
-    }, [usersData, chatData, currentUser.userID, chatData.id]);
+    }, [messages]);
 
     function getFile(selectedFiles: string | any[] | FileList) {
         const fileProperty = [];
@@ -384,8 +391,8 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
         e.target.value = '';
     };
 
-    const handleDelete = (index) => {
-        const updatedFiles = selectedFiles.filter((value, i) => i !== index);
+    const handleDelete = (index: number) => {
+        const updatedFiles = selectedFiles.filter((_, i: number) => i !== index);
 
         if (updatedFiles.length <= MAX_FILES_ALLOWED) {
             setClientErrors({ maxFilesAllowed: '' });
@@ -395,7 +402,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     };
 
     useEffect(() => {
-        if (state.isAtBottom ) {
+        if (state.isAtBottom) {
             scrollToBottom();
         }
     }, [messages, state.isAtBottom]);
@@ -450,10 +457,10 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
         const firstUnreadIndex = messages.findIndex((msg) => msg.unreaded === true);
         const lastMessageIndex = messages.length - 1
 
-        
+
         if (messageRefs.current[firstUnreadIndex]) {
             messageRefs.current[firstUnreadIndex].scrollIntoView({ behavior: "smooth" });
-        }else if (!state.isAtBottom && !messageRefs.current[firstUnreadIndex]) {
+        } else if (!state.isAtBottom && !messageRefs.current[firstUnreadIndex]) {
             messageRefs.current[lastMessageIndex].scrollIntoView({ behavior: "smooth" });
         }
 
@@ -516,21 +523,24 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     };
 
     return (
-        <div className={`w-full bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat ${MainFont.className} text-white caret-transparent`}>
+        <div className={`w-full ${MainFont.className} text-white caret-transparent`}>
             <Header />
-            <div className='min-h-[calc(100vh-100px)] mt-[100px] flex flex-col justify-center items-center'>
-
-                {isLoading ? (
-                    <motion.div
-                        initial={{ opacity: 1 }}
-                        animate={{ opacity: 0 }}
-                        transition={{ duration: .3 }}
-                        className="bg-black w-full h-[100vh]"
-                    >
-                        <Loader />
-                    </motion.div>
-                ) : (
-
+            {isLoading ? (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: .3 }}
+                    className="bg-black w-full h-[100vh]"
+                >
+                    <Loader />
+                </motion.div>
+            ) : (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: isLoading ? 0 : 1 }}
+                    transition={{ duration: .3 }}
+                    className={`min-h-[calc(100vh-100px)] mt-[100px] flex flex-col justify-center items-center bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat`}
+                >
                     <div className='w-full flex flex-row justify-center sm:min-w-[500px] md:min-w-[750px]'>
                         {currentUser.userRole === 'admin' ? (
                             <div className='flex flex-col justify-between bg-[rgba(6,6,6,.65)] rounded-xl px-3 py-3 h-1/2 w-[250px]'>
@@ -549,8 +559,8 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                 )}
 
                                 <motion.div
-                                    initial={{ opacity: 0, height: 0}}
-                                    animate={{ opacity: confirmClose ? 1 : 0,  height: confirmClose? 38 : 0 }}
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: confirmClose ? 1 : 0, height: confirmClose ? 38 : 0 }}
                                     className={`flex flex-row justify-evenly items-center text-lg ${chatData.status ? 'hidden' : 'block'}`}
                                 >
                                     <button onClick={closeChatRoom}>
@@ -574,7 +584,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                 className='relative w-full flex flex-col gap-4 px-4 mx-auto max-w-[750px]'
                             >
                                 <button onClick={scrollToUnreadMessage} className={`w-10 h-10 mr-4 rounded-full bg-[#ebebeb] absolute right-5 bottom-20 duration-100 ease-in-out hover:bg-[#c5c5c5] ${!state.isAtBottom || state.newMessage === true ? null : 'hidden'}`}>
-                                     {state.newMessage ?  <p className={`text-[#C67E5F] text-center font-semibold ${MainFont.className}`}>NEW</p> : <Image alt='down' src={'/support/icons/down.svg'} width={50} height={50} className='m-auto'/>}
+                                    {state.newMessage ? <p className={`text-[#C67E5F] text-center font-semibold ${MainFont.className}`}>NEW</p> : <Image alt='down' src={'/support/icons/down.svg'} width={50} height={50} className='m-auto' />}
                                 </button>
 
                                 <div ref={scrollContainerRef} className={`w-full h-[600px] sm:w-auto sm:min-w-[400px] md:min-w-[650px] sm:max-w-[750px] bg-[rgba(6,6,6,.65)] flex flex-col gap-3 items-center rounded-xl px-3 sm:px-5 py-5 overflow-scroll overflow-x-hidden ${styles.custom_chat_scroll}`}>
@@ -616,7 +626,11 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                                         : 'items-start'
                                                         }`}
                                                     data-id={index}
-                                                    ref={(el) => (messageRefs.current[index] = el)}
+                                                    ref={(el) => {
+                                                        if (el) {
+                                                            messageRefs.current[index] = el;
+                                                        }
+                                                    }}
                                                 >
                                                     {isFirstMessageInSequence && (
                                                         <p className='text-white tracking-widest'>
@@ -741,8 +755,8 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
 
                         </div>
                     </div>
-                )}
-            </div>
+                </motion.div>
+            )}
         </div>
     )
 }

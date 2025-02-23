@@ -33,7 +33,7 @@ export function NewsPageComponent() {
     const [currentPage, setCurrentPage] = useState(1);
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
-    const [isLoading, setIsLoading] = useState(true);
+    const [showContent, setShowContent] = useState(false);
 
     useEffect(() => {
         const fetchAllNews = async () => {
@@ -47,7 +47,7 @@ export function NewsPageComponent() {
                 if (response.ok) {
                     setAllNews(result);
                     setTimeout(() => {
-                        setIsLoading(false);
+                        setShowContent(true);
                     }, 300);
                 } else {
                     console.error('Error fetching news');
@@ -75,21 +75,23 @@ export function NewsPageComponent() {
 
     return (
         <div className={`min-h-[calc(100vh-100px)] max-w-[1000px] xl:max-w-[1110px] flex flex-col items-center gap-4 mx-auto px-4 ${MainFont.className} text-[#F5DEB3] caret-transparent`}>
-            {isLoading ? (
+            {!showContent ? (
                 <motion.div
-                    initial={{ opacity: 1 }}
-                    animate={{ opacity: 0 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1  }}
                     transition={{ duration: .3 }}
                     className=" bg-black fixed inset-0 flex justify-center items-center"
                 >
                     <Loader />
                 </motion.div>
             ) : (
-                <div className="w-full py-5">
+                <motion.div 
+                    className="w-full py-5"
+                >
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: isLoading ? 0 : 1 }}
-                        transition={{ duration: .3 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: showContent ? 1 : 0 }}
+                    transition={{ duration: .3 }}
                         className="h-full flex flex-col gap-5"
                     >
                         <div className="h-[120px] flex flex-col gap-4 text-center justify-center">
@@ -169,7 +171,7 @@ export function NewsPageComponent() {
                                 </button>
                             ))}
                     </div>
-                </div>
+                </motion.div>
             )}
         </div>
     )

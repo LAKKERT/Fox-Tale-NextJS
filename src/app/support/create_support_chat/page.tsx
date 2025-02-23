@@ -64,14 +64,14 @@ export default function CreateSupportChat() {
 
     useEffect(() => {
         const allErrors = { ...errors };
-        
+
         if (selectedFiles && selectedFiles.length > MAX_FILES_ALLOWED) {
             allErrors.maxFilesLimit = `You can upload up to ${MAX_FILES_ALLOWED} files only`;
         }
 
         if (Object.keys(allErrors).length > 0) {
             setClientErrors(allErrors);
-        }else {
+        } else {
             const timeout = setTimeout(() => {
                 setClientErrors({});
                 return () => clearTimeout(timeout);
@@ -188,11 +188,12 @@ export default function CreateSupportChat() {
     }
 
     return (
-        <div className={`w-full h-[90vh] mt-[100px] bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat ${MainFont.className} text-white caret-transparent`}>
+        <div className={`w-full ${MainFont.className} text-white caret-transparent`}>
+            <Header />
             {isLoading ? (
                 <motion.div
-                    initial={{ opacity: 1 }}
-                    animate={{ opacity: 0 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     transition={{ duration: .3 }}
                     className="bg-black w-full h-[100vh]"
                 >
@@ -200,13 +201,13 @@ export default function CreateSupportChat() {
                 </motion.div>
             ) : (
                 <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: isLoading ? 0 : 1 }}
-                    transition={{ duration: .3 }}
-                    className='h-full flex flex-col justify-center items-center gap-4 text-balance text-center'
+                    className={`min-h-[calc(100vh-100px)] flex flex-col justify-center items-center gap-4 text-balance text-center mt-[100px] bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat`}
                 >
-                    <Header />
-                    <div className='h-full flex flex-col justify-center items-center gap-4 text-balance text-center'>
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: isLoading ? 0 : 1 }}
+                        transition={{ duration: .3 }}
+                        className='h-full flex flex-col justify-center items-center gap-4 text-balance text-center'>
                         <h2 className="uppercase text-lg">DESCRIBE THE PROBLEM, ATTACH SCREENSHOTS IF NECESSARY</h2>
                         <div className="flex justify-center items-center h-auto max-w-[730px] py-4 px-6 bg-[rgba(6,6,6,.64)] rounded-lg select-none">
                             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col justify-center items-center gap-4">
@@ -225,11 +226,11 @@ export default function CreateSupportChat() {
                                 <div className="w-full flex flex-col text-center">
                                     <motion.p
                                         initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: clientErrors.description?.message || serverErrors?.description  ? 1 : 0, height: clientErrors.description?.message || serverErrors?.description  ? 30 : 0 }}
+                                        animate={{ opacity: clientErrors.description?.message || serverErrors?.description ? 1 : 0, height: clientErrors.description?.message || serverErrors?.description ? 30 : 0 }}
                                         transition={{ duration: .3 }}
                                         className="text-orange-300 text-[13px] sm:text-[18px]"
                                     >
-                                        {clientErrors.description?.message || serverErrors?.description }
+                                        {clientErrors.description?.message || serverErrors?.description}
                                     </motion.p>
                                     <textarea rows={4} maxLength={1000} onChange={handleInputChange} placeholder="DESCRIBE PROBLEM..." {...register("description")} className={`w-full bg-transparent outline-none font-extralight tracking-[1px] py-2 px-3 text-balance resize-none border-2 rounded text-base md:text-lg ${styles.custom_scroll} border-[#F5DEB3]`} />
                                 </div>
@@ -280,7 +281,7 @@ export default function CreateSupportChat() {
                                 <input type="submit" value="SEND" className="w-[250px] h-[50px] text-lg tracking-wider transition-colors duration-75 rounded border border-[#F5DEB3] bg-[#C2724F] hover:bg-[#c2724f91] select-none" />
                             </form>
                         </div>
-                    </div>
+                    </motion.div>
 
                 </motion.div>
             )}
