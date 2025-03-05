@@ -8,6 +8,13 @@ function generateCode() {
     return Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
 }
 
+interface JwtPayload {
+    profileAccess: boolean;
+    userId: string;
+    userID: string;
+    email: string;
+}
+
 export default async function createVerificationCode(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'POST') {
         const authHeader = req.headers['authorization'];
@@ -19,22 +26,23 @@ export default async function createVerificationCode(req: NextApiRequest, res: N
         const token = authHeader.split(' ')[1];
     
         let decoded;
+        
+        const {cookiesName, userEmail} = req.body;
 
         try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-            if (decoded.profileAccess === true) {
-                return res.status(201).json({ redirectUrl: `/profile/${decoded.userId}` });
-            }
+            decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
         } catch (error) {
             console.error("Invalid token:", error);
             return res.status(400).json({ error: "Invalid token" });
         }
-
-        const userID = decoded?.userId;
-        
-        const {cookiesName, userEmail} = req.body;
         
         if (cookiesName === 'auth_token') {
+
+            if (decoded.profileAccess === true) {
+                return res.status(201).json({ redirectUrl: `/profile/${decoded.userId}` });
+            }
+
+            const userID = decoded?.userId;
     
             const code = generateCode();
     

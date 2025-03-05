@@ -18,10 +18,15 @@ const MainFont = K2D({
     weight: "400",
 });
 
+interface userDataState {
+    username: string;
+
+}
+
 export default function UserProfile({ params }) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
-    const [userData, setUserData] = useState<string[]>();
+    const [userData, setUserData] = useState<userDataState | null>(null);
     const [access, setAccess] = useState(false);
     const [cookies] = useCookies(['auth_token']);
 

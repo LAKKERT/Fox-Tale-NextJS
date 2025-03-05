@@ -5,7 +5,6 @@ export function Loader() {
     const [offset, setOffset] = useState({ x: 0, y: 0 });
     const targetOffset = useRef({ x: 0, y: 0 });
 
-    // Интерполяция для плавного перехода
     const lerp = (start, end, factor) => start * (1 - factor) + end * factor;
 
     useEffect(() => {
@@ -19,7 +18,6 @@ export function Loader() {
         animate();
     }, []);
 
-    // Обрабатываем движение мыши
     const handleMouseMove = (e) => {
         const { clientX, clientY, currentTarget } = e;
         const { width, height, left, top } = currentTarget.getBoundingClientRect();

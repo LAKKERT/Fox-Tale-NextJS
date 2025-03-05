@@ -2,7 +2,7 @@
 import { Loader } from '@/app/components/load';
 import { Header } from '@/app/components/header';
 import { saveFile } from '@/pages/api/support/sendMessageAPI';
-import { useEffect, useState, useRef, useCallback, useReducer } from 'react';
+import { useEffect, useState, useRef, useCallback, useReducer, KeyboardEvent } from 'react';
 import { useCookies } from 'react-cookie';
 import { useRouter } from 'next/navigation';
 import { io, Socket } from "socket.io-client";
@@ -62,9 +62,9 @@ const initialState = {
 const reducer = (state, action) => {
     switch (action.type) {
         case 'SCROLL_TO_BOTTOM':
-            return { ...state, isAtBottom: action.payload, newMessage: false };
+            return { ...state, isAtBottom: action.payload };
         case 'SET_NEW_MESSAGE':
-            return { ...state, newMessage: true };
+            return { ...state, newMessage: action.payload };
         case 'SET_LAST_SEEN_MESSAGE':
             return { ...state, lastSeenMessage: action.payload };
         default:
@@ -76,8 +76,8 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isChatClose, setIsChatClose] = useState(false);
     const [confirmClose, setConfirmClose] = useState(false);
-    const [selectedFiles, setSelectedFiles] = useState<FileList>([]);
-    const [clientErrors, setClientErrors] = useState<ClientErrors>({});
+    const [selectedFiles, setSelectedFiles] = useState<FileList[]>([]);
+    const [clientErrors, setClientErrors] = useState<ClientErrors>({ maxFilesAllowed: '' });
     const [showImage, setShowImage] = useState<string | null>(null);
     const [chatData, setChatData] = useState<ChatData>({} as ChatData);
     const [usersData, setUsersData] = useState<UsersData[]>([]);
@@ -100,7 +100,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     const [timing, setTiming] = useState(false);
 
     const scrollToBottom = useCallback(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        chatEndRef.current?.scrollIntoView({ behavior: "instant" });
     }, []);
 
     useEffect(() => {
@@ -120,7 +120,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                 socketInstance.disconnect();
             }
         }
-    }, [])
+    }, []);
 
     useEffect(() => {
         const handleUnloadOrPopState = async (event) => {
@@ -167,8 +167,8 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
 
         const fetchData = async () => {
             if (!cookies.auth_token) {
-                router.push('/');
-                return;
+                return router.push('/');
+
             }
 
             try {
@@ -187,17 +187,9 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                 })
 
                 const result = await response.json();
-                
-                if (!isMounted) return;
-                
-                if (socket) {
-                    const participantsList = {
-                        participants: result.usersData
-                    }
 
-                    socket.emit('participants', participantsList)
-                }
-                
+                if (!isMounted) return;
+
                 if (response.ok) {
                     setIsLoading(false);
                     setChatData(result.chatData)
@@ -205,15 +197,23 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                     setCurrentUser(result.currentUserId);
                     setMessages(result.messages);
 
-                }else {
+                    if (socket) {
+                        const participantsList = {
+                            participants: result.usersData
+                        }
+    
+                        socket.emit('participants', participantsList)
+                    }
+
+                } else {
                     console.error('Error fetching chat room data');
-                    router.push('/');
+                    return router.push('/');
                 }
 
 
             } catch (error) {
                 console.error('Error fetching data:', error);
-                router.push('/');
+                return router.push('/');
             }
         }
 
@@ -260,9 +260,9 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
         if (currentUser.userID && chatData.id) {
             fetchLastSeenMessage();
         }
-    }, [messages]);
+    }, [chatData.id, currentUser.userID]);
 
-    function getFile(selectedFiles: string | any[] | FileList) {
+    function getFile(selectedFiles: FileList) {
         const fileProperty = [];
         for (let i = 0; i < selectedFiles.length; i++) {
             const fileName = selectedFiles[i].name;
@@ -290,9 +290,9 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
         });
     }
 
-    const processFiles = async (files: FileList | null): Promise<string | ArrayBuffer | null> => {
+    const processFiles = async (files: FileList[] | null): Promise<(string | ArrayBuffer | null)[]> => {
         if (!files || files.length === 0) return [];
-        const filePromises = Array.from(files).map((file) => readFileAsDataURL(file));
+        const filePromises = files.map((file) => readFileAsDataURL(file));
         return await Promise.all(filePromises);
     }
 
@@ -341,7 +341,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                 status: chatData.status
             }
             socket.emit("message", messageData);
-            setSelectedFiles(null);
+            setSelectedFiles([]);
             setMessage("");
         }
     }
@@ -376,8 +376,8 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     }
 
     const handleFileChange = (e) => {
-        const files = Array.from(e.target.files);
-        const updatedFiles = [...(selectedFiles || []), ...files];
+        const files: FileList[] = Array.from(e.target.files);
+        const updatedFiles: FileList[] | null = [...(selectedFiles || []), ...files];
 
         if (updatedFiles.length > MAX_FILES_ALLOWED) {
             setClientErrors({
@@ -410,7 +410,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     const handleScrollAndMessages = useCallback(() => {
         const element = scrollContainerRef.current;
         if (element) {
-            const isBottom = Math.ceil(element.scrollTop + element.clientHeight) >= element.scrollHeight - 150;
+            const isBottom = Math.ceil(element.scrollTop + element.clientHeight) >= element.scrollHeight - 20;
             dispatch({ type: 'SCROLL_TO_BOTTOM', payload: isBottom });
 
             if (isBottom) {
@@ -426,7 +426,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
         const timeout = setTimeout(() => {
             const hasUnreadMessages = messages.some((msg) => msg.unreaded === true);
             if (hasUnreadMessages) {
-                dispatch({ type: 'SET_NEW_MESSAGE' });
+                dispatch({ type: 'SET_NEW_MESSAGE', payload: true });
             }
         }, 100)
 
@@ -452,11 +452,10 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
         }
     }, [handleScrollAndMessages])
 
-    const scrollToUnreadMessage = useCallback(() => {
+    const scrollToUnreadMessage = () => {
 
         const firstUnreadIndex = messages.findIndex((msg) => msg.unreaded === true);
         const lastMessageIndex = messages.length - 1
-
 
         if (messageRefs.current[firstUnreadIndex]) {
             messageRefs.current[firstUnreadIndex].scrollIntoView({ behavior: "smooth" });
@@ -464,14 +463,16 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
             messageRefs.current[lastMessageIndex].scrollIntoView({ behavior: "smooth" });
         }
 
-    }, [messages, state.isAtBottom]);
+    }
 
     useEffect(() => {
         let messageIndex = 0;
+
         observer.current = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
+                const dataId: string = String(entry.target.getAttribute("data-id"));
                 if (entry.isIntersecting) {
-                    const messageId = parseInt(entry.target.getAttribute("data-id"), 10);
+                    const messageId = parseInt(dataId, 10);
 
                     if (messageId > messageIndex) {
                         messageIndex = messageId;
@@ -499,9 +500,13 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
         }
     }, [messages]);
 
-    const handleKeyDown = (event) => {
-        if (event.key === "Enter" && message.trim() !== '') {
+    const handleKeyDown = (event: KeyboardEvent) => {
+        const textAreaTarget = event.target as HTMLTextAreaElement;
+
+        if (!event.shiftKey && event.key === "Enter" && message.trim() !== '') {
             event.preventDefault();
+            textAreaTarget.style.height = '24px';
+            textAreaTarget.style.overflowY = 'hidden';
             sendMessage();
             setMessage('');
         }
@@ -575,147 +580,158 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                         ) : (
                             null
                         )}
+                        <div className='flex flex-col gap-3'>
+                            <div className='flex'>
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: isLoading ? 0 : 1 }}
+                                    transition={{ duration: .3 }}
+                                    className='relative w-full flex flex-col gap-4 px-4 mx-auto max-w-[750px]'
+                                >
+                                    <button onClick={scrollToUnreadMessage} className={`w-10 h-10 mr-4 rounded-full bg-[#ebebeb] absolute right-5 bottom-5 duration-200 ease-in-out hover:bg-[#c5c5c5] ${state.newMessage === true || !state.isAtBottom ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                                        {state.newMessage && !state.isAtBottom ? <p className={`text-[#C67E5F] text-center font-semibold ${MainFont.className}`}>NEW</p> : <Image alt='down' src={'/support/icons/down.svg'} width={50} height={50} className='m-auto' />}
+                                    </button>
 
-                        <div className='flex'>
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: isLoading ? 0 : 1 }}
-                                transition={{ duration: .3 }}
-                                className='relative w-full flex flex-col gap-4 px-4 mx-auto max-w-[750px]'
-                            >
-                                <button onClick={scrollToUnreadMessage} className={`w-10 h-10 mr-4 rounded-full bg-[#ebebeb] absolute right-5 bottom-20 duration-100 ease-in-out hover:bg-[#c5c5c5] ${!state.isAtBottom || state.newMessage === true ? null : 'hidden'}`}>
-                                    {state.newMessage ? <p className={`text-[#C67E5F] text-center font-semibold ${MainFont.className}`}>NEW</p> : <Image alt='down' src={'/support/icons/down.svg'} width={50} height={50} className='m-auto' />}
-                                </button>
+                                    <div ref={scrollContainerRef} className={`w-full h-[600px] sm:w-auto sm:min-w-[400px] md:min-w-[650px] sm:max-w-[750px] bg-[rgba(6,6,6,.65)] flex flex-col gap-3 items-center rounded-xl px-3 sm:px-5 py-5 overflow-scroll overflow-x-hidden ${styles.custom_chat_scroll}`}>
 
-                                <div ref={scrollContainerRef} className={`w-full h-[600px] sm:w-auto sm:min-w-[400px] md:min-w-[650px] sm:max-w-[750px] bg-[rgba(6,6,6,.65)] flex flex-col gap-3 items-center rounded-xl px-3 sm:px-5 py-5 overflow-scroll overflow-x-hidden ${styles.custom_chat_scroll}`}>
+                                        <div className='text-base sm:text-xl font-extralight tracking-[5px] text-balance'>
+                                            <h3>{chatData?.title}</h3>
+                                        </div>
 
-                                    <div className='text-base sm:text-xl font-extralight tracking-[5px] text-balance'>
-                                        <h3>{chatData?.title}</h3>
-                                    </div>
+                                        <div className='w-full text-base text-center '>
+                                            <p>{chatData?.description}</p>
+                                        </div>
 
-                                    <div className='w-full text-base text-center '>
-                                        <p>{chatData?.description}</p>
-                                    </div>
-
-                                    <div className='flex flex-row justify-center gap-2'>
-                                        {Array.isArray(chatData.files) &&
-                                            chatData?.files.map((file, i) => (
-                                                <div key={i}
-                                                    onClick={() => handleImageClick(`http://localhost:3000/${file}`)}
-                                                >
-                                                    <Image
-                                                        src={`http://localhost:3000/${file}`}
-                                                        alt={`Image ${i + 1}`}
-                                                        width={80}
-                                                        height={80}
-                                                        className={`rounded cursor-pointer`}
-                                                        loading='lazy'
-                                                    />
-                                                </div>
-                                            ))}
-                                    </div>
-
-                                    <div className='w-full h-full text-base sm:text-lg flex flex-col gap-3 pb-5 font-extralight tracking-[1px] text-balance'>
-                                        {messages.map((msg, index) => {
-                                            const isFirstMessageInSequence = index === 0 || messages[index - 1]?.user_id !== msg.user_id;
-                                            return (
-                                                <motion.div
-                                                    key={index}
-                                                    className={`flex flex-col w-full last:pb-5 ${currentUser.userID === msg.userID || currentUser.userID === msg.user_id
-                                                        ? 'items-end'
-                                                        : 'items-start'
-                                                        }`}
-                                                    data-id={index}
-                                                    ref={(el) => {
-                                                        if (el) {
-                                                            messageRefs.current[index] = el;
-                                                        }
-                                                    }}
-                                                >
-                                                    {isFirstMessageInSequence && (
-                                                        <p className='text-white tracking-widest'>
-                                                            {usersData.find(user => user.id === msg.user_id || user.id === msg.userID)?.username || 'UNKNOWN'}
-                                                        </p>
-                                                    )}
-
-                                                    {(msg?.content || msg?.message) ? (
-                                                        <p ref={chatEndRef} className={`bg-[rgba(194,114,79,1)] rounded-lg py-2 px-3`}>
-                                                            {msg?.content || msg?.message}
-                                                        </p>
-                                                    ) : (
-                                                        null
-                                                    )}
-
-                                                    {Array.isArray(msg.file_url) &&
-                                                        msg.file_url.map((url, i) => (
-                                                            <motion.div key={`${index}-${i}`}
-                                                                onClick={() => handleImageClick(`http://localhost:3000/${url}`)}
-                                                                initial={{ width: '50%', height: 'auto' }}
-                                                                transition={{ duration: .3 }}
-                                                                className={`${i !== 0 || (msg.content || msg.message) ? 'mt-3' : ''} `}
-                                                            >
-                                                                <Image
-                                                                    src={`http://localhost:3000/${url}`}
-                                                                    alt={`Image ${i + 1}`}
-                                                                    width={1080}
-                                                                    height={1080}
-                                                                    className={`rounded cursor-pointer`}
-                                                                    loading='lazy'
-                                                                />
-                                                            </motion.div>
-                                                        ))}
-                                                </motion.div>
-                                            );
-                                        })}
-                                        {showImage && (
-                                            <motion.div
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: timing ? 0 : 1 }}
-                                                transition={{ duration: 0.3 }}
-                                                onClick={closeImage}
-                                                className="fixed inset-0 flex items-center justify-center bg-[rgba(0,0,0,0.02)] bg-opacity-70 z-50 px-3"
-                                            >
-                                                <motion.div
-                                                    initial={{ scale: 0.5 }}
-                                                    animate={{ scale: timing ? 0 : 1 }}
-                                                    transition={{ duration: 0.3 }}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="relative"
-                                                >
-                                                    <Image
-                                                        src={showImage}
-                                                        alt="Scaled image"
-                                                        width={600}
-                                                        height={600}
-                                                        className="rounded"
-                                                    />
-                                                    <button
-                                                        onClick={closeImage}
-                                                        className="absolute top-2 right-2 bg-[rgba(194,114,79,1)] text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-500 transition"
+                                        <div className='flex flex-row justify-center gap-2'>
+                                            {Array.isArray(chatData.files) &&
+                                                chatData?.files.map((file, i) => (
+                                                    <div key={i}
+                                                        onClick={() => handleImageClick(`http://localhost:3000/${file}`)}
                                                     >
-                                                        ✕
-                                                    </button>
+                                                        <Image
+                                                            src={`http://localhost:3000/${file}`}
+                                                            alt={`Image ${i + 1}`}
+                                                            width={80}
+                                                            height={80}
+                                                            className={`rounded cursor-pointer`}
+                                                            loading='lazy'
+                                                        />
+                                                    </div>
+                                                ))}
+                                        </div>
+
+                                        <div className='w-full h-full text-base sm:text-lg flex flex-col gap-3 pb-5 font-extralight tracking-[1px] text-balance'>
+                                            {messages.map((msg, index) => {
+                                                const isFirstMessageInSequence = index === 0 || messages[index - 1]?.user_id !== msg.user_id;
+                                                return (
+                                                    <motion.div
+                                                        key={index}
+                                                        className={`flex flex-col w-full last:pb-5 ${currentUser.userID === msg.user_id || currentUser.userID === msg.user_id
+                                                            ? 'items-end'
+                                                            : 'items-start'
+                                                            }`}
+                                                        data-id={index}
+                                                    >
+                                                        {isFirstMessageInSequence && (
+                                                            <p className='text-white tracking-widest'>
+                                                                {usersData.find(user => user.id === msg.user_id || user.id === msg.user_id)?.username || 'UNKNOWN'}
+                                                            </p>
+                                                        )}
+
+                                                        {(msg?.content || msg?.message) ? (
+                                                            <div>
+                                                                <p className={`bg-[rgba(194,114,79,1)] rounded-lg py-2 px-3`}>
+                                                                    {msg?.content || msg?.message}
+                                                                </p>
+                                                            </div>
+                                                        ) : (
+                                                            null
+                                                        )}
+
+                                                        {Array.isArray(msg.file_url) &&
+                                                            msg.file_url.map((url, i) => (
+                                                                <motion.div key={`${index}-${i}`}
+                                                                    onClick={() => handleImageClick(`http://localhost:3000/${url}`)}
+                                                                    initial={{ width: '50%', height: 'auto' }}
+                                                                    transition={{ duration: .3 }}
+                                                                    className={`${i !== 0 || (msg.content || msg.message) ? 'mt-3' : ''} `}
+                                                                >
+                                                                    <Image
+                                                                        src={`http://localhost:3000/${url}`}
+                                                                        alt={`Image ${i + 1}`}
+                                                                        width={1080}
+                                                                        height={1080}
+                                                                        className={`rounded cursor-pointer`}
+                                                                        loading='lazy'
+                                                                    />
+                                                                </motion.div>
+                                                            ))}
+
+                                                        <div
+                                                            ref={(el) => {
+                                                                if (el) {
+                                                                    messageRefs.current[index] = el;
+                                                                }
+                                                            }} >
+
+                                                        </div>
+                                                        <div ref={chatEndRef}></div>
+                                                    </motion.div>
+                                                );
+                                            })}
+                                            {showImage && (
+                                                <motion.div
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: timing ? 0 : 1 }}
+                                                    transition={{ duration: 0.3 }}
+                                                    onClick={closeImage}
+                                                    className="fixed inset-0 flex items-center justify-center bg-[rgba(0,0,0,0.02)] bg-opacity-70 z-50 px-3"
+                                                >
+                                                    <motion.div
+                                                        initial={{ scale: 0.5 }}
+                                                        animate={{ scale: timing ? 0 : 1 }}
+                                                        transition={{ duration: 0.3 }}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="relative"
+                                                    >
+                                                        <Image
+                                                            src={showImage}
+                                                            alt="Scaled image"
+                                                            width={600}
+                                                            height={600}
+                                                            className="rounded"
+                                                        />
+                                                        <button
+                                                            onClick={closeImage}
+                                                            className="absolute top-2 right-2 bg-[rgba(194,114,79,1)] text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-500 transition"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </motion.div>
                                                 </motion.div>
-                                            </motion.div>
-                                        )}
+                                            )}
+                                        </div>
+                                        <motion.p
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: clientErrors?.maxFilesAllowed ? 1 : 0, height: clientErrors?.maxFilesAllowed ? 30 : 0 }}
+                                            transition={{ duration: .3 }}
+                                            className="text-orange-300 text-[13px] sm:text-[18px]"
+                                        >
+                                            {clientErrors?.maxFilesAllowed}
+                                        </motion.p>
                                     </div>
-                                    <motion.p
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: clientErrors?.maxFilesAllowed ? 1 : 0, height: clientErrors?.maxFilesAllowed ? 30 : 0 }}
-                                        transition={{ duration: .3 }}
-                                        className="text-orange-300 text-[13px] sm:text-[18px]"
-                                    >
-                                        {clientErrors?.maxFilesAllowed}
-                                    </motion.p>
-                                </div>
+                                </motion.div>
+                            </div>
+
+                            <div>
                                 {chatData.status === true ? (
-                                    <div className='text-center text-white bg-[rgba(6,6,6,.65)] p-2 rounded-xl'>
+                                    <div className='text-center text-white bg-[rgba(6,6,6,.65)] p-2 mx-3 rounded-xl'>
                                         <p>problem has been solved</p>
                                     </div>
                                 ) : (
-                                    <div className={`flex flex-col ${selectedFiles?.length === 0 || selectedFiles === null ? null : 'gap-2'} bg-[rgba(6,6,6,.65)] p-2 rounded-xl`}>
+                                    <div className={`flex flex-col ${selectedFiles?.length === 0 || selectedFiles === null ? null : 'gap-2'} bg-[rgba(6,6,6,.65)] p-2 mx-3 rounded-xl`}>
                                         <div className='flex flex-row gap-2 items-center select-none'>
-                                            <textarea value={message} rows={1} onChange={handleInputChange} onKeyDown={handleKeyDown} autoFocus maxLength={1000} placeholder='WRITE A MESSAGE...' className={`w-full bg-transparent outline-none font-extralight tracking-[1px] text-balance resize-none ${styles.custom_scroll} caret-white`} />
+                                            <textarea value={message} rows={1} onChange={handleInputChange} onKeyDown={handleKeyDown} autoFocus maxLength={1000} placeholder='WRITE A MESSAGE...' className={`w-full bg-transparent outline-none font-extralight tracking-[1px] text-balance resize-none ${styles.custom_scroll} caret-white overflow-auto`} />
 
                                             <label>
                                                 <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple accept='image/*,video/*' className='hidden' />
@@ -744,15 +760,14 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                                                 </svg>
                                                             </button>
                                                         </li>
-                                                    ))}
+                                                    )
+                                                    )}
                                                 </ul>
                                             )}
                                         </div>
-
                                     </div>
                                 )}
-                            </motion.div>
-
+                            </div>
                         </div>
                     </div>
                 </motion.div>

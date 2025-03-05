@@ -17,14 +17,14 @@ const validationSchema = Yup.object().shape({
         .max(400, 'The description should not be longer than 400 characters')
         .matches(/\S/, 'Description cannot be empty or whitespace')
         .required('Please explain your problem'),
-    file: Yup.mixed()
+    file: Yup.mixed(),
 });
 
 export default async function CreateSupportChat(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'POST') {
         try {
             const token = req.body.cookies.auth_token;
-            let decoded 
+            let decoded
             
             try {
                 decoded = jwt.verify(token, process.env.JWT_SECRET as string);

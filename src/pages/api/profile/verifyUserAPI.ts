@@ -14,6 +14,12 @@ const validationSchema = Yup.object().shape({
         .typeError("Please enter a 4-digit number"),
 });
 
+interface JwtPayload {
+    profileAccess: boolean;
+    userId: string;
+    userRole: string;
+}
+
 export default async function VerifyUser(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === "POST" || req.method === "GET") {
         try {
@@ -30,8 +36,8 @@ export default async function VerifyUser(req: NextApiRequest, res: NextApiRespon
             let decoded;
 
             try {
-                decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-                if (decoded.profileAccess === true) {
+                decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
+                if (decoded.profileAccess === true || decoded.userRole === 'admin') {
                     return res.status(201).json({ redirectUrl: `/profile/${decoded.userId}` });
                 }
             } catch (error) {
@@ -42,6 +48,7 @@ export default async function VerifyUser(req: NextApiRequest, res: NextApiRespon
             const userID = decoded.userId;
 
             const conn = await Connect()
+
             try {
                 if (req.method === 'POST') {
                     const { code } = await validationSchema.validate(req.body, {

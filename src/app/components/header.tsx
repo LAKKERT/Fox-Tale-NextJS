@@ -25,8 +25,13 @@ const MobileMode: React.FC<{ isMenuOpen: boolean; toggleMenu: () => void }> = ({
     </div>
 );
 
+type usersData = {
+    id: number;
+    username: string;
+}
+
 export function Header() {
-    const [userData, setUserData] = useState(null);
+    const [userData, setUserData] = useState<usersData | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
     const [isAuth, setIsAuth] = useState(false);
@@ -122,7 +127,7 @@ export function Header() {
                         <div className={`absolute flex flex-col justify-center items-center h-auto w-[250px] px-7 py-2 top-[70px] left-[-134px] gap-2 rounded-b-lg bg-[#000000] text-white text-2xl border-4 border-t-0 border-[rgba(245,136,90,.9)] ${isOptionsMenuOpen ? "flex flex-col" : "hidden"}`}>
                             <p className="w-full text-center border-b-2 border-[rgba(245,136,90,.9)]">{userData.username}</p>
                             {userData && (
-                                <Link href={`/profile/[id]`} as={`/profile/${userData.id}`} key={userData.id} className="uppercase text-left hover:bg-[rgba(245,136,90,.9)] py-1 px-3 rounded transition duration-150 ease-in-out ">
+                                <Link href={`/profile/verify`} key={userData.id} className="uppercase text-left hover:bg-[rgba(245,136,90,.9)] py-1 px-3 rounded transition duration-150 ease-in-out ">
                                     <div>
                                         PROFILE
                                     </div>
@@ -166,7 +171,7 @@ export function Header() {
                     }
 
                     {userData && (
-                        <Link href={`/profile/[id]`} as={`/profile/${userData.id}`} key={userData.id} className={`w-full py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,0.7)] transition duration-150 ease-in-out ${isAuth ? "block" : "hidden"}`}>
+                        <Link href={`/profile/verify`} key={userData.id} className={`w-full py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,0.7)] transition duration-150 ease-in-out ${isAuth ? "block" : "hidden"}`}>
                             <div>
                                 PROFILE
                             </div>
@@ -179,7 +184,7 @@ export function Header() {
                         </div>
                     </Link>
 
-                    <Link href="#" className="w-full">
+                    <Link href="/news" className="w-full">
                         <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.7)] transition duration-150 ease-in-out ">
                             News
                         </div>

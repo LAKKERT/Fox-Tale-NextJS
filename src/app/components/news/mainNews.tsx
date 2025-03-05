@@ -30,6 +30,7 @@ type AllNews = {
 
 export function NewsPageComponent() {
     const [allNews, setAllNews] = useState<AllNews | null>(null);
+    const [countOfNews, setCountOfNews] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
@@ -46,6 +47,7 @@ export function NewsPageComponent() {
 
                 if (response.ok) {
                     setAllNews(result);
+                    setCountOfNews(result.result.length)
                     setTimeout(() => {
                         setShowContent(true);
                     }, 300);
@@ -62,14 +64,14 @@ export function NewsPageComponent() {
         fetchAllNews();
     }, [cookies, router]);
 
-    const totalPages = Math.ceil(allNews?.result.length / ITEMS_PER_PAGE);
+    const totalPages = Math.ceil(countOfNews / ITEMS_PER_PAGE);
 
     const paginatedNews = allNews?.result.slice(
         (currentPage - 1) * ITEMS_PER_PAGE,
         currentPage * ITEMS_PER_PAGE
     );
 
-    const handlePageChange = (page) => {
+    const handlePageChange = (page: number) => {
         setCurrentPage(page);
     }
 

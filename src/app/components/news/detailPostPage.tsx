@@ -68,6 +68,7 @@ export function PostDetailComponent({ postID }) {
     const router = useRouter();
 
     const imgRef = useRef<HTMLElement[]>([]);
+    const textAreaRef = useRef<HTMLElement[][]>([]);
 
     const [verticalAlign, setVerticalAlign] = useState<number[]>([]);
     const [horizontalAlign, setHorizontalAlign] = useState<number[]>([]);
@@ -366,7 +367,40 @@ export function PostDetailComponent({ postID }) {
         debouncedUpdate(paragraphIndex, newH, newV)
     }
 
-    console.log(textAreaRef)
+    const [windowSize, setWindowSize] = useState({
+        width: typeof window !== "undefined" ? window.innerWidth : 0,
+        height: typeof window !== "undefined" ? window.innerHeight : 0,
+    });
+
+    useEffect(() => {
+        const handleResize = () => {
+            setWindowSize({
+                width: window.innerWidth,
+                height: window.innerHeight
+            });
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    useEffect(() => {
+        const updateTextareas = () => {
+            document.querySelectorAll('textarea').forEach(textarea => {
+                textarea.style.height = "auto";
+                textarea.style.height = `${textarea.scrollHeight}px`;
+            });
+        };
+
+        updateTextareas();
+
+        const resizeObserver = new ResizeObserver(_.debounce(updateTextareas, 100));
+
+        const container = document.querySelector('.your-container-class');
+        if (container) resizeObserver.observe(container);
+
+        return () => resizeObserver.disconnect();
+    }, [windowSize, editModeActive]);
 
     return (
         <div className={`max-w-[768px] xl:max-w-[1110px] flex flex-col justify-center items-center gap-0 lg:max-w-8xl mx-auto mt-[100px] px-4 pb-8 ${MainFont.className} text-[#F5DEB3] caret-transparent`}>
@@ -417,14 +451,27 @@ export function PostDetailComponent({ postID }) {
                                         {errors.title?.message}
                                     </motion.p>
 
-                                    <p className={`text-base md:text-lg ${editModeActive ? 'hidden' : 'block'}`}>
+                                    <p
+                                        className={`text-base md:text-lg ${editModeActive ? 'hidden' : 'block'}`}
+                                    >
                                         {postData?.result?.[0].description}
                                     </p>
 
                                     <motion.textarea
-                                        transition={{ duration: .3 }}
                                         {...register('description')}
-                                        className={` text-base text-center text-[#F5DEB3] md:text-lg w-full h-[150px] border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll} ${editModeActive ? 'block' : 'hidden'} caret-white`}
+                                        onInput={(e) => {
+                                            const target = e.target as HTMLTextAreaElement;
+                                        
+                                            target.style.height = "auto";
+                                            target.style.minHeight = "50px";
+                                            target.style.height = `${target.scrollHeight}px`;
+                                        }}
+                                        className={`text-center text-sm md:text-base text-balance text-[#F5DEB3] overflow-hidden py-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll} ${editModeActive ? 'block' : 'hidden'} caret-white`}
+                                        style={{
+
+                                            maxHeight: "70vh",
+                                            boxSizing: "border-box"
+                                        }}
                                     />
 
                                     <motion.p
@@ -596,19 +643,39 @@ export function PostDetailComponent({ postID }) {
                                                                     {content.image ? 'Change Image' : 'Upload Image'}
                                                                 </motion.label>
 
-                                                                <p
-                                                                    className={`text-left text-sm md:text-base text-balance ${editModeActive ? 'hidden' : 'block'}`}
+                                                                <div
+                                                                    ref={(el) => {
+                                                                        if (el) {
+                                                                            if (!textAreaRef.current[paragraphIndex]) {
+                                                                                textAreaRef.current[paragraphIndex] = [];
+                                                                            }
+                                                                            textAreaRef.current[paragraphIndex][contentIndex] = el;
+
+                                                                        }
+                                                                    }}
                                                                 >
-                                                                    {content.text}
-                                                                </p>
+                                                                    <pre
+                                                                        className={`text-left text-sm md:text-base text-balance ${editModeActive ? 'hidden' : 'block'}`}
+                                                                    >
+                                                                        {content.text}
+                                                                    </pre>
+                                                                </div>
 
                                                                 <motion.textarea
                                                                     {...register(`paragraphs.${paragraphIndex}.contents.${contentIndex}.text`)}
                                                                     onInput={(e) => {
                                                                         const target = e.target as HTMLTextAreaElement;
+                                                                    
+                                                                        target.style.height = "auto";
+                                                                        target.style.minHeight = "50px";
                                                                         target.style.height = `${target.scrollHeight}px`;
                                                                     }}
-                                                                    className={`text-left text-sm md:text-base text-balance text-[#F5DEB3] w-full min-h-[150px] border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll} ${editModeActive ? 'block' : 'hidden'} caret-white`}
+                                                                    className={`text-left text-sm md:text-base text-balance text-[#F5DEB3] overflow-hidden py-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll} ${editModeActive ? 'block' : 'hidden'} caret-white`}
+                                                                    style={{
+
+                                                                        maxHeight: "70vh",
+                                                                        boxSizing: "border-box"
+                                                                    }}
                                                                 />
 
                                                                 <motion.p

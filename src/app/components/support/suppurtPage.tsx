@@ -10,15 +10,19 @@ const MainFont = K2D({
     weight: "400",
 });
 
+type OpenCardsState = {
+    [key: number]: boolean;
+  };
+
 export function SupportPageComponent() {
     const [isLoading, setIsLoading] = useState(true);
-    const [openCards, setOpenCards] = useState({});
+    const [openCards, setOpenCards] = useState<OpenCardsState>({});
 
     setTimeout(() => {
         setIsLoading(false);
     }, 300)
 
-    const toggleCard = (id) => {
+    const toggleCard = (id: number) => {
         setOpenCards((prev) => ({
             ...prev,
             [id]: !prev[id],
@@ -95,7 +99,7 @@ export function SupportPageComponent() {
                     </div>
 
                     <div className="flex flex-col items-center gap-5">
-                        <p className="text-lg md:text-2xl text-balance text-center">If you haven't found the answer to your problem, please contact our support team.</p>
+                        <p className="text-lg md:text-2xl text-balance text-center">If you haven&apos;t found the answer to your problem, please contact our support team.</p>
                         <Link href='/support/create_support_chat' className="flex justify-center items-center w-[250px] h-[50px] text-lg tracking-wider transition-colors duration-75 rounded border border-[#F5DEB3] bg-[#C2724F] hover:bg-[#b66847] uppercase select-none">WRITE</Link>
                     </div>
 

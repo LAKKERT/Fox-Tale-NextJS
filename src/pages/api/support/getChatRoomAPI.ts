@@ -46,7 +46,7 @@ export default async function getChatRoom(req: NextApiRequest, res: NextApiRespo
                 [userId, roomId]
             );
             
-            if (existingParticipant.rowCount = 0) {
+            if (existingParticipant.rowCount === 0) {
                 await conn.query("INSERT INTO participants (user_id, room_id) VALUES ($1, $2)", [userId, roomId]);
             }
             

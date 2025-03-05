@@ -7,7 +7,7 @@ const validationSchema = Yup.object().shape({
     login: Yup.string().min(4, "Login must be at least 4 characters").required("Enter your new login")
 })
 
-async function checkLoginExists(login) {
+async function checkLoginExists(login: string) {
     try {
         const conn = await Connect();
         const result = await conn.query('SELECT username FROM users WHERE username = $1', [login]);

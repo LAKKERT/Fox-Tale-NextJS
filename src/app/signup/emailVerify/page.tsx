@@ -54,14 +54,14 @@ export default function EmailVerification() {
     const onSubmit = async (data) => {
         try {
             const payload = {
-                ...data,
-                cookies
+                ...data
             }
 
             const response = await fetch('/api/users/verifyEmailAPI', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${cookies.regToken}`,
                 },
                 body: JSON.stringify(payload)
             })
@@ -92,7 +92,7 @@ export default function EmailVerification() {
                         method: 'POST',
                         headers: {
                             'content-type': 'application/json',
-                            'Authorization': `Bearer ${cookies['regToken']}`,
+                            'Authorization': `Bearer ${cookies.regToken}`,
                         },
                         body: JSON.stringify(payload),
                     })
@@ -119,13 +119,14 @@ export default function EmailVerification() {
         const handleOnBeforeUnload = async (event) => {
             event.preventDefault();
             event.returnValue = 'Are you sure you want to leave?';
+            console.log(cookies.regToken)
             try {
                 const response = await fetch('/api/users/verifyEmailAPI', {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${cookies.regToken}`
                     },
-                    body: JSON.stringify(cookies),
                 })
 
                 const result = await response.json();
@@ -144,13 +145,14 @@ export default function EmailVerification() {
 
         window.history.pushState({ page: 'emailVerify' }, '', window.location.href);
         const handlePopState = async (event) => {
+            console.log(cookies)
             try {
                 const response = await fetch('/api/users/verifyEmailAPI', {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${cookies.regToken}`
                     },
-                    body: JSON.stringify(cookies),
                 });
 
                 const result = await response.json();
@@ -209,7 +211,7 @@ export default function EmailVerification() {
                                     >
                                         {errors.code?.message || serverError}
                                     </motion.p>
-                                    <input type="text" maxLength={4} autoComplete="off" {...register("code")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 bg-transparent tracking-[25px] text-center text-2xl outline-none" placeholder="CODE" />
+                                    <input type="text" maxLength={4} autoComplete="off" {...register("code")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 bg-transparent tracking-[25px] text-center text-2xl outline-none caret-white" placeholder="CODE" />
                                 </div>
                                 <input type="submit" value="SIGN UP" className="w-[250px] h-[50px] text-2xl tracking-widest rounded border border-[#F5DEB3] bg-[#C2724F] cursor-pointer transition duration-75 ease-in-out hover:bg-[rgba(194,114,79,.7)]" />
                             </form>

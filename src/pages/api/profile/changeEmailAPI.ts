@@ -16,7 +16,7 @@ const codeValidationSchema = Yup.object().shape({
     code: Yup.number().min(1000, 'Number must be a 4-digit number').max(9999, 'Number must be a 4-digit number').typeError('Please enter a 4-digit number'),
 })
 
-async function EmailExist(newEmail) {
+async function EmailExist(newEmail: string) {
     try {
         const conn = await Connect() ;
         const result = await conn.query('SELECT email FROM users WHERE email = $1', [newEmail]);

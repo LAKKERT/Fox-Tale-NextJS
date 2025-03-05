@@ -17,36 +17,15 @@ const validationSchema = Yup.object().shape({
 export default function VerifyPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [showContent, setShowContent] = useState(false);
-    const [userEmail, setUserEmail] = useState<string>('');
+    const [userEmail, setUserEmail] = useState();
     const [serverMessage, setServerMessage] = useState("");
-    const [serverError, setServerError] = useState({});
-    const [clientError, setClientError] = useState({});
+    const [serverError, setServerError] = useState<{code: number | null}>();
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
 
-    const { register, handleSubmit, formState: { errors } } = useForm({
+    const { register, handleSubmit, formState: { errors } } = useForm<{code: number}>({
         resolver: yupResolver(validationSchema)
     })
-
-    useEffect(() => {
-        const timeout = setTimeout(() => {
-            setIsLoading(false);
-            setTimeout(() => setShowContent(true), 300);
-        }, 300);
-
-        return () => clearTimeout(timeout);
-    });
-
-    useEffect(() => {
-        if (errors) {
-            setClientError(errors);
-        } else {
-            const timeout = setTimeout(() => {
-                setClientError(errors);
-                return () => clearTimeout(timeout);
-            }, 300);
-        }
-    }, [errors]);
 
     useEffect(() => {
         const fetchUserEmail = async () => {
@@ -59,12 +38,14 @@ export default function VerifyPage() {
                 });
 
                 const result = await response.json();
-
+                
                 if (response.ok) {
+                    setIsLoading(false);
                     if (result.redirectUrl) {
                         router.push(result.redirectUrl);
+                    }else {
+                        setUserEmail(result.email.email);
                     }
-                    setUserEmail(result.email);
                 } else {
                     console.error("Failed to fetch user data");
                 }
@@ -73,6 +54,7 @@ export default function VerifyPage() {
                     cookiesName: 'auth_token',
                     userEmail: result.email.email,
                 }
+                
                 const createCodeResponse = await fetch(`/api/profile/createVerificationCodeAPI`, {
                     method: 'POST',
                     headers: {
@@ -83,7 +65,6 @@ export default function VerifyPage() {
                 })
 
                 const codeResponse = await createCodeResponse.json();
-
 
                 if (createCodeResponse.ok) {
                     if (codeResponse.redirectUrl) {
@@ -101,11 +82,11 @@ export default function VerifyPage() {
 
         fetchUserEmail();
 
-    }, [router, cookies])
+    }, [router])
 
-    const onSubmit = async (data) => {
+    const onSubmit = async (data: {code: number}) => {
         try {
-            const payLoad = await {
+            const payLoad = {
                 ...data,
             }
 
@@ -147,7 +128,7 @@ export default function VerifyPage() {
                 </motion.div>
             ) : null}
 
-            {showContent ? (
+            {!isLoading ? (
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -156,7 +137,7 @@ export default function VerifyPage() {
                 >
 
                     <div className="bg-[rgba(6,6,6,.65)] flex flex-col gap-4 py-9 px-5 rounded-lg text-center">
-                        <p>the code was sent to the email: {userEmail?.email}</p>
+                        <p>the code was sent to the email: {userEmail}</p>
                         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col justify-center items-center text-center gap-6">
                             <div className="flex flex-col text-center">
                                 <motion.p
@@ -167,7 +148,7 @@ export default function VerifyPage() {
                                 >
                                     {errors.code?.message || serverError?.code || serverMessage}
                                 </motion.p>
-                                <input type="text" maxLength={4} autoComplete="off" {...register("code")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 bg-transparent tracking-[25px] text-center text-2xl outline-none" placeholder="CODE" />
+                                <input type="text" maxLength={4} autoComplete="off" {...register("code")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 bg-transparent tracking-[25px] text-center text-2xl outline-none caret-white" placeholder="CODE" />
                             </div>
                             <input type="submit" value="VERIFY" className="w-[250px] h-[50px] text-2xl tracking-widest rounded border border-[#F5DEB3] bg-[#C2724F] cursor-pointer transition duration-75 ease-in-out hover:bg-[rgba(194,114,79,.7)]" />
                         </form>

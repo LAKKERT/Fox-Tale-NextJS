@@ -1,6 +1,6 @@
 "use client";
 import { useForm } from "react-hook-form";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as Yup from "yup";
 import { motion } from "framer-motion";
@@ -10,10 +10,10 @@ const validationSchema = Yup.object().shape({
 })
 
 const codeValidationSchema = Yup.object().shape({
-    code: Yup.number().min(1000, 'Number must be a 4-digit number').max(9999, 'Number must be a 4-digit number').typeError('Please enter a 4-digit number'),
+    code: Yup.number().min(1000, 'Number must be a 4-digit number').max(9999, 'Number must be a 4-digit number').typeError('Please enter a 4-digit number').required('Enter your code from old email'),
 })
 
-function maskEmail(email) {
+function maskEmail(email: string) {
     const index = email?.indexOf("@");
 
     const visiblePart = email?.slice(0, index - 4);
@@ -28,8 +28,7 @@ export function EmailChange({ userData }) {
     const [codeIncorrect, setCodeIncorrect] = useState("");
     const [serverMessage, setServerMessage] = useState("");
     const [successMessage, setSuccessMessage] = useState("")
-    const [clientError, setClientError] = useState({});
-    const [serverError, setServerError] = useState({});
+    const [serverError, setServerError] = useState<{newEmail: string; code: number}>({newEmail: '', code: 0});
     const [newEmail, setNewEmail] = useState("");
 
     const maskedEmail = maskEmail(userData?.email);
@@ -42,20 +41,7 @@ export function EmailChange({ userData }) {
         resolver: yupResolver(codeValidationSchema)
     });
 
-    useEffect(() => {
-        if (errors) {
-            setClientError(errors);
-        }else {
-            const timeout = setTimeout(() => {
-                setClientError(errors);
-                return () => clearTimeout(timeout);
-            }, 300)
-        }
-
-
-    }, [errors, errorsCode]);
-
-    const onSubmit = async (data) => {
+    const onSubmit = async (data: {newEmail: string}) => {
         try {
             const payload = {
                 ...data,
@@ -78,7 +64,11 @@ export function EmailChange({ userData }) {
                 setServerMessage('');
                 setNewEmail(data.newEmail);
             } else {
-                setServerMessage(result.emailExistMessage);
+                if (result.errors) {
+                    setServerError(result.errors);
+                }else {
+                    setServerMessage(result.emailExistMessage);
+                }
                 console.error("Failed to change email");
             }
 
@@ -87,7 +77,7 @@ export function EmailChange({ userData }) {
         }
     }
 
-    const onSubmitSecondForm = async (data) => {
+    const onSubmitSecondForm = async (data: {code: number}) => {
         try {
             const payload = {
                 ...data,
@@ -144,11 +134,11 @@ export function EmailChange({ userData }) {
                 <form className="flex flex-col gap-3" onSubmit={handleSubmit(onSubmit)}>
                     <motion.p
                         initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: clientError.newEmail?.message || serverError?.newEmail || serverMessage ? 1 : 0, height: clientError.newEmail?.message || serverError?.newEmail || serverMessage ? 30 : 0}}
+                        animate={{ opacity: errors.newEmail?.message || serverError?.newEmail || serverMessage ? 1 : 0, height: errors.newEmail?.message || serverError?.newEmail || serverMessage ? 30 : 0}}
                         transition={{ duration: .3}}
                         className="text-orange-300 text-[13px] sm:text-[18px]"
                     >
-                        {clientError.newEmail?.message || serverError?.newEmail || serverMessage }
+                        {errors.newEmail?.message || serverError?.newEmail || serverMessage }
                     </motion.p>
                     <input type="email" {...register("newEmail")} placeholder="New email" disabled={isCodeGenerated} className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white" />
                     <motion.input

@@ -27,20 +27,42 @@ const validationSchema = Yup.object().shape({
         .required('Please enter a title'),
     description: Yup.string()
         .trim()
-        .min(1, 'The description must be at least 10 characters long')
+        .min(10, 'The description must be at least 10 characters long')
         .max(400, 'The description should not be longer than 400 characters')
         .matches(/\S/, 'Description cannot be empty or whitespace')
         .required('Please explain your problem'),
-    file: Yup.mixed()
+    file: Yup.mixed(),
 });
+
+interface errorsState {
+    max_files: string;
+}
+
+interface serverErrors {
+    title: string;
+    description: string;
+    file: string;
+}
+
+interface filesProperties {
+    name: string;
+    extension: string;
+    size: number;
+}
+
+interface dataState {
+    title: string;
+    description: string;
+    file?: File | null;
+}
 
 const MAX_FILES_ALLOWED = 3;
 
 export default function CreateSupportChat() {
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedFiles, setSelectedFiles] = useState([]);
-    const [clientErrors, setClientErrors] = useState({});
-    const [serverErrors, setServerErrors] = useState({});
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [clientErrors, setClientErrors] = useState<errorsState | null>(null);
+    const [serverErrors, setServerErrors] = useState<serverErrors | null>(null);
 
     const [cookies] = useCookies();
     const router = useRouter();
@@ -58,29 +80,11 @@ export default function CreateSupportChat() {
         }
     }, [cookies]);
 
-    const { register, handleSubmit, formState: { errors } } = useForm({
+    const { register, handleSubmit, formState: { errors } } = useForm<dataState>({
         resolver: yupResolver(validationSchema),
     });
 
-    useEffect(() => {
-        const allErrors = { ...errors };
-
-        if (selectedFiles && selectedFiles.length > MAX_FILES_ALLOWED) {
-            allErrors.maxFilesLimit = `You can upload up to ${MAX_FILES_ALLOWED} files only`;
-        }
-
-        if (Object.keys(allErrors).length > 0) {
-            setClientErrors(allErrors);
-        } else {
-            const timeout = setTimeout(() => {
-                setClientErrors({});
-                return () => clearTimeout(timeout);
-            }, 300)
-        }
-
-    }, [errors, selectedFiles]);
-
-    const onSubmit = async (data) => {
+    const onSubmit = async (data: dataState) => {
 
         const fileURL = [];
 
@@ -99,7 +103,6 @@ export default function CreateSupportChat() {
                 console.error(error);
             }
         }
-
         try {
             const payload = {
                 ...data,
@@ -130,14 +133,20 @@ export default function CreateSupportChat() {
     }
 
     const handleFileChange = async (e) => {
-        const files = e.target.files
-        if (files.length > 0) {
-            setSelectedFiles([...files])
+        const files: File[] = Array.from(e.target.files);
+        const updatedFiles: File[] | null = [...(selectedFiles || []), ...files];
+
+        if (updatedFiles.length > MAX_FILES_ALLOWED) {
+            setClientErrors({ max_files: `You can upload up to ${MAX_FILES_ALLOWED} files only` });
+        } else {
+            setClientErrors({ max_files: '' });
         }
+
+        setSelectedFiles(updatedFiles.slice(0, MAX_FILES_ALLOWED));
         e.target.value = '';
     }
 
-    const processFiles = async (files: FileList | null): Promise<string | ArrayBuffer | null> => {
+    const processFiles = async (files: File[] | null): Promise<(string | ArrayBuffer | null)[]> => {
         if (!files || files.length === 0) return [];
         const filePromises = Array.from(files.map((file) => readFileAsDataURL(file)))
         return await Promise.all(filePromises)
@@ -152,7 +161,7 @@ export default function CreateSupportChat() {
         })
     }
 
-    const fetchFileData = (files: FileList) => {
+    const fetchFileData = (files: File[]): filesProperties[] => {
         const fileProperty = [];
         for (let i = 0; i < files.length; i++) {
             const fileName = files[i].name;
@@ -170,7 +179,7 @@ export default function CreateSupportChat() {
         return fileProperty;
     }
 
-    const handleInputChange = (e) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const textarea = e.target;
         textarea.style.height = 'auto';
         const maxHeight = 4 * parseFloat(getComputedStyle(textarea).lineHeight);
@@ -183,8 +192,8 @@ export default function CreateSupportChat() {
         }
     }
 
-    const handleDeleteFile = (index) => {
-        setSelectedFiles(selectedFiles.filter((value, i) => i !== index));
+    const handleDeleteFile = (index: number) => {
+        setSelectedFiles(selectedFiles.filter((_, i: number) => i !== index));
     }
 
     return (
@@ -214,11 +223,11 @@ export default function CreateSupportChat() {
                                 <div>
                                     <motion.p
                                         initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: clientErrors.title?.message || serverErrors?.title ? 1 : 0, height: clientErrors.title?.message || serverErrors?.title ? 30 : 0 }}
+                                        animate={{ opacity: errors.title?.message || serverErrors?.title ? 1 : 0, height: errors.title?.message || serverErrors?.title ? 30 : 0 }}
                                         transition={{ duration: .3 }}
                                         className="text-orange-300 text-[13px] sm:text-[18px]"
                                     >
-                                        {clientErrors.title?.message || serverErrors?.title}
+                                        {errors.title?.message || serverErrors?.title}
                                     </motion.p>
                                     <input type="text" {...register("title")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center outline-none border-[#F5DEB3] select-none text-base md:text-2xl" placeholder="Title" />
                                 </div>
@@ -226,36 +235,44 @@ export default function CreateSupportChat() {
                                 <div className="w-full flex flex-col text-center">
                                     <motion.p
                                         initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: clientErrors.description?.message || serverErrors?.description ? 1 : 0, height: clientErrors.description?.message || serverErrors?.description ? 30 : 0 }}
+                                        animate={{ opacity: errors.description?.message || serverErrors?.description ? 1 : 0, height: errors.title?.message || serverErrors?.description ? 30 : 0 }}
                                         transition={{ duration: .3 }}
                                         className="text-orange-300 text-[13px] sm:text-[18px]"
                                     >
-                                        {clientErrors.description?.message || serverErrors?.description}
+                                        {errors.description?.message || serverErrors?.description}
                                     </motion.p>
-                                    <textarea rows={4} maxLength={1000} onChange={handleInputChange} placeholder="DESCRIBE PROBLEM..." {...register("description")} className={`w-full bg-transparent outline-none font-extralight tracking-[1px] py-2 px-3 text-balance resize-none border-2 rounded text-base md:text-lg ${styles.custom_scroll} border-[#F5DEB3]`} />
+                                    <textarea rows={4} maxLength={1000} placeholder="DESCRIBE PROBLEM..."   
+                                        {...register("description", {
+                                        onChange: (e) => {
+                                            handleInputChange(e);
+                                        }
+                                    })} 
+                                    className={`w-full bg-transparent outline-none font-extralight tracking-[1px] py-2 px-3 text-balance resize-none border-2 rounded text-base md:text-lg ${styles.custom_scroll} border-[#F5DEB3]`} />
                                 </div>
 
                                 <div className={`w-full flex flex-col items-start ${selectedFiles?.length === 0 || selectedFiles === null ? null : 'gap-2'}`}>
                                     <motion.p
                                         initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: clientErrors?.maxFilesLimit ? 1 : 0, height: clientErrors?.maxFilesLimit ? 30 : 0 }}
+                                        animate={{ opacity: clientErrors?.max_files ? 1 : 0, height: clientErrors?.max_files ? 30 : 0 }}
                                         transition={{ duration: .3 }}
                                         className="text-orange-300 text-[13px] sm:text-[18px] place-self-center"
                                     >
-                                        {clientErrors?.maxFilesLimit}
+                                        {clientErrors?.max_files}
                                     </motion.p>
 
                                     <label htmlFor="file-input" className="place-self-start select-none">
-                                        <input id="file-input" type="file" {...register("file", {
-                                            onChange: (e) => {
-                                                handleFileChange(e)
-                                            }
-                                        })}
-                                            multiple accept='image/*,video/*'
+                                        <input
+                                            id="file-input"
+                                            type="file"
+                                            {...register("file")}
+                                            multiple
+                                            accept='image/*,video/*'
                                             className="hidden"
+                                            onChange={handleFileChange}
                                         />
                                         <button type="button" className="py-2 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3] transition-colors duration-75 hover:bg-[#c2724f91]" onClick={() => document.getElementById('file-input')?.click()}>FILES</button>
                                     </label>
+
                                     <div className={`place-self-start`}>
                                         {selectedFiles && selectedFiles.length > 0 && (
                                             <ul>
