@@ -26,7 +26,7 @@ export default async function GetPostData(req: NextApiRequest, res: NextApiRespo
                     const decoded = jwt.verify(token, process.env.JWT_SECRET) as { userRole: string };
                     currentUserRole = decoded.userRole;
                 } catch (error) {
-                    console.error('Invalid token:', error.message);
+                    console.error('Invalid token:', error);
                 }
             }
         }

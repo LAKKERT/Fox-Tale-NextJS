@@ -159,11 +159,10 @@ export function PostDetailComponent({ postID }) {
         if (deletePost === true) {
             setDeletePost(false);
         } else {
-
+            const value = editModeActive;
+    
+            setEditModeActive(!value);
         }
-        const value = editModeActive;
-
-        setEditModeActive(!value);
     }
 
     const deletePostHandle = () => {
@@ -513,7 +512,8 @@ export function PostDetailComponent({ postID }) {
 
                                 <AnimatePresence mode="popLayout">
                                     {paragraphs.map((paragraph, paragraphIndex) => {
-                                        return (<motion.div
+                                        return (
+                                        <motion.div
                                             layout={'position'}
                                             key={paragraph.id}
                                             transition={{ duration: .3, type: 'spring', bounce: 0.25 }}

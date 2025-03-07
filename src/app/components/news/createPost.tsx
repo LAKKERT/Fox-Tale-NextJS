@@ -91,7 +91,6 @@ export function CreatePostComponent() {
     }, [cookies, router]);
 
     useEffect(() => {
-
         if (!cookies || !cookies.auth_token) {
             return router.push('/');
         }
