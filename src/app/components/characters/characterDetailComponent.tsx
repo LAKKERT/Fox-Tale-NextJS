@@ -10,6 +10,7 @@ import Image from "next/image";
 import { K2D } from "next/font/google";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Yup from "yup";
+import _ from "lodash";
 import { yupResolver } from "@hookform/resolvers/yup";
 
 const MainFont = K2D({
@@ -62,12 +63,47 @@ export function CharacterPageDetailComponent({ params }) {
     const [allUniverses, setAllUniverses] = useState<territories[]>([]);
     const [selectedTerritories, setSelectedTerritories] = useState<number[]>([])
 
+    const [windowSize, setWindowSize] = useState({
+        width: typeof window !== "undefined" ? window.innerWidth : 0,
+        height: typeof window !== "undefined" ? window.innerHeight : 0,
+    });
+
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
 
     const { register, handleSubmit, reset, formState: { errors } } = useForm<characterType>({
         resolver: yupResolver(validationSchema)
     });
+
+    useEffect(() => {
+        const handleResize = () => {
+            setWindowSize({
+                width: window.innerWidth,
+                height: window.innerHeight
+            });
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    useEffect(() => {
+        const updateTextareas = () => {
+            document.querySelectorAll('textarea').forEach(textarea => {
+                textarea.style.height = "auto";
+                textarea.style.height = `${textarea.scrollHeight}px`;
+            });
+        };
+
+        updateTextareas();
+
+        const resizeObserver = new ResizeObserver(_.debounce(updateTextareas, 100));
+
+        const container = document.querySelector('.your-container-class');
+        if (container) resizeObserver.observe(container);
+
+        return () => resizeObserver.disconnect();
+    }, [windowSize, isEditMode]);
 
     useEffect(() => {
         const fetchDetailCharacter = async () => {
@@ -314,7 +350,7 @@ export function CharacterPageDetailComponent({ params }) {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: .3 }}
-                                    className={`uppercase absolute inset-0 flex items-center justify-center text-white text-xl md:text-7xl tracking-[5px] caret-transparent z-10 ${isEditMode ? 'hidden' : 'block'}`}
+                                    className={`uppercase absolute inset-0 text-center text-balance flex items-center justify-center text-white text-xl md:text-7xl tracking-[5px] caret-transparent z-10 ${isEditMode ? 'hidden' : 'block'}`}
                                 >
                                     {characterData?.name}
                                 </motion.p>
@@ -356,6 +392,7 @@ export function CharacterPageDetailComponent({ params }) {
 
                         <AnimatePresence>
                             <motion.div
+                                layout
                                 animate={{
                                     gap: isEditMode ? '12px' : '0px',
                                     transitionEnd: {
@@ -393,10 +430,10 @@ export function CharacterPageDetailComponent({ params }) {
                                         </div>
                                     </motion.div>
                                 </div>
-                                
+
                                 <motion.div
                                     initial={{ height: 'auto' }}
-                                    animate={{ 
+                                    animate={{
                                         height: isEditMode ? 'auto' : '0',
                                         transition: {
                                             duration: .3,
@@ -404,47 +441,36 @@ export function CharacterPageDetailComponent({ params }) {
                                         }
                                     }}
                                 >
-                                    <motion.label
-                                        layout
-
-                                        htmlFor="inputFile"
-
-                                        initial={{
-                                            opacity: 0,
-                                            y: -10,
-                                            scale: 0.98
-                                        }}
-
-                                        animate={{
-                                            opacity: isEditMode ? 1 : 0,
-                                            y: isEditMode ? 0 : -10,
-                                            scale: isEditMode ? 1 : 0.98,
-                                            display: isEditMode ? "inline-block" : "none",
-                                            transition: {
-                                                duration: 0.3,
+                                    {isEditMode && (
+                                        <motion.label
+                                            htmlFor="inputFile"
+                                            initial={{
+                                                opacity: 0,
+                                                scale: 0.95,
+                                                y: 10
+                                            }}
+                                            animate={{
+                                                opacity: 1,
+                                                scale: 1,
+                                                y: 0
+                                            }}
+                                            exit={{
+                                                opacity: 0,
+                                                y: 10
+                                            }}
+                                            transition={{
+                                                duration: 0.2,
                                                 ease: "easeInOut"
-                                            },
-                                            transitionEnd: {
-                                                display: isEditMode ? "inline-block" : "none",
-                                            },
-
-
-                                        }}
-
-                                        transition={{
-                                            layout: {
-                                                duration: 0.3,
-                                                ease: "easeInOut"
-                                            }
-                                        }}
-                                        className={`min-w-[185px] max-h-[42px] text-center py-2 mt-3 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3] ${!isEditMode ? 'pointer-events-none' : ''}`}
-                                    >
-                                        Change cover
-                                    </motion.label>
+                                            }}
+                                            className={`min-w-[185px] max-h-[42px] text-center py-2 mt-3 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3]`}
+                                        >
+                                            Change cover
+                                        </motion.label>
+                                    )}
                                 </motion.div>
 
 
-                                <div className="max-w-[640px] w-full h-auto flex flex-col gap-3 mt-4">
+                                <motion.div layout={'position'} className="max-w-[640px] w-full h-auto flex flex-col gap-3 mt-4">
                                     <pre className={`text-lg text-wrap text-[#F5DEB3] px-2 md:px-0 ${isEditMode ? 'hidden' : 'block'}`}>
                                         {characterData?.description}
                                     </pre>
@@ -457,13 +483,12 @@ export function CharacterPageDetailComponent({ params }) {
                                             target.style.minHeight = "50px";
                                             target.style.height = `${target.scrollHeight}px`;
                                         }}
-                                        className={`text-left text-sm md:text-base text-balance text-[#F5DEB3] overflow-hidden py-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${isEditMode ? 'block' : 'hidden'} caret-white`}
+                                        className={` text-left text-lg text-wrap px-2 text-[#F5DEB3] overflow-hidden py-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${isEditMode ? 'block' : 'hidden'} caret-white`}
                                         style={{
-                                            maxHeight: "70vh",
                                             boxSizing: "border-box"
                                         }}
                                     />
-                                </div>
+                                </motion.div>
 
                                 <motion.div layout={'position'} className="flex flex-col items-center gap-3">
                                     <h2 className="uppercase text-2xl">TERRITORIES</h2>
@@ -471,25 +496,25 @@ export function CharacterPageDetailComponent({ params }) {
                                         {territories.length > 0 ? (
                                             territories.map((item) => (
                                                 <motion.div
-                                                key={item.id}
-                                                initial={{ opacity: 0, scale: 0.5 }}
-                                                animate={{
-                                                    opacity: 1,
-                                                    scale: 1,
-                                                    borderColor: isEditMode && selectedTerritories.includes(item.id)
-                                                        ? "#C2724F"
-                                                        : "transparent"
-                                                }}
-                                                exit={{ opacity: 0, scale: 0 }}
-                                                transition={{
-                                                    duration: 0.3,
-                                                    ease: "easeInOut",
-                                                    scale: { type: "spring" }
-                                                }}
-                                                whileTap={{ scale: 0.95 }}
-                                                onClick={() => isEditMode ? selectCardsHandler(item.id) : null}
-                                                className={`border-4 rounded-lg flex justify-center gap-3 ${isEditMode ? 'z-10' : 'z-0'}`}
-                                            >
+                                                    key={item.id}
+                                                    initial={{ opacity: 0, scale: 0.5 }}
+                                                    animate={{
+                                                        opacity: 1,
+                                                        scale: 1,
+                                                        borderColor: isEditMode && selectedTerritories.includes(item.id)
+                                                            ? "#C2724F"
+                                                            : "transparent"
+                                                    }}
+                                                    exit={{ opacity: 0, scale: 0 }}
+                                                    transition={{
+                                                        duration: 0.3,
+                                                        ease: "easeInOut",
+                                                        scale: { type: "spring" }
+                                                    }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                    onClick={() => isEditMode ? selectCardsHandler(item.id) : null}
+                                                    className={`border-4 rounded-lg flex justify-center gap-3 ${isEditMode ? 'z-10' : 'z-0'}`}
+                                                >
                                                     <Link href={`/universe/${item.id}`} className={` ${isEditMode ? 'pointer-events-none' : ''} ${isEditMode ? 'z-0' : 'z-10'}`}>
                                                         <motion.div
                                                             whileHover='hover'
@@ -552,7 +577,7 @@ export function CharacterPageDetailComponent({ params }) {
                                     </div>
 
                                     <div className={`w-full flex flex-col justify-center gap-3 ${isEditMode ? 'block' : 'hidden'}`}>
-                                        <motion.h2 
+                                        <motion.h2
                                             initial={{ opacity: 0, y: -10, scale: 0.98 }}
                                             animate={{ opacity: isEditMode ? 1 : 0, y: isEditMode ? -10 : 0, scale: isEditMode ? 1 : 0.98 }}
                                             transition={{ duration: .3 }}

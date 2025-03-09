@@ -1,19 +1,24 @@
 'use client';
 import { Header } from '@/app/components/header';
 import { RequestsListComponent } from '@/app/components/support/requestsList';
-
-import { K2D } from "next/font/google";
-const MainFont = K2D({
-    style: "normal",
-    subsets: ["latin"],
-    weight: "400",
-});
+import Image from 'next/image';
 
 export default function AllSupporRequests() {
     return (
-        <div className={`w-full h-full bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden ${MainFont.className} caret-transparent`}>
-            <Header />
-            <RequestsListComponent />
+        <div className={`min-h-[calc(100vh-100px)] mt-[100px]`}>
+            <div className="fixed inset-0 -z-10">
+                <Image
+                    src="/login/gradient_bg.png"
+                    alt="background"
+                    className="w-full h-full object-cover"
+                    fill
+                />
+            </div>
+            
+            <div className="flex flex-col">
+                <Header />
+                <RequestsListComponent />
+            </div>
         </div>
     );
 }

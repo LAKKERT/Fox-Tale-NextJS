@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useCookies } from "react-cookie";
 import { motion } from "framer-motion";
 import { K2D } from "next/font/google";
 
@@ -24,7 +25,9 @@ interface universeType {
 export function UniversePageComponent() {
 
     const [isLoading, setIsLoading] = useState(true);
+    const [currentUserRole, setCurrentUserRole] = useState('');
     const [universeData, setUniverseData] = useState<universeType[]>([])
+    const [cookies] = useCookies(['auth_token'])
 
     const router = useRouter();
 
@@ -34,7 +37,8 @@ export function UniversePageComponent() {
                 const response = await fetch('/api/universe/fetchUniverseData', {
                     method: 'GET',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${cookies.auth_token}`
                     }
                 })
 
@@ -42,6 +46,7 @@ export function UniversePageComponent() {
 
                 if (response.ok) {
                     setUniverseData(result.data);
+                    setCurrentUserRole(result.userRole)
                     setIsLoading(false);
                 } else {
                     console.error(`Error fetching data`);
@@ -74,9 +79,15 @@ export function UniversePageComponent() {
                 >
                     <div className="flex flex-col items-center gap-4">
 
-                        <h1 className="uppercase text-3xl">
-                            territories
-                        </h1>
+                        <div className="flex flex-col items-center gap-3">
+                            <h1 className="uppercase text-3xl">
+                                territories
+                            </h1>
+
+                            <Link href={'/universe/add_universe'} className={`flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out ${currentUserRole === 'admin' ? '' : 'hidden'} `}>
+                                add territory
+                            </Link>
+                        </div>
 
                         <div className="w-full flex flex-row flex-wrap gap-4 justify-center ">
                             {universeData.map((item, i) => {

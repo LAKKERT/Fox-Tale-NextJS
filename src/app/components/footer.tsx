@@ -40,8 +40,12 @@ export function Footer() {
                         Support
                     </Link>
 
-                    <Link href="/" className="uppercase text-white hover:text-[#f5885a] transition duration-150 ease-in-out">
+                    <Link href="/universe" className="uppercase text-white hover:text-[#f5885a] transition duration-150 ease-in-out">
                         Universe
+                    </Link>
+
+                    <Link href="/characters" className="uppercase text-white hover:text-[#f5885a] transition duration-150 ease-in-out">
+                        Characters
                     </Link>
                 </div>
 

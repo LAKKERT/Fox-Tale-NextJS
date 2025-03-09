@@ -5,18 +5,32 @@ import { useCookies } from "react-cookie";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { K2D } from "next/font/google";
 
-const ITEMS_PER_PAGE = 8;
+const ITEMS_PER_PAGE = 6;
+
+const MainFont = K2D({
+    style: "normal",
+    subsets: ["latin"],
+    weight: "400",
+});
+
+interface requestsType {
+    id: string;
+    title: string;
+    status: boolean;
+    link: string;
+}
 
 export function RequestsHistoryComponent() {
     const [isLoading, setIsLoading] = useState(true);
-    const [requests, setRequests] = useState<any[]>([]);
+    const [requests, setRequests] = useState<requestsType[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [filteredRequests, setFilteredRequests] = useState<any[]>([]);
+    const [filteredRequests, setFilteredRequests] = useState<requestsType[]>([]);
 
     useEffect(() => {
         const fetchAllRequests = async () => {
@@ -29,6 +43,7 @@ export function RequestsHistoryComponent() {
                 const response = await fetch('/api/support/getRequestsHistoryAPI', {
                     method: 'GET',
                     headers: {
+                        'Content-Type': 'application/json',
                         'Authorization': `Bearer ${cookies.auth_token}`
                     }
                 })
@@ -77,23 +92,22 @@ export function RequestsHistoryComponent() {
     }
 
     return (
-        <div>
+        <div className={`w-full h-full flex flex-col items-center gap-4 mx-auto px-4 ${MainFont.className} text-[#F5DEB3] caret-transparent`}>
             {isLoading ? (
                 <motion.div
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: isLoading ? 1 : 0 }}
+                    animate={{ opacity: 1 }}
                     transition={{ duration: .3 }}
-                    className="bg-black w-full h-[100vh]"
+                    className=" bg-black fixed inset-0 flex justify-center items-center"
                 >
                     <Loader />
                 </motion.div>
             ) : (
-            <motion.div>
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: .3 }}
-                    className={`min-h-[calc(100vh-100px)] w-full mt-[100px] pt-8 px-2 flex flex-col justify-top items-center gap-5 text-white bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat overflow-hidden`}
+                    className="h-full flex flex-col gap-5 mt-4"
                 >
                     <h1 className="text-xl text-balance text-center">Welcome to your inquiries page! You may view your previous requests here.</h1>
                     <input
@@ -122,7 +136,7 @@ export function RequestsHistoryComponent() {
                         </div>
                     </div>
 
-                    <div className={`h-28 flex flex-col gap-5`}>
+                    <div className={` flex flex-col gap-5`}>
                         {paginatedRequests.map(request => (
                             <div key={request.id} className="flex flex-col md:grid grid-cols-4 gap-4 md:gap-2 p-4 min-w-5xl w-full max-w-[1070px] text-center text-md text-balance bg-[rgba(6,6,6,.65)] rounded-xl shadow-[8px_9px_6px_0px_rgba(34,60,80,0.2)] transition-all duration-150 ease-in-out hover:outline outline-[#f5885a]">
                                 <div className="border-b-2 md:border-r-2 md:border-b-0 border-white flex justify-center items-center truncate">
@@ -145,19 +159,19 @@ export function RequestsHistoryComponent() {
                             </div>
                         ))}
 
-                        <div className="flex justify-center gap-2 mt-4">
+                        <div className="flex justify-center gap-2 my-4">
                             {Array.from({ length: totalPages }, (value, i) => i + 1)
                                 .filter(page => {
-                                    const startPage = Math.max(1, currentPage - 2); 
-                                    const endPage = Math.min(totalPages, currentPage + 3); 
+                                    const startPage = Math.max(1, currentPage - 2);
+                                    const endPage = Math.min(totalPages, currentPage + 3);
                                     return page >= startPage && page <= endPage;
                                 })
                                 .map(page => (
                                     <button
                                         key={page}
                                         className={`px-4 py-2 rounded ${currentPage === page
-                                                ? "bg-[#f5885a] text-white"
-                                                : "bg-gray-200 text-gray-800"
+                                            ? "bg-[#f5885a] text-white"
+                                            : "bg-gray-200 text-gray-800"
                                             }`}
                                         onClick={() => handlePageChange(page)}
                                     >
@@ -167,7 +181,6 @@ export function RequestsHistoryComponent() {
                         </div>
                     </div>
                 </motion.div>
-            </motion.div>
             )}
         </div>
     )

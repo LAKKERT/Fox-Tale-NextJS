@@ -12,23 +12,19 @@ export default async function GetDetailCharacter(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    const authHeaders = req.headers["authorization"];
+    const authHeader = req.headers['authorization'];
 
-    if (!authHeaders || !authHeaders.startsWith("Bearer ")) {
-        return res.status(401).json({ error: "No token provided" });
+    let userRole;
+
+    if (authHeader || authHeader?.startsWith('Bearer ')) {
+
+        const token = authHeader?.split(' ')[1];
+
+        if (token !== 'undefined') {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
+            userRole = decoded.userRole;
+        }
     }
-
-    const token = authHeaders.split(" ")[1];
-
-    let decoded;
-
-    try {
-        decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
-    } catch (error) {
-        return res.status(403).json({ error: `Invalid token ${error}` });
-    }
-
-    const userRole = decoded.userRole;
 
     if (req.method === "GET") {
         const detailID = req.query.characterID;

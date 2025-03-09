@@ -93,11 +93,11 @@ export function Header() {
                 </Link>
 
                 <div className="hidden lg:flex flex-row items-center gap-5">
-                    <Link href="#">
+                    {/* <Link href="#">
                         <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out ">
                             about
                         </div>
-                    </Link>
+                    </Link> */}
 
                     <Link href="/news">
                         <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out ">
@@ -184,11 +184,11 @@ export function Header() {
                         </Link>
                     )}
 
-                    <Link href="#" className="w-full">
+                    {/* <Link href="#" className="w-full">
                         <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,0.7)] transition duration-150 ease-in-out ">
                             about
                         </div>
-                    </Link>
+                    </Link> */}
 
                     <Link href="/news" className="w-full">
                         <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.7)] transition duration-150 ease-in-out ">

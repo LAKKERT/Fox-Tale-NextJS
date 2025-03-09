@@ -300,7 +300,6 @@ export function AddCharacter() {
                                     }}
                                     className={`text-left text-sm md:text-base text-balance text-[#F5DEB3] overflow-hidden p-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 caret-white`}
                                     style={{
-                                        maxHeight: "70vh",
                                         boxSizing: "border-box"
                                     }}
                                     placeholder="DESCRIPTION"

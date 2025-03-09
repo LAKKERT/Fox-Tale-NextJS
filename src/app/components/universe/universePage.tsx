@@ -10,6 +10,7 @@ import Image from "next/image";
 import { K2D } from "next/font/google";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Yup from "yup";
+import _ from "lodash";
 import { yupResolver } from "@hookform/resolvers/yup";
 
 const MainFont = K2D({
@@ -42,12 +43,12 @@ const validationSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     description: Yup.string().required('Description is required'),
     cover: Yup.mixed().required('Cover is required')
-      .test(
-        'is-file-or-string',
-        'Cover must be a file or string',
-        (value) => value instanceof File || typeof value === 'string'
-      )
-  });
+        .test(
+            'is-file-or-string',
+            'Cover must be a file or string',
+            (value) => value instanceof File || typeof value === 'string'
+        )
+});
 
 export function UniversePageDetailComponent({ params }) {
     const [isLoading, setIsLoading] = useState(true);
@@ -58,12 +59,47 @@ export function UniversePageDetailComponent({ params }) {
     const [universeData, setUniverseData] = useState<universeData>();
     const [characters, setCharacters] = useState<characterData[]>([]);
 
+    const [windowSize, setWindowSize] = useState({
+        width: typeof window !== "undefined" ? window.innerWidth : 0,
+        height: typeof window !== "undefined" ? window.innerHeight : 0,
+    });
+
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
 
     const { register, handleSubmit, reset, formState: { errors } } = useForm<universeType>({
         resolver: yupResolver(validationSchema)
     });
+
+    useEffect(() => {
+        const handleResize = () => {
+            setWindowSize({
+                width: window.innerWidth,
+                height: window.innerHeight
+            });
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    useEffect(() => {
+        const updateTextareas = () => {
+            document.querySelectorAll('textarea').forEach(textarea => {
+                textarea.style.height = "auto";
+                textarea.style.height = `${textarea.scrollHeight}px`;
+            });
+        };
+
+        updateTextareas();
+
+        const resizeObserver = new ResizeObserver(_.debounce(updateTextareas, 100));
+
+        const container = document.querySelector('.your-container-class');
+        if (container) resizeObserver.observe(container);
+
+        return () => resizeObserver.disconnect();
+    }, [windowSize, isEditMode]);
 
     useEffect(() => {
         const fetchDetailUniverse = async () => {
@@ -203,10 +239,10 @@ export function UniversePageDetailComponent({ params }) {
 
             if (response.ok) {
                 router.push('/universe');
-            }else {
+            } else {
                 console.log('error occurred');
             }
-        }catch (error) {
+        } catch (error) {
             console.error(error);
         }
     }
@@ -322,10 +358,10 @@ export function UniversePageDetailComponent({ params }) {
                                         </div>
                                     </motion.div>
                                 </div>
-                                
+
                                 <motion.div
                                     initial={{ height: 'auto' }}
-                                    animate={{ 
+                                    animate={{
                                         height: isEditMode ? 'auto' : '0',
                                         transition: {
                                             duration: .3,
@@ -333,35 +369,32 @@ export function UniversePageDetailComponent({ params }) {
                                         }
                                     }}
                                 >
-                                    <motion.label
-                                        layout
-
-                                        htmlFor="inputFile"
-
-                                        initial={{
-                                            opacity: 0,
-                                            y: -10,
-                                            scale: 0.98
-                                        }}
-
-                                        animate={{
-                                            opacity: isEditMode ? 1 : 0,
-                                            y: isEditMode ? 0 : -10,
-                                            scale: isEditMode ? 1 : 0.98,
-                                            display: isEditMode ? "inline-block" : "none",
-                                            transition: {
-                                                duration: .3,
+                                    {isEditMode && (
+                                        <motion.label
+                                            htmlFor="inputFile"
+                                            initial={{
+                                                opacity: 0,
+                                                scale: 0.95,
+                                                y: 10
+                                            }}
+                                            animate={{
+                                                opacity: 1,
+                                                scale: 1,
+                                                y: 0
+                                            }}
+                                            exit={{
+                                                opacity: 0,
+                                                y: 10
+                                            }}
+                                            transition={{
+                                                duration: 0.2,
                                                 ease: "easeInOut"
-                                            },
-                                            transitionEnd: {
-                                                display: isEditMode ? "inline-block" : "none",
-                                            },
-                                        }}
-
-                                        className={`min-w-[185px] max-h-[42px] text-center py-2 mt-3 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3] ${!isEditMode ? 'pointer-events-none' : ''}`}
-                                    >
-                                        Change cover
-                                    </motion.label>
+                                            }}
+                                            className={`min-w-[185px] max-h-[42px] text-center py-2 mt-3 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3]`}
+                                        >
+                                            Change cover
+                                        </motion.label>
+                                    )}
                                 </motion.div>
 
                                 <motion.div layout={'position'} className="max-w-[640px] w-full h-auto flex flex-col gap-3 mt-4">
@@ -377,7 +410,7 @@ export function UniversePageDetailComponent({ params }) {
                                             target.style.minHeight = "50px";
                                             target.style.height = `${target.scrollHeight}px`;
                                         }}
-                                        className={`text-left text-sm md:text-base text-balance text-[#F5DEB3] overflow-hidden py-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${isEditMode ? 'block' : 'hidden'} caret-white`}
+                                        className={`text-left text-sm md:text-base text-balance px-2 text-[#F5DEB3] overflow-hidden py-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${isEditMode ? 'block' : 'hidden'} caret-white`}
                                         style={{
                                             maxHeight: "70vh",
                                             boxSizing: "border-box"
@@ -385,19 +418,19 @@ export function UniversePageDetailComponent({ params }) {
                                     />
                                 </motion.div>
 
-                                <div className="w-full flex flex-col items-center gap-3">
+                                <motion.div layout={'position'} className="w-full flex flex-col items-center gap-3">
                                     <h3 className="uppercase text-2xl">CHARACTERS</h3>
                                     <div className="w-full max-w-xl sm:max-w-2xl lg:max-w-4xl xl:max-w-5xl flex flex-wrap flex-row justify-center gap-3 ">
-                                            {characters ? (
+                                        {characters ? (
                                             characters.map((item) => (
                                                 <motion.div
                                                     key={item.id}
                                                     initial={{ scale: 1 }}
-                                                    transition={{ duration: 0.3, ease: "easeInOut"}}
+                                                    transition={{ duration: 0.3, ease: "easeInOut" }}
                                                     whileTap="tap"
                                                     className={`rounded-lg flex justify-center gap-3 ${isEditMode ? 'z-10' : 'z-0'}`}
                                                 >
-                                                    <Link href={`/characters/${item.id}`}>
+                                                    <Link href={`/characters/${item.id}`} className={`${isEditMode ? "pointer-events-none" : ''}`}>
                                                         <motion.div
                                                             className="relative w-[250px] h-[345px] bg-white rounded shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
                                                             whileHover="hover"
@@ -413,7 +446,7 @@ export function UniversePageDetailComponent({ params }) {
                                                             />
 
                                                             <div className="absolute inset-0 flex items-center justify-center">
-                                                                <p className="uppercase text-2xl text-white z-10 drop-shadow-lg">
+                                                                <p className="uppercase text-2xl text-center text-balance text-white z-10 drop-shadow-lg">
                                                                     {item.name}
                                                                 </p>
                                                             </div>
@@ -458,7 +491,7 @@ export function UniversePageDetailComponent({ params }) {
                                             <div>No territories</div>
                                         )}
                                     </div>
-                                </div>
+                                </motion.div>
                                 <motion.button
                                     layout
 

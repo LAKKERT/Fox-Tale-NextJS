@@ -113,11 +113,12 @@ export function PostDetailComponent({ postID }) {
             });
 
             const result = await response.json();
-
+            
             const formedResult = result.result[0].content.map((content: string[]) => content.filter(item => item !== null))
-
+            
             if (response.ok) {
-
+                console.log(result);
+                
                 const formattedData = result.result[0].paragraph_heading.map((heading: string, index: number) => ({
                     id: uuidv4(),
                     heading,
@@ -130,6 +131,8 @@ export function PostDetailComponent({ postID }) {
                         image: result.result[0].images[index]?.[contentIndex] || null
                     }))
                 }));
+                
+                console.log(formattedData);
 
                 reset({
                     title: result.result[0].title,
@@ -258,6 +261,7 @@ export function PostDetailComponent({ postID }) {
     }, []);
 
     const onSubmit = async (data: FormValues) => {
+        console.log(data);
         try {
             const newCovers = data.paragraphs
                 .map(p => p.cover)
@@ -644,6 +648,7 @@ export function PostDetailComponent({ postID }) {
                                                                 </motion.label>
 
                                                                 <div
+                                                                    className="w-full"
                                                                     ref={(el) => {
                                                                         if (el) {
                                                                             if (!textAreaRef.current[paragraphIndex]) {

@@ -65,9 +65,7 @@ export function CreatePostComponent() {
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
 
-    const [verticalAlign, setVerticalAlign] = useState(50);
-    const [horizontalAlign, setHorizontalAlign] = useState(50);
-    const imgRef = useRef([]);
+    const imgRef = useRef<HTMLElement[]>([]);
 
     const { register, control, handleSubmit, formState: { errors } } = useForm<FormValues>({
         resolver: yupResolver(validationSchema),
@@ -78,13 +76,6 @@ export function CreatePostComponent() {
         name: "paragraphs",
         keyName: uuidv4(),
     })
-
-    const debouncedUpdate = useRef(
-        _.debounce((h, v) => {
-            setHorizontalAlign(h);
-            setVerticalAlign(v);
-        }, 100)
-    ).current;
 
     useEffect(() => {
         if (!cookies.auth_token) router.push('/');
@@ -285,13 +276,21 @@ export function CreatePostComponent() {
 
     const handleSliderChange = (paragraphIndex: number, isHorizontal: boolean, e) => {
         const value = Number(e.target.value);
-
-        const newH = isHorizontal ? value : horizontalAlign;
-        const newV = !isHorizontal ? value : verticalAlign;
-
+        
+        const currentH = paragraphs[paragraphIndex].horizontalPosition;
+        const currentV = paragraphs[paragraphIndex].verticalPosition;
+      
+        const newH = isHorizontal ? value : currentH;
+        const newV = !isHorizontal ? value : currentV;
+      
         handlePositionChange(paragraphIndex, newH, newV);
-        debouncedUpdate(newH, newV);
-    }
+        
+        update(paragraphIndex, {
+          ...paragraphs[paragraphIndex],
+          horizontalPosition: newH,
+          verticalPosition: newV
+        });
+      };
 
     return (
         <div className={`max-w-[768px] xl:max-w-[1110px] flex flex-col items-center gap-0 lg:max-w-8xl mx-auto mt-[100px] ${MainFont.className} text-[#F5DEB3] caret-transparent pt-4 pb-8`}>
@@ -388,26 +387,27 @@ export function CreatePostComponent() {
                                             </motion.p>
 
                                             {paragraph.cover && (
-                                            <motion.div
-                                                layout={'position'}
-                                                className="w-full h-64 relative mb-4"
-                                            >
-                                                <Image
-                                                    ref={e => imgRef.current[paragraphIndex] = e}
-                                                    src={typeof paragraph.cover === 'string'
-                                                        ? `http://localhost:3000/${paragraph.cover}`
-                                                        : URL.createObjectURL(paragraph.cover)}
-                                                    alt="cover"
-                                                    fill
-                                                    className={`rounded object-cover`}
-                                                    style={{ objectPosition: '50% 50%' }}
-                                                    sizes="(max-width: 768px) 100vw, 50vw"
-                                                    quality={80}
-                                                    onError={(e) => {
-                                                        e.target.style.display = 'none'
-                                                    }}
-                                                />
-                                            </motion.div>
+                                                <motion.div
+                                                    layout={'position'}
+                                                    className="w-full h-64 relative mb-4"
+                                                >
+                                                    <Image
+                                                        ref={e => {
+                                                            if (e) {
+                                                                imgRef.current[paragraphIndex] = e
+                                                            }
+                                                        }}
+                                                        src={typeof paragraph.cover === 'string'
+                                                            ? `http://localhost:3000/${paragraph.cover}`
+                                                            : URL.createObjectURL(paragraph.cover)}
+                                                        alt="cover"
+                                                        fill
+                                                        className={`transform-gpu rounded object-cover`}
+                                                        style={{ objectPosition: `${paragraph.horizontalPosition}% ${paragraph.verticalPosition}%` }}
+                                                        sizes="(max-width: 768px) 100vw, 50vw"
+                                                        quality={80}
+                                                    />
+                                                </motion.div>
                                             )}
 
                                             <input
@@ -425,8 +425,12 @@ export function CreatePostComponent() {
                                                 {paragraph.cover ? 'Change Cover' : 'Upload Cover'}
                                             </motion.label>
 
-                                            <input type="range" {...register(`paragraphs.${paragraphIndex}.horizontalPosition`)} onChange={(e) => handleSliderChange(paragraphIndex ,true, e)}  min="0" max="100" />
-                                            <input type="range" {...register(`paragraphs.${paragraphIndex}.verticalPosition`)} onChange={(e) => handleSliderChange(paragraphIndex ,false, e)}  min="0" max="100" />
+                                            <div
+                                                className=" w-full flex flex-col items-center gap-6"
+                                            >
+                                                <input type="range" {...register(`paragraphs.${paragraphIndex}.horizontalPosition`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(paragraphIndex, true, e)} min="0" max="100" className={`${styles.custom_input_range} `} />
+                                                <input type="range" {...register(`paragraphs.${paragraphIndex}.verticalPosition`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(paragraphIndex, false, e)} min="0" max="100" className={`${styles.custom_input_range} `} />
+                                            </div>
 
                                             <div className="w-full relative flex-col flex gap-4">
 

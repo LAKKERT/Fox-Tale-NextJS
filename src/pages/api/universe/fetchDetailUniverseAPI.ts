@@ -9,25 +9,21 @@ interface JwtPayload {
 }
 
 export default async function GetDetailUniverse(req: NextApiRequest, res: NextApiResponse) {
-    
-    const authHeaders = req.headers['authorization'];
 
-    if (!authHeaders || !authHeaders.startsWith('Bearer ')) {
-        return res.status(401).json({ error: "No token provided" });
+    const authHeader = req.headers['authorization'];
+
+    let userRole;
+
+    if (authHeader || authHeader?.startsWith('Bearer ')) {
+
+        const token = authHeader?.split(' ')[1];
+
+        if (token !== 'undefined') {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
+            userRole = decoded.userRole;
+        }
     }
 
-    const token = authHeaders.split(' ')[1];
-    
-    let decoded;
-
-    try {
-        decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
-    }catch (error) {
-        return res.status(403).json({ error: `Invalid token ${error}` });
-    }
-
-    const userRole = decoded.userRole;
-    
     if (req.method === "GET") {
         const detailID = req.query.universeID;
 
@@ -58,11 +54,11 @@ export default async function GetDetailUniverse(req: NextApiRequest, res: NextAp
             if (result.rows.length === 0) {
                 return res.status(404).json({ error: "Universe not found" });
             }
-            return res.status(200).json({data: result.rows, userRole: userRole})
-        }catch (error) {
+            return res.status(200).json({ data: result.rows, userRole: userRole })
+        } catch (error) {
             console.error(error);
             return res.status(500).json({ error: "Server error" });
-        }finally {
+        } finally {
             conn.end();
         }
     }

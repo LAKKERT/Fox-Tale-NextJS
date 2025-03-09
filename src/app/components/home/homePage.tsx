@@ -155,11 +155,16 @@ export function Main() {
 
                     </div>
 
-
                     <div className="relative flex flex-col-reverse items-center md:flex-row justify-between p-10 gap-5 bg-black">
                         <div className="relative top-[-100px] sm:top-[0] w-full uppercase text-center flex flex-col gap-4 text-[#F5DEB3]">
                             <h2 className="text-4xl">UNIVERSE</h2>
-                            <p className="text-lg">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Velit eum itaque sit, aut ducimus ea nulla molestiae maxime animi ratione incidunt sapiente officiis provident facilis doloribus ullam harum soluta fuga!</p>
+                            <p className="text-lg">FOX TALE immerses you in a world brimming with enigmatic locations and intriguing characters, each hiding secrets waiting to be uncovered. From shadow-drenched forests whispering ancient tales to elusive figures cloaked in mystery, every corner of this universe pulses with untold stories. Crave to unravel the cryptic past of these haunting landscapes and their inhabitants? Follow the link below to delve deeper into their secrets.</p>
+                            <div className="flex justify-end">
+                                <Link href="/universe" className="w-auto flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 mr-4 mt-4 mb-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out">
+                                    UNIVERSE •
+                                    <Image src="/home/Arrow.svg" alt="arrow" width={25} height={25} className="mt-1" />
+                                </Link>
+                            </div>
                         </div>
 
                         <div className="relative top-[-80px] sm:top-0 md:transform scale-50 smx:scale-[65%] sm:scale-100">

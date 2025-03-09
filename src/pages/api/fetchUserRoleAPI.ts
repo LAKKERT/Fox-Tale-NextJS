@@ -2,6 +2,11 @@
 import jwt from "jsonwebtoken";
 import { NextApiRequest, NextApiResponse } from "next";
 
+interface JwtPayload {
+    userId: string;
+    userRole: string;
+}
+
 export default async function fetchUserRole(req: NextApiRequest, res: NextApiResponse) {
     try {
         const authHeader = req.headers["authorization"];
@@ -15,7 +20,7 @@ export default async function fetchUserRole(req: NextApiRequest, res: NextApiRes
         let decoded;
 
         try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+            decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
         } catch (error) {
             console.error(error);
             return res.status(403).json({ message: "Invaled token", redirectUrl: "/" });

@@ -30,6 +30,7 @@ type AllNews = {
 
 export function NewsPageComponent() {
     const [allNews, setAllNews] = useState<AllNews | null>(null);
+    const [currentUserRole, setCurrentUserRole] = useState('');
     const [countOfNews, setCountOfNews] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
     const [cookies] = useCookies(['auth_token']);
@@ -40,14 +41,19 @@ export function NewsPageComponent() {
         const fetchAllNews = async () => {
             try {
                 const response = await fetch('/api/news/fetchAllNewsAPI', {
-                    method: 'GET'
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${cookies.auth_token}`
+                    }
                 })
 
                 const result = await response.json();
 
                 if (response.ok) {
                     setAllNews(result);
-                    setCountOfNews(result.result.length)
+                    setCurrentUserRole(result.userRole);
+                    setCountOfNews(result.result.length);
                     setTimeout(() => {
                         setShowContent(true);
                     }, 300);
@@ -96,9 +102,12 @@ export function NewsPageComponent() {
                     transition={{ duration: .3 }}
                         className="h-full flex flex-col gap-5"
                     >
-                        <div className="h-[120px] flex flex-col gap-4 text-center justify-center">
+                        <div className="h-[120px] flex flex-col gap-4 text-center justify-center items-center">
                             <h2 className="uppercase text-base md:text-2xl">-NEWS-</h2>
                             <p className="text-base md:text-lg">Here you can learn something new about FOX TALE</p>
+                            <Link href={'/news/create_new'} className={`flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out ${currentUserRole === 'admin' ? '' : 'hidden'} `}>
+                                    add post
+                            </Link>
                         </div>
 
                         <div className="flex flex-col justify-center items-center flex-wrap gap-5">
