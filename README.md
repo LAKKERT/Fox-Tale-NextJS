@@ -1,4 +1,28 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<p align="center"><img align="center" src="https://github.com/LAKKERT/Fox-Tale-NextJS/blob/main/public/header/logo.svg" /></p>
+<h1 align="center">FOX TALE</h1>
+
+## О проекте
+
+<div>
+  <p>Fox Tale это Сайт-портал для онлайн RPG игры, решающий ключевые задачи:</p>
+    <ul>      
+      <li>Лента последних новостей проекта</li>
+      <li>Система тикетов для технической поддержки</li>
+      <li>Интерактивная вики по игровому миру   </li> 
+      </li>
+    </ul>
+
+  **Мотивация:**
+  Проект создан для освоения Next.js
+</div>
+
+## Built With
+
+* ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+* ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+* ![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+* ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+* ![blender](https://img.shields.io/badge/blender-E87D0D?style=for-the-badge&logo=blender&logoColor=white)
 
 ## Getting Started
 
