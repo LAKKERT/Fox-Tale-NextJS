@@ -23,6 +23,7 @@ const MainFont = K2D({
 type FormValues = {
     title: string;
     description: string;
+    add_at: string;
     paragraphs: {
         id: string;
         heading: string;
@@ -59,7 +60,7 @@ const validationSchema = Yup.object().shape({
 });
 
 export function PostDetailComponent({ postID }) {
-    const [postData, setPostData] = useState<{ result?: any[] }>();
+    const [postData, setPostData] = useState<{ result?: FormValues[] }>();
     const [currentUserRole, setCurrentUserRole] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [editModeActive, setEditModeActive] = useState(false);
@@ -113,12 +114,12 @@ export function PostDetailComponent({ postID }) {
             });
 
             const result = await response.json();
-            
+
             const formedResult = result.result[0].content.map((content: string[]) => content.filter(item => item !== null))
-            
+
             if (response.ok) {
                 console.log(result);
-                
+
                 const formattedData = result.result[0].paragraph_heading.map((heading: string, index: number) => ({
                     id: uuidv4(),
                     heading,
@@ -131,7 +132,7 @@ export function PostDetailComponent({ postID }) {
                         image: result.result[0].images[index]?.[contentIndex] || null
                     }))
                 }));
-                
+
                 console.log(formattedData);
 
                 reset({
@@ -163,7 +164,7 @@ export function PostDetailComponent({ postID }) {
             setDeletePost(false);
         } else {
             const value = editModeActive;
-    
+
             setEditModeActive(!value);
         }
     }
@@ -464,7 +465,7 @@ export function PostDetailComponent({ postID }) {
                                         {...register('description')}
                                         onInput={(e) => {
                                             const target = e.target as HTMLTextAreaElement;
-                                        
+
                                             target.style.height = "auto";
                                             target.style.minHeight = "50px";
                                             target.style.height = `${target.scrollHeight}px`;
@@ -488,9 +489,12 @@ export function PostDetailComponent({ postID }) {
 
                                     <div className="w-full flex flex-row justify-between">
                                         <p className="text-left text-base">
-                                            {new Date(postData?.result?.[0].add_at).toLocaleString("ru-RU", {
-                                                dateStyle: 'short'
-                                            })}
+                                            {postData?.result?.[0]?.add_at ?
+                                                new Date(postData.result[0].add_at).toLocaleString("ru-RU", {
+                                                    dateStyle: 'short'
+                                                })
+                                                :
+                                                'Н/Д'}
                                         </p>
                                         {currentUserRole === "admin" && (
                                             <div className="flex flex-row gap-3">
@@ -517,210 +521,216 @@ export function PostDetailComponent({ postID }) {
                                 <AnimatePresence mode="popLayout">
                                     {paragraphs.map((paragraph, paragraphIndex) => {
                                         return (
-                                        <motion.div
-                                            layout={'position'}
-                                            key={paragraph.id}
-                                            transition={{ duration: .3, type: 'spring', bounce: 0.25 }}
-                                            className=" max-w-[1110px] flex flex-col justify-center items-center gap-4"
-                                        >
-                                            <h2
-                                                className={`text-center text-xl wrap text-balance ${editModeActive ? 'hidden' : 'block'}`}
-                                            >
-                                                {paragraph.heading}
-                                            </h2>
-
-                                            <input
-                                                {...register(`paragraphs.${paragraphIndex}.heading`)}
-                                                className={` w-full bg-transparent outline-none border-b-2 border-white focus:border-orange-400 transition-colors duration-300 text-xl text-center caret-white ${editModeActive ? 'block' : 'hidden'}`}
-                                            />
-
-                                            <motion.p
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: errors.paragraphs?.[paragraphIndex]?.heading?.message ? 1 : 0, height: errors.paragraphs?.[paragraphIndex]?.heading?.message ? 'auto' : '0px' }}
-                                                transition={{ duration: .3 }}
-                                                className={` text-orange-300 text-[13px] sm:text-[18px] ${editModeActive ? 'block' : 'hidden'}`}
-                                            >
-                                                {errors.paragraphs?.[paragraphIndex]?.heading?.message}
-                                            </motion.p>
-
-                                            <motion.p
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: errors.title?.message ? 30 : 0, height: errors.title?.message ? 'auto' : '0px' }}
-                                                transition={{ duration: .3 }}
-                                                className={` text-orange-300 text-[13px] sm:text-[18px] ${editModeActive ? 'block' : 'hidden'}`}
-                                            >
-                                                {errors.title?.message}
-                                            </motion.p>
-
-                                            {paragraph.cover && (
-                                                <motion.div
-                                                    layout="position"
-                                                    className="w-full h-64 relative mb-4"
-                                                >
-                                                    <Image
-                                                        ref={e => {
-                                                            if (e) {
-                                                                imgRef.current[paragraphIndex] = e
-                                                            }
-                                                        }}
-                                                        src={typeof paragraph.cover === 'string'
-                                                            ? `http://localhost:3000/${paragraph.cover}`
-                                                            : URL.createObjectURL(paragraph.cover)}
-                                                        alt="cover"
-                                                        fill
-                                                        className={`transform-gpu rounded object-cover`}
-                                                        style={{ objectPosition: `${paragraph.horizontalPosition}% ${paragraph.verticalPosition}%` }}
-                                                        sizes="(max-width: 768px) 100vw, 50vw"
-                                                        quality={80}
-                                                    />
-                                                </motion.div>
-                                            )}
-
                                             <motion.div
                                                 layout={'position'}
-                                                className=" w-full flex flex-col items-center gap-6"
+                                                key={paragraph.id}
+                                                transition={{ duration: .3, type: 'spring', bounce: 0.25 }}
+                                                className=" max-w-[1110px] flex flex-col justify-center items-center gap-4"
                                             >
+                                                <h2
+                                                    className={`text-center text-xl wrap text-balance ${editModeActive ? 'hidden' : 'block'}`}
+                                                >
+                                                    {paragraph.heading}
+                                                </h2>
+
                                                 <input
-                                                    type="file"
-                                                    onChange={(e) => handleCoverChange(paragraphIndex, e.target.files?.[0])}
-                                                    className="hidden"
-                                                    id={`cover-${paragraphIndex}`}
+                                                    {...register(`paragraphs.${paragraphIndex}.heading`)}
+                                                    className={` w-full bg-transparent outline-none border-b-2 border-white focus:border-orange-400 transition-colors duration-300 text-xl text-center caret-white ${editModeActive ? 'block' : 'hidden'}`}
                                                 />
 
-                                                <label
-                                                    htmlFor={`cover-${paragraphIndex}`}
-                                                    className={` min-w-[185px] text-center py-2 mb-3 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3] transition-colors duration-75 hover:bg-[#c2724f91] ${editModeActive ? 'block' : 'hidden'}`}
+                                                <motion.p
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: errors.paragraphs?.[paragraphIndex]?.heading?.message ? 1 : 0, height: errors.paragraphs?.[paragraphIndex]?.heading?.message ? 'auto' : '0px' }}
+                                                    transition={{ duration: .3 }}
+                                                    className={` text-orange-300 text-[13px] sm:text-[18px] ${editModeActive ? 'block' : 'hidden'}`}
                                                 >
-                                                    {paragraph.cover ? 'Change Cover' : 'Upload Cover'}
-                                                </label>
+                                                    {errors.paragraphs?.[paragraphIndex]?.heading?.message}
+                                                </motion.p>
 
-                                                <div
+                                                <motion.p
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: errors.title?.message ? 30 : 0, height: errors.title?.message ? 'auto' : '0px' }}
+                                                    transition={{ duration: .3 }}
+                                                    className={` text-orange-300 text-[13px] sm:text-[18px] ${editModeActive ? 'block' : 'hidden'}`}
+                                                >
+                                                    {errors.title?.message}
+                                                </motion.p>
+
+                                                {paragraph.cover && (
+                                                    <motion.div
+                                                        layout="position"
+                                                        className="w-full h-64 relative mb-4"
+                                                    >
+                                                        <Image
+                                                            ref={e => {
+                                                                if (e) {
+                                                                    imgRef.current[paragraphIndex] = e
+                                                                }
+                                                            }}
+                                                            src={typeof paragraph.cover === 'string'
+                                                                ? `http://localhost:3000/${paragraph.cover}`
+                                                                : URL.createObjectURL(paragraph.cover)}
+                                                            alt="cover"
+                                                            fill
+                                                            className={`transform-gpu rounded object-cover`}
+                                                            style={{ objectPosition: `${paragraph.horizontalPosition}% ${paragraph.verticalPosition}%` }}
+                                                            sizes="(max-width: 768px) 100vw, 50vw"
+                                                            quality={80}
+                                                        />
+                                                    </motion.div>
+                                                )}
+
+                                                <motion.div
+                                                    layout={'position'}
                                                     className=" w-full flex flex-col items-center gap-6"
                                                 >
-                                                    <input type="range" {...register(`paragraphs.${paragraphIndex}.horizontalPosition`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(paragraphIndex, true, e)} min="0" max="100" className={`${styles.custom_input_range} ${editModeActive ? 'block' : 'hidden'}`} />
-                                                    <input type="range" {...register(`paragraphs.${paragraphIndex}.verticalPosition`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(paragraphIndex, false, e)} min="0" max="100" className={`${styles.custom_input_range} ${editModeActive ? 'block' : 'hidden'}`} />
-                                                </div>
-                                            </motion.div>
+                                                    <input
+                                                        type="file"
+                                                        onChange={(e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (file) {
+                                                                handleCoverChange(paragraphIndex, file);
+                                                            }
+                                                        }}
+                                                        className="hidden"
+                                                        id={`cover-${paragraphIndex}`}
+                                                    />
+
+                                                    <label
+                                                        htmlFor={`cover-${paragraphIndex}`}
+                                                        className={` min-w-[185px] text-center py-2 mb-3 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3] transition-colors duration-75 hover:bg-[#c2724f91] ${editModeActive ? 'block' : 'hidden'}`}
+                                                    >
+                                                        {paragraph.cover ? 'Change Cover' : 'Upload Cover'}
+                                                    </label>
+
+                                                    <div
+                                                        className=" w-full flex flex-col items-center gap-6"
+                                                    >
+                                                        <input type="range" {...register(`paragraphs.${paragraphIndex}.horizontalPosition`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(paragraphIndex, true, e)} min="0" max="100" className={`${styles.custom_input_range} ${editModeActive ? 'block' : 'hidden'}`} />
+                                                        <input type="range" {...register(`paragraphs.${paragraphIndex}.verticalPosition`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(paragraphIndex, false, e)} min="0" max="100" className={`${styles.custom_input_range} ${editModeActive ? 'block' : 'hidden'}`} />
+                                                    </div>
+                                                </motion.div>
 
 
-                                            <div className="w-full relative flex-col flex gap-4">
-                                                <AnimatePresence mode="popLayout">
-                                                    {paragraph.contents.map((content, contentIndex) => {
-                                                        return (
-                                                            <motion.div
-                                                                key={content.id}
-                                                                layout={'position'}
-                                                                transition={{ duration: .3, type: 'spring', bounce: 0.25 }}
-                                                                className=" w-full flex flex-col justify-center items-center gap-2 p-3"
-                                                            >
-                                                                {content.image && (
-                                                                    <div className="w-full h-96 relative mb-4">
-                                                                        <Image
-                                                                            src={typeof content.image === 'string'
-                                                                                ? `http://localhost:3000/${content.image}`
-                                                                                : URL.createObjectURL(content.image)}
-                                                                            alt="Content"
-                                                                            fill
-                                                                            className="rounded object-contain"
-                                                                            sizes="(max-width: 768px) 100vw, 50vw"
-                                                                            quality={80}
-
-                                                                        />
-                                                                    </div>
-                                                                )}
-
-                                                                <input
-                                                                    type="file"
-                                                                    onChange={(e) => {
-                                                                        if (e) {
-                                                                            handleImageChange(paragraphIndex, contentIndex, e.target.files?.[0])
-                                                                        }
-                                                                    }}
-                                                                    className="hidden"
-                                                                    id={`image-${paragraphIndex}-${contentIndex}`}
-                                                                />
-
-                                                                <motion.label
-                                                                    htmlFor={`image-${paragraphIndex}-${contentIndex}`}
-                                                                    className={` min-w-[185px] text-center py-2 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3] transition-colors duration-75 hover:bg-[#c2724f91] ${editModeActive ? 'block' : 'hidden'}`}
+                                                <div className="w-full relative flex-col flex gap-4">
+                                                    <AnimatePresence mode="popLayout">
+                                                        {paragraph.contents.map((content, contentIndex) => {
+                                                            return (
+                                                                <motion.div
+                                                                    key={content.id}
+                                                                    layout={'position'}
+                                                                    transition={{ duration: .3, type: 'spring', bounce: 0.25 }}
+                                                                    className=" w-full flex flex-col justify-center items-center gap-2 p-3"
                                                                 >
-                                                                    {content.image ? 'Change Image' : 'Upload Image'}
-                                                                </motion.label>
+                                                                    {content.image && (
+                                                                        <div className="w-full h-96 relative mb-4">
+                                                                            <Image
+                                                                                src={typeof content.image === 'string'
+                                                                                    ? `http://localhost:3000/${content.image}`
+                                                                                    : URL.createObjectURL(content.image)}
+                                                                                alt="Content"
+                                                                                fill
+                                                                                className="rounded object-contain"
+                                                                                sizes="(max-width: 768px) 100vw, 50vw"
+                                                                                quality={80}
 
-                                                                <div
-                                                                    className="w-full"
-                                                                    ref={(el) => {
-                                                                        if (el) {
-                                                                            if (!textAreaRef.current[paragraphIndex]) {
-                                                                                textAreaRef.current[paragraphIndex] = [];
+                                                                            />
+                                                                        </div>
+                                                                    )}
+
+                                                                    <input
+                                                                        type="file"
+                                                                        onChange={(e) => {
+                                                                            const file = e.target.files?.[0];
+                                                                            if (file) {
+                                                                                handleImageChange(paragraphIndex, contentIndex, file)
                                                                             }
-                                                                            textAreaRef.current[paragraphIndex][contentIndex] = el;
+                                                                        }}
+                                                                        className="hidden"
+                                                                        id={`image-${paragraphIndex}-${contentIndex}`}
+                                                                    />
 
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    <pre
-                                                                        className={`text-left text-sm md:text-base text-balance ${editModeActive ? 'hidden' : 'block'}`}
+                                                                    <motion.label
+                                                                        htmlFor={`image-${paragraphIndex}-${contentIndex}`}
+                                                                        className={` min-w-[185px] text-center py-2 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3] transition-colors duration-75 hover:bg-[#c2724f91] ${editModeActive ? 'block' : 'hidden'}`}
                                                                     >
-                                                                        {content.text}
-                                                                    </pre>
-                                                                </div>
+                                                                        {content.image ? 'Change Image' : 'Upload Image'}
+                                                                    </motion.label>
 
-                                                                <motion.textarea
-                                                                    {...register(`paragraphs.${paragraphIndex}.contents.${contentIndex}.text`)}
-                                                                    onInput={(e) => {
-                                                                        const target = e.target as HTMLTextAreaElement;
-                                                                    
-                                                                        target.style.height = "auto";
-                                                                        target.style.minHeight = "50px";
-                                                                        target.style.height = `${target.scrollHeight}px`;
-                                                                    }}
-                                                                    className={`text-left text-sm md:text-base text-balance text-[#F5DEB3] overflow-hidden py-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll} ${editModeActive ? 'block' : 'hidden'} caret-white`}
-                                                                    style={{
+                                                                    <div
+                                                                        className="w-full"
+                                                                        ref={(el) => {
+                                                                            if (el) {
+                                                                                if (!textAreaRef.current[paragraphIndex]) {
+                                                                                    textAreaRef.current[paragraphIndex] = [];
+                                                                                }
+                                                                                textAreaRef.current[paragraphIndex][contentIndex] = el;
 
-                                                                        maxHeight: "70vh",
-                                                                        boxSizing: "border-box"
-                                                                    }}
-                                                                />
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <pre
+                                                                            className={`text-left text-sm md:text-base text-balance ${editModeActive ? 'hidden' : 'block'}`}
+                                                                        >
+                                                                            {content.text}
+                                                                        </pre>
+                                                                    </div>
 
-                                                                <motion.p
-                                                                    initial={{ opacity: 0, height: 0 }}
-                                                                    animate={{ opacity: errors.paragraphs?.[paragraphIndex]?.contents?.[contentIndex]?.text?.message ? 30 : 0, height: errors.paragraphs?.[paragraphIndex]?.contents?.[contentIndex]?.text?.message ? 'auto' : '0px' }}
-                                                                    transition={{ duration: .3 }}
-                                                                    className=" text-orange-300 text-[13px] sm:text-[18px]"
-                                                                >
-                                                                    {errors.paragraphs?.[paragraphIndex]?.contents?.[contentIndex]?.text?.message}
-                                                                </motion.p>
+                                                                    <motion.textarea
+                                                                        {...register(`paragraphs.${paragraphIndex}.contents.${contentIndex}.text`)}
+                                                                        onInput={(e) => {
+                                                                            const target = e.target as HTMLTextAreaElement;
 
-                                                                <motion.button
-                                                                    type="button"
-                                                                    onClick={() => deleteContentBlock(paragraphIndex, contentIndex)}
-                                                                    className={` min-w-[185px] bg-red-500 px-4 py-2 rounded  transition-colors duration-75 hover:bg-[#c40000] ${editModeActive ? 'block' : 'hidden'}`}
-                                                                >
-                                                                    Delete Content Block
-                                                                </motion.button>
-                                                            </motion.div>
-                                                        )
-                                                    })}
-                                                </AnimatePresence>
-                                            </div>
+                                                                            target.style.height = "auto";
+                                                                            target.style.minHeight = "50px";
+                                                                            target.style.height = `${target.scrollHeight}px`;
+                                                                        }}
+                                                                        className={`text-left text-sm md:text-base text-balance text-[#F5DEB3] overflow-hidden py-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll} ${editModeActive ? 'block' : 'hidden'} caret-white`}
+                                                                        style={{
 
-                                            <button
-                                                type="button"
-                                                onClick={() => addContentBlock(paragraphIndex)}
-                                                className={`min-w-[185px] bg-blue-400 px-4 py-2 rounded  transition-colors duration-75 hover:bg-[#4576b3] ${editModeActive ? 'block' : 'hidden'}`}
-                                            >
-                                                Add Content Block
-                                            </button>
+                                                                            maxHeight: "70vh",
+                                                                            boxSizing: "border-box"
+                                                                        }}
+                                                                    />
 
-                                            <button
-                                                type="button"
-                                                onClick={() => deleteParagraph(paragraphIndex)}
-                                                className={`min-w-[185px] bg-rose-500 px-4 py-2 rounded  transition-colors duration-75 hover:bg-[#9f1239] ${editModeActive ? 'block' : 'hidden'}`}
-                                            >
-                                                Delete Paragraph
-                                            </button>
-                                        </motion.div>)
+                                                                    <motion.p
+                                                                        initial={{ opacity: 0, height: 0 }}
+                                                                        animate={{ opacity: errors.paragraphs?.[paragraphIndex]?.contents?.[contentIndex]?.text?.message ? 30 : 0, height: errors.paragraphs?.[paragraphIndex]?.contents?.[contentIndex]?.text?.message ? 'auto' : '0px' }}
+                                                                        transition={{ duration: .3 }}
+                                                                        className=" text-orange-300 text-[13px] sm:text-[18px]"
+                                                                    >
+                                                                        {errors.paragraphs?.[paragraphIndex]?.contents?.[contentIndex]?.text?.message}
+                                                                    </motion.p>
+
+                                                                    <motion.button
+                                                                        type="button"
+                                                                        onClick={() => deleteContentBlock(paragraphIndex, contentIndex)}
+                                                                        className={` min-w-[185px] bg-red-500 px-4 py-2 rounded  transition-colors duration-75 hover:bg-[#c40000] ${editModeActive ? 'block' : 'hidden'}`}
+                                                                    >
+                                                                        Delete Content Block
+                                                                    </motion.button>
+                                                                </motion.div>
+                                                            )
+                                                        })}
+                                                    </AnimatePresence>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => addContentBlock(paragraphIndex)}
+                                                    className={`min-w-[185px] bg-blue-400 px-4 py-2 rounded  transition-colors duration-75 hover:bg-[#4576b3] ${editModeActive ? 'block' : 'hidden'}`}
+                                                >
+                                                    Add Content Block
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => deleteParagraph(paragraphIndex)}
+                                                    className={`min-w-[185px] bg-rose-500 px-4 py-2 rounded  transition-colors duration-75 hover:bg-[#9f1239] ${editModeActive ? 'block' : 'hidden'}`}
+                                                >
+                                                    Delete Paragraph
+                                                </button>
+                                            </motion.div>)
                                     }
 
                                     )}
