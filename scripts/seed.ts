@@ -154,393 +154,381 @@ const characterTerritories = [
     { character_name: "twin vixens Lira and Kael", territory_name: "Embervale" },
 ];
 
-async function seedUsers() {
+async function seed() {
     const conn = await Connect();
 
-    try {
+    async function seedUsers() {
+    
+        try {
+            await conn.query(`
+                CREATE TABLE IF NOT EXISTS public.users
+                (
+                    id uuid NOT NULL,
+                    email text COLLATE pg_catalog."default" NOT NULL,
+                    password text COLLATE pg_catalog."default" NOT NULL,
+                    role text COLLATE pg_catalog."default" NOT NULL DEFAULT 'user'::text,
+                    username text COLLATE pg_catalog."default" NOT NULL,
+                    verified boolean NOT NULL DEFAULT false,
+                    verificationcode integer,
+                    CONSTRAINT users_pkey PRIMARY KEY (id),
+                    CONSTRAINT users_email_username_key UNIQUE (email, username)
+                )
+            `);
+    
+            console.log("Users table created successfully");
+    
+            await Promise.all(
+                users.map(async (user) => {
+                    const hashedPassword = await bcrypt.hash(user.password, 10);
+                    return conn.query(
+                        `
+                        INSERT INTO users (id, username, email, password, role, verified)
+                        VALUES ($1, $2, $3, $4, $5, $6)
+                        `,
+                        [
+                            user.id,
+                            user.username,
+                            user.email,
+                            hashedPassword,
+                            user.role,
+                            user.verified,
+                        ]
+                    );
+                })
+            );
+        } catch (error) {
+            console.error("Error creating users table:", error);
+        } 
+    }
+    
+    async function seedTerritories() {
+        
+    
+        try {
+            await conn.query(
+                `CREATE TABLE IF NOT EXISTS public.universe
+                (
+                    id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
+                    name text COLLATE pg_catalog."default" NOT NULL,
+                    description text COLLATE pg_catalog."default" NOT NULL,
+                    cover text COLLATE pg_catalog."default" NOT NULL,
+                    CONSTRAINT universe_pkey PRIMARY KEY (id)
+                )`
+            );
+    
+            console.log("territories table created successfully");
+    
+            await Promise.all(
+                territories.map(async (territory) => {
+                    return conn.query(
+                        `
+                        INSERT INTO universe (name, description, cover)
+                        VALUES ($1, $2, $3)
+                        `,
+                        [territory.name, territory.description, territory.cover]
+                    );
+                })
+            );
+        } catch (error) {
+            console.error("Error creating territories table:", error);
+            return;
+        }
+    }
+    
+    async function seedCharacters() {
+        
+    
+        try {
+            await conn.query(
+                `CREATE TABLE IF NOT EXISTS public.characters
+                (
+                    id serial NOT NULL,
+                    name text COLLATE pg_catalog."default" NOT NULL,
+                    description text COLLATE pg_catalog."default" NOT NULL,
+                    cover text COLLATE pg_catalog."default" NOT NULL,
+                    CONSTRAINT characters_pkey PRIMARY KEY (id)
+                );`
+            );
+    
+            console.log("Characters table created successfully");
+    
+            await Promise.all(
+                characters.map(async (item) => {
+                    return conn.query(
+                        `
+                        INSERT INTO characters (name, description, cover)
+                        VALUES ($1, $2, $3)
+                    `,
+                        [item.name, item.description, item.cover]
+                    );
+                })
+            );
+        } catch (error) {
+            console.error("Error creating characters table:", error);
+            return;
+        }
+    }
+    
+    async function seedCharactersTrritories() {
+        
         await conn.query(`
-            CREATE TABLE IF NOT EXISTS public.users
+            CREATE TABLE IF NOT EXISTS public.character_territories
+            (
+                territory_id integer NOT NULL,
+                character_id integer NOT NULL,
+                CONSTRAINT character_territories_pkey PRIMARY KEY (territory_id, character_id),
+                CONSTRAINT fk_territory
+                    FOREIGN KEY(territory_id) 
+                    REFERENCES universe(id)
+                    ON DELETE CASCADE,
+                CONSTRAINT fk_character
+                    FOREIGN KEY(character_id) 
+                    REFERENCES characters(id)
+                    ON DELETE CASCADE
+            );
+        `);
+    
+        console.log("Character-Territories table created successfully");
+    
+        await Promise.all(
+            characterTerritories.map(async (link) => {
+                const { rows: charRows } = await conn.query(
+                    `SELECT id FROM characters WHERE name = \$1`,
+                    [link.character_name]
+                );
+    
+                const { rows: terrRows } = await conn.query(
+                    `SELECT id FROM universe WHERE name = \$1`,
+                    [link.territory_name]
+                );
+    
+                if (charRows.length === 0 || terrRows.length === 0) {
+                    throw new Error(
+                        `Not found: ${link.character_name} или ${link.territory_name}`
+                    );
+                }
+    
+                const characterId = charRows[0].id;
+                const territoryId = terrRows[0].id;
+    
+                return conn.query(
+                    `INSERT INTO character_territories (character_id, territory_id)
+                     VALUES (\$1, \$2)
+                     ON CONFLICT DO NOTHING`,
+                    [characterId, territoryId]
+                );
+            })
+        );
+        try {
+        } catch (error) {
+            console.error("Error creating characters table:", error);
+            return;
+        }
+    }
+    
+    async function seedNews() {
+        
+    
+        try {
+            await conn.query(
+                `CREATE TABLE IF NOT EXISTS public.news (
+                    id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
+                    title text COLLATE pg_catalog."default" NOT NULL,
+                    description text COLLATE pg_catalog."default" NOT NULL,
+                    add_at timestamp with time zone NOT NULL,
+                    paragraph_heading text[] COLLATE pg_catalog."default" NOT NULL,
+                    content text[] COLLATE pg_catalog."default" NOT NULL,
+                    covers text[] COLLATE pg_catalog."default",
+                    author uuid NOT NULL,
+                    images text[] COLLATE pg_catalog."default",
+                    covers_vertical_position integer[],
+                    covers_horizontal_position integer[],
+                    CONSTRAINT news_pkey PRIMARY KEY (id),
+                    CONSTRAINT news_author_fkey FOREIGN KEY (author)
+                        REFERENCES public.users (id) MATCH SIMPLE
+                        ON UPDATE CASCADE
+                        ON DELETE CASCADE
+                )`
+            );
+    
+            console.log("News table created successfully");
+    
+            await Promise.all(
+                news.map(async (item) => {
+                    return conn.query(
+                        `
+                        INSERT INTO news (title, description, add_at, paragraph_heading, content, covers, author, images, covers_vertical_position, covers_horizontal_position) 
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                        ON CONFLICT (id) DO NOTHING;
+    
+                    `,
+                        [
+                            item.title,
+                            item.description,
+                            item.add_at,
+                            item.paragraph_heading,
+                            item.content,
+                            item.covers,
+                            item.author,
+                            item.images,
+                            item.covers_vertical_position,
+                            item.covers_horizontal_position,
+                        ]
+                    );
+                })
+            );
+        } catch (error) {
+            console.error("Error creating news table:", error);
+            return;
+        }
+    }
+    
+    async function seedChatRooms() {
+        
+    
+        try {
+            await conn.query(`
+            CREATE TABLE IF NOT EXISTS public.chat_room
             (
                 id uuid NOT NULL,
-                email text COLLATE pg_catalog."default" NOT NULL,
-                password text COLLATE pg_catalog."default" NOT NULL,
-                role text COLLATE pg_catalog."default" NOT NULL DEFAULT 'user'::text,
-                username text COLLATE pg_catalog."default" NOT NULL,
-                verified boolean NOT NULL DEFAULT false,
-                verificationcode integer,
-                CONSTRAINT users_pkey PRIMARY KEY (id),
-                CONSTRAINT users_email_username_key UNIQUE (email, username)
-            )
-        `);
-
-        console.log("Users table created successfully");
-
-        await Promise.all(
-            users.map(async (user) => {
-                const hashedPassword = await bcrypt.hash(user.password, 10);
-                return conn.query(
-                    `
-                    INSERT INTO users (id, username, email, password, role, verified)
-                    VALUES ($1, $2, $3, $4, $5, $6)
-                    `,
-                    [
-                        user.id,
-                        user.username,
-                        user.email,
-                        hashedPassword,
-                        user.role,
-                        user.verified,
-                    ]
-                );
-            })
-        );
-    } catch (error) {
-        console.error("Error creating users table:", error);
-    } finally {
-        conn.end();
-    }
-}
-
-async function seedTerritories() {
-    const conn = await Connect();
-
-    try {
-        await conn.query(
-            `CREATE TABLE IF NOT EXISTS public.universe
-            (
-                id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
-                name text COLLATE pg_catalog."default" NOT NULL,
-                description text COLLATE pg_catalog."default" NOT NULL,
-                cover text COLLATE pg_catalog."default" NOT NULL,
-                CONSTRAINT universe_pkey PRIMARY KEY (id)
-            )`
-        );
-
-        console.log("territories table created successfully");
-
-        await Promise.all(
-            territories.map(async (territory) => {
-                return conn.query(
-                    `
-                    INSERT INTO universe (name, description, cover)
-                    VALUES ($1, $2, $3)
-                    `,
-                    [territory.name, territory.description, territory.cover]
-                );
-            })
-        );
-    } catch (error) {
-        console.error("Error creating territories table:", error);
-        return;
-    } finally {
-        await conn.end();
-    }
-}
-
-async function seedCharacters() {
-    const conn = await Connect();
-
-    try {
-        await conn.query(
-            `CREATE TABLE IF NOT EXISTS public.characters
-            (
-                id serial NOT NULL,
-                name text COLLATE pg_catalog."default" NOT NULL,
-                description text COLLATE pg_catalog."default" NOT NULL,
-                cover text COLLATE pg_catalog."default" NOT NULL,
-                CONSTRAINT characters_pkey PRIMARY KEY (id)
-            );`
-        );
-
-        console.log("Characters table created successfully");
-
-        await Promise.all(
-            characters.map(async (item) => {
-                return conn.query(
-                    `
-                    INSERT INTO characters (name, description, cover)
-                    VALUES ($1, $2, $3)
-                `,
-                    [item.name, item.description, item.cover]
-                );
-            })
-        );
-    } catch (error) {
-        console.error("Error creating characters table:", error);
-        return;
-    } finally {
-        await conn.end();
-    }
-}
-
-async function seedCharactersTrritories() {
-    const conn = await Connect();
-    await conn.query(`
-        CREATE TABLE IF NOT EXISTS public.character_territories
-        (
-            territory_id integer NOT NULL,
-            character_id integer NOT NULL,
-            CONSTRAINT character_territories_pkey PRIMARY KEY (territory_id, character_id),
-            CONSTRAINT fk_territory
-                FOREIGN KEY(territory_id) 
-                REFERENCES universe(id)
-                ON DELETE CASCADE,
-            CONSTRAINT fk_character
-                FOREIGN KEY(character_id) 
-                REFERENCES characters(id)
-                ON DELETE CASCADE
-        );
-    `);
-
-    console.log("Character-Territories table created successfully");
-
-    await Promise.all(
-        characterTerritories.map(async (link) => {
-            const { rows: charRows } = await conn.query(
-                `SELECT id FROM characters WHERE name = \$1`,
-                [link.character_name]
-            );
-
-            const { rows: terrRows } = await conn.query(
-                `SELECT id FROM universe WHERE name = \$1`,
-                [link.territory_name]
-            );
-
-            if (charRows.length === 0 || terrRows.length === 0) {
-                throw new Error(
-                    `Not found: ${link.character_name} или ${link.territory_name}`
-                );
-            }
-
-            const characterId = charRows[0].id;
-            const territoryId = terrRows[0].id;
-
-            return conn.query(
-                `INSERT INTO character_territories (character_id, territory_id)
-                 VALUES (\$1, \$2)
-                 ON CONFLICT DO NOTHING`,
-                [characterId, territoryId]
-            );
-        })
-    );
-    try {
-    } catch (error) {
-        console.error("Error creating characters table:", error);
-        return;
-    } finally {
-        await conn.end();
-    }
-}
-
-async function seedNews() {
-    const conn = await Connect();
-
-    try {
-        await conn.query(
-            `CREATE TABLE IF NOT EXISTS public.news (
-                id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
                 title text COLLATE pg_catalog."default" NOT NULL,
+                created_at timestamp with time zone NOT NULL,
                 description text COLLATE pg_catalog."default" NOT NULL,
-                add_at timestamp with time zone NOT NULL,
-                paragraph_heading text[] COLLATE pg_catalog."default" NOT NULL,
-                content text[] COLLATE pg_catalog."default" NOT NULL,
-                covers text[] COLLATE pg_catalog."default",
+                status boolean NOT NULL DEFAULT false,
+                files text[] COLLATE pg_catalog."default",
                 author uuid NOT NULL,
-                images text[] COLLATE pg_catalog."default",
-                CONSTRAINT news_pkey PRIMARY KEY (id),
-                CONSTRAINT news_author_fkey FOREIGN KEY (author)
+                CONSTRAINT chat_room_pkey PRIMARY KEY (id),
+                CONSTRAINT chat_room_author_fkey FOREIGN KEY (author)
                     REFERENCES public.users (id) MATCH SIMPLE
                     ON UPDATE CASCADE
                     ON DELETE CASCADE
-            )`
-        );
-
-        console.log("News table created successfully");
-
-        await Promise.all(
-            news.map(async (item) => {
-                return conn.query(
-                    `
-                    INSERT INTO news (title, description, add_at, paragraph_heading, content, covers, author, images, covers_vertical_position, covers_horizontal_position) 
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-                    ON CONFLICT (id) DO NOTHING;
-
-                `,
-                    [
-                        item.title,
-                        item.description,
-                        item.add_at,
-                        item.paragraph_heading,
-                        item.content,
-                        item.covers,
-                        item.author,
-                        item.images,
-                        item.covers_vertical_position,
-                        item.covers_horizontal_position,
-                    ]
-                );
-            })
-        );
-    } catch (error) {
-        console.error("Error creating news table:", error);
-        return;
-    } finally {
+                    NOT VALID
+            )
+            `);
+    
+            console.log("Chat rooms table created successfully");
+        } catch (error) {
+            console.error("Error creating chat rooms table:", error);
+        } 
+    }
+    
+    async function seedLastMessage() {
+        
+    
+        try {
+            await conn.query(`
+                CREATE TABLE IF NOT EXISTS public.last_message
+                (
+                    id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
+                    last_message_id integer NOT NULL,
+                    user_id uuid NOT NULL,
+                    room_id uuid NOT NULL,
+                    CONSTRAINT last_message_pkey PRIMARY KEY (id),
+                    CONSTRAINT last_message_user_id_room_id_key UNIQUE (user_id, room_id)
+                )
+            `);
+    
+            console.log("Last message table created successfully");
+        } catch (error) {
+            console.error("Error creating lLast message table:", error);
+        } 
+    }
+    
+    async function seedMessages() {
+        
+    
+        try {
+            await conn.query(`
+                CREATE TABLE IF NOT EXISTS public.messages
+                (
+                    id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
+                    room_id uuid NOT NULL,
+                    user_id uuid NOT NULL,
+                    message text COLLATE pg_catalog."default",
+                    sent_at timestamp with time zone NOT NULL,
+                    file_url text[] COLLATE pg_catalog."default",
+                    CONSTRAINT messages_pkey PRIMARY KEY (id),
+                    CONSTRAINT messages_room_id_fkey FOREIGN KEY (room_id)
+                        REFERENCES public.chat_room (id) MATCH SIMPLE
+                        ON UPDATE CASCADE
+                        ON DELETE CASCADE
+                        NOT VALID
+                )
+            `);
+    
+            console.log("Messages table created successfully");
+        } catch (error) {
+            console.error("Error creating messages table:", error);
+        } 
+    }
+    
+    async function seedParticipants() {
+        
+    
+        try {
+            await conn.query(`
+                CREATE TABLE IF NOT EXISTS public.participants
+                (
+                    id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
+                    user_id uuid NOT NULL,
+                    room_id uuid NOT NULL,
+                    CONSTRAINT participants_pkey PRIMARY KEY (id),
+                    CONSTRAINT participants_user_id_room_id_key UNIQUE (user_id, room_id),
+                    CONSTRAINT participants_room_id_fkey FOREIGN KEY (room_id)
+                        REFERENCES public.chat_room (id) MATCH SIMPLE
+                        ON UPDATE CASCADE
+                        ON DELETE CASCADE
+                        NOT VALID
+                )
+            `);
+    
+            console.log("Users participants created successfully");
+        } catch (error) {
+            console.error("Error creating participants table:", error);
+        } 
+    }
+    
+    async function seedPasswordReset() {
+        
+    
+        try {
+            await conn.query(`
+                CREATE TABLE IF NOT EXISTS public.password_reset
+                (
+                    id uuid NOT NULL,
+                    user_id uuid NOT NULL,
+                    token text COLLATE pg_catalog."default" NOT NULL,
+                    expires_at timestamp with time zone NOT NULL,
+                    CONSTRAINT password_reset_pkey PRIMARY KEY (id),
+                    CONSTRAINT password_reset_token_key UNIQUE (token),
+                    CONSTRAINT "password_reset_user_Id_fkey" FOREIGN KEY (user_id)
+                        REFERENCES public.users (id) MATCH SIMPLE
+                        ON UPDATE NO ACTION
+                        ON DELETE CASCADE
+                )
+            `);
+    
+            console.log("Password reset table created successfully");
+        } catch (error) {
+            console.error("Error creating Password reset table:", error);
+        } 
+    }
+    
+    async function universeSeed() {
+        await seedTerritories();
+        await seedCharacters();
+        await seedCharactersTrritories();
+        await seedUsers();
+        await seedNews();
+        await seedChatRooms();
+        await seedPasswordReset();
+        await seedParticipants();
+        await seedMessages();
+        await seedLastMessage();
         await conn.end();
     }
+    
+    universeSeed();
 }
 
-async function seedChatRooms() {
-    const conn = await Connect();
-
-    try {
-        await conn.query(`
-        CREATE TABLE IF NOT EXISTS public.chat_room
-        (
-            id uuid NOT NULL,
-            title text COLLATE pg_catalog."default" NOT NULL,
-            created_at timestamp with time zone NOT NULL,
-            description text COLLATE pg_catalog."default" NOT NULL,
-            status boolean NOT NULL DEFAULT false,
-            files text[] COLLATE pg_catalog."default",
-            author uuid NOT NULL,
-            CONSTRAINT chat_room_pkey PRIMARY KEY (id),
-            CONSTRAINT chat_room_author_fkey FOREIGN KEY (author)
-                REFERENCES public.users (id) MATCH SIMPLE
-                ON UPDATE CASCADE
-                ON DELETE CASCADE
-                NOT VALID
-        )
-        `);
-
-        console.log("Chat rooms table created successfully");
-    } catch (error) {
-        console.error("Error creating chat rooms table:", error);
-    } finally {
-        conn.end();
-    }
-}
-
-async function seedLastMessage() {
-    const conn = await Connect();
-
-    try {
-        await conn.query(`
-            CREATE TABLE IF NOT EXISTS public.last_message
-            (
-                id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
-                last_message_id integer NOT NULL,
-                user_id uuid NOT NULL,
-                room_id uuid NOT NULL,
-                CONSTRAINT last_message_pkey PRIMARY KEY (id),
-                CONSTRAINT last_message_user_id_room_id_key UNIQUE (user_id, room_id)
-            )
-        `);
-
-        console.log("Last message table created successfully");
-    } catch (error) {
-        console.error("Error creating lLast message table:", error);
-    } finally {
-        conn.end();
-    }
-}
-
-async function seedMessages() {
-    const conn = await Connect();
-
-    try {
-        await conn.query(`
-            CREATE TABLE IF NOT EXISTS public.messages
-            (
-                id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
-                room_id uuid NOT NULL,
-                user_id uuid NOT NULL,
-                message text COLLATE pg_catalog."default",
-                sent_at timestamp with time zone NOT NULL,
-                file_url text[] COLLATE pg_catalog."default",
-                CONSTRAINT messages_pkey PRIMARY KEY (id),
-                CONSTRAINT messages_room_id_fkey FOREIGN KEY (room_id)
-                    REFERENCES public.chat_room (id) MATCH SIMPLE
-                    ON UPDATE CASCADE
-                    ON DELETE CASCADE
-                    NOT VALID
-            )
-        `);
-
-        console.log("Messages table created successfully");
-    } catch (error) {
-        console.error("Error creating messages table:", error);
-    } finally {
-        conn.end();
-    }
-}
-
-async function seedParticipants() {
-    const conn = await Connect();
-
-    try {
-        await conn.query(`
-            CREATE TABLE IF NOT EXISTS public.participants
-            (
-                id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
-                user_id uuid NOT NULL,
-                room_id uuid NOT NULL,
-                CONSTRAINT participants_pkey PRIMARY KEY (id),
-                CONSTRAINT participants_user_id_room_id_key UNIQUE (user_id, room_id),
-                CONSTRAINT participants_room_id_fkey FOREIGN KEY (room_id)
-                    REFERENCES public.chat_room (id) MATCH SIMPLE
-                    ON UPDATE CASCADE
-                    ON DELETE CASCADE
-                    NOT VALID
-            )
-        `);
-
-        console.log("Users participants created successfully");
-    } catch (error) {
-        console.error("Error creating participants table:", error);
-    } finally {
-        conn.end();
-    }
-}
-
-async function seedPasswordReset() {
-    const conn = await Connect();
-
-    try {
-        await conn.query(`
-            CREATE TABLE IF NOT EXISTS public.password_reset
-            (
-                id uuid NOT NULL,
-                user_id uuid NOT NULL,
-                token text COLLATE pg_catalog."default" NOT NULL,
-                expires_at timestamp with time zone NOT NULL,
-                CONSTRAINT password_reset_pkey PRIMARY KEY (id),
-                CONSTRAINT password_reset_token_key UNIQUE (token),
-                CONSTRAINT "password_reset_user_Id_fkey" FOREIGN KEY (user_id)
-                    REFERENCES public.users (id) MATCH SIMPLE
-                    ON UPDATE NO ACTION
-                    ON DELETE CASCADE
-            )
-        `);
-
-        console.log("Password reset table created successfully");
-    } catch (error) {
-        console.error("Error creating Password reset table:", error);
-    } finally {
-        conn.end();
-    }
-}
-
-async function universeSeed() {
-    await seedTerritories();
-    await seedCharacters();
-    await seedCharactersTrritories();
-}
-
-seedUsers();
-seedNews();
-universeSeed();
-seedChatRooms();
-seedPasswordReset();
-seedParticipants();
-seedMessages();
-seedLastMessage();
+seed();
