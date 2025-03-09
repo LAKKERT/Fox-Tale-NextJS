@@ -35,28 +35,19 @@ const news = [
 
 - Temperature drops during blizzards/nighttime
 - Campfires and insulated gear slow freezing
-- 12 new craftable winter survival items`
+- 12 new craftable winter survival items`,
             ],
         ],
-        covers: [
-            "/uploads/news/1741444476478_2198150_14.jpg",
-        ],
+        covers: ["/uploads/news/1741444476478_2198150_14.jpg"],
         author: "1cf50aee-7b66-4b6b-a681-ed95e721c5a7",
-        images: [
-            [null, null]
-        ],
-        covers_vertical_position: [
-            56
-        ],
-        covers_horizontal_position: [
-            52
-        ]
+        images: [[null, null]],
+        covers_vertical_position: [56],
+        covers_horizontal_position: [52],
     },
 
     {
         title: "Hotfix 1.3.7",
-        description:
-            "UI Optimization & Class Balancing.",
+        description: "UI Optimization & Class Balancing.",
         add_at: "2025-01-08 17:41:32.613451+03",
         paragraph_heading: ["Quality of Life Improvements"],
         content: [
@@ -74,28 +65,19 @@ const news = [
 - Quick slots expanded to 8 (Alt+1-8)
 - Bear-form Druid damage reduced by 15%
 - Ice Mages gain new \"Frost Prison\" ability (3s CC)
-- Fixed infinite poison stacking exploit for Rogues`
+- Fixed infinite poison stacking exploit for Rogues`,
             ],
         ],
-        covers: [
-            "/uploads/news/1741444891582_2198150_11.jpg",
-        ],
+        covers: ["/uploads/news/1741444891582_2198150_11.jpg"],
         author: "1cf50aee-7b66-4b6b-a681-ed95e721c5a7",
-        images: [
-            [null]
-        ],
-        covers_vertical_position: [
-            61
-        ],
-        covers_horizontal_position: [
-            50
-        ]
+        images: [[null]],
+        covers_vertical_position: [61],
+        covers_horizontal_position: [50],
     },
 
     {
         title: "Chronicles of the Ancient Grove",
-        description:
-            "Faction-Based Story Expansion",
+        description: "Faction-Based Story Expansion",
         add_at: "2025-02-08 17:43:15.62885+03",
         paragraph_heading: ["Two warring cults emerge"],
         content: [
@@ -110,38 +92,31 @@ const news = [
 - Children of Progress (terraforming technomancers)
 - Platforming sections with moving ice floes
 - Mirror maze rooms with light-reflection puzzles
-- Rune-matching challenges using ancient glyphs`
+- Rune-matching challenges using ancient glyphs`,
             ],
         ],
-        covers: [
-            null,
-        ],
+        covers: [null],
         author: "1cf50aee-7b66-4b6b-a681-ed95e721c5a7",
-        images: [
-            [null]
-        ],
-        covers_vertical_position: [
-            50
-        ],
-        covers_horizontal_position: [
-            50
-        ]
+        images: [[null]],
+        covers_vertical_position: [50],
+        covers_horizontal_position: [50],
     },
 ];
 
 const territories = [
     {
-        name: 'Frostspire Peaks',
-        description: 'A glacial dominion where eternal blizzards carve crystalline spires of cerulean ice, towering like skyscrapers. The air is so frigid that breath crystallizes into diamond dust, and sounds vanish as if swallowed by the void. Beneath meter-thick rime lie cities of the Cryonic species—an ancient race whose liquid nitrogen bodies left fractal patterns in subterranean labyrinths. By day, polar sunlight refracts through ice prisms, casting mirages of fallen civilizations; by night, quantum auroras ignite the sky, awakening artifacts from the Age of Glaciation. Only the brave dare traverse the Windblades—canyons where frozen sandstorms strip flesh to bone in seconds. Here roam packs of Sipharix, translucent predators whose claws generate absolute-zero temperatures. The sole heat sources are geothermal vents, around which Taulint nomads build mobile yurts from the hides of electric bears. Icebergs drift with "Frost Libraries"—floating arctifords storing knowledge in frozen time-bubbles. At dawn, gravity inversions cause ice floes to levitate, forming transient bridges between realms. Beneath the permafrost, hibernating Terra Cores hum with primordial energy, their vibrations triggering seismic prophecies. Explorers whisper of the Frost Sentinels: colossal golems of black ice that emerge during solar eclipses to reset the glacial clockwork.',
-        cover: '/uploads/universe/1741453936939_2198150_14.jpg'
+        name: "Frostspire Peaks",
+        description:
+            'A glacial dominion where eternal blizzards carve crystalline spires of cerulean ice, towering like skyscrapers. The air is so frigid that breath crystallizes into diamond dust, and sounds vanish as if swallowed by the void. Beneath meter-thick rime lie cities of the Cryonic species—an ancient race whose liquid nitrogen bodies left fractal patterns in subterranean labyrinths. By day, polar sunlight refracts through ice prisms, casting mirages of fallen civilizations; by night, quantum auroras ignite the sky, awakening artifacts from the Age of Glaciation. Only the brave dare traverse the Windblades—canyons where frozen sandstorms strip flesh to bone in seconds. Here roam packs of Sipharix, translucent predators whose claws generate absolute-zero temperatures. The sole heat sources are geothermal vents, around which Taulint nomads build mobile yurts from the hides of electric bears. Icebergs drift with "Frost Libraries"—floating arctifords storing knowledge in frozen time-bubbles. At dawn, gravity inversions cause ice floes to levitate, forming transient bridges between realms. Beneath the permafrost, hibernating Terra Cores hum with primordial energy, their vibrations triggering seismic prophecies. Explorers whisper of the Frost Sentinels: colossal golems of black ice that emerge during solar eclipses to reset the glacial clockwork.',
+        cover: "/uploads/universe/1741453936939_2198150_14.jpg",
     },
 
     {
-        name: 'Embervale',
+        name: "Embervale",
         description: `A solar-soaked valley where dawn never yields to dusk, and photon rivers flow through quartz channels. Towering sunflowers, their titanium stalks groaning like gears, track the unfading sun. At zenith, heat shimmers liquefy rock into liquid mirrors that reflect "shadow twins"—ghosts of parallel realities. Vineyards yield harvests every 72 hours: neural grapes imbued with growers' memories. The Ferumir—human-fungus hybrids with photosynthetic skin—construct homes from light-compacted prisms. At night, fire salamanders patrol, leaving smoldering runes of warning. The valley’s heart pulses with the Pharos Heart, a plasma crystal fed by solar flares. Touching it risks enlightenment or annihilation—a quantum gamble. Subterranean caves house dusk traders peddling sunset capsules: concentrated particles of twilight. During the Crimson Monsoon, rain ignites into liquid flame, nourishing flame lilies whose petals encode forgotten languages. The eastern plateau hosts the Ashborne Archives, where heat-resistant scribes etch histories on ever-burning parchment. Legends speak of the Ember Leviathan, a serpent of molten glass that rewrites geography during heatwaves.`,
-        cover: '/uploads/universe/1741454241114_2198150_11.jpg'
-    }
-]
+        cover: "/uploads/universe/1741454241114_2198150_11.jpg",
+    },
+];
 
 const characters = [
     {
@@ -176,7 +151,7 @@ For in Frostspire Peaks, survival was a dance of frost and fire—and twins who 
 ];
 
 const characterTerritories = [
-    { character_name: 'twin vixens Lira and Kael', territory_name: 'Embervale' },
+    { character_name: "twin vixens Lira and Kael", territory_name: "Embervale" },
 ];
 
 async function seedUsers() {
@@ -250,11 +225,7 @@ async function seedTerritories() {
                     INSERT INTO universe (name, description, cover)
                     VALUES ($1, $2, $3)
                     `,
-                    [
-                        territory.name,
-                        territory.description,
-                        territory.cover,
-                    ]
+                    [territory.name, territory.description, territory.cover]
                 );
             })
         );
@@ -290,16 +261,10 @@ async function seedCharacters() {
                     INSERT INTO characters (name, description, cover)
                     VALUES ($1, $2, $3)
                 `,
-                    [
-                        item.name,
-                        item.description,
-                        item.cover,
-
-                    ]
+                    [item.name, item.description, item.cover]
                 );
             })
         );
-
     } catch (error) {
         console.error("Error creating characters table:", error);
         return;
@@ -342,7 +307,9 @@ async function seedCharactersTrritories() {
             );
 
             if (charRows.length === 0 || terrRows.length === 0) {
-                throw new Error(`Not found: ${link.character_name} или ${link.territory_name}`);
+                throw new Error(
+                    `Not found: ${link.character_name} или ${link.territory_name}`
+                );
             }
 
             const characterId = charRows[0].id;
@@ -357,7 +324,6 @@ async function seedCharactersTrritories() {
         })
     );
     try {
-
     } catch (error) {
         console.error("Error creating characters table:", error);
         return;
@@ -423,6 +389,147 @@ async function seedNews() {
     }
 }
 
+async function seedChatRooms() {
+    const conn = await Connect();
+
+    try {
+        await conn.query(`
+        CREATE TABLE IF NOT EXISTS public.chat_room
+        (
+            id uuid NOT NULL,
+            title text COLLATE pg_catalog."default" NOT NULL,
+            created_at timestamp with time zone NOT NULL,
+            description text COLLATE pg_catalog."default" NOT NULL,
+            status boolean NOT NULL DEFAULT false,
+            files text[] COLLATE pg_catalog."default",
+            author uuid NOT NULL,
+            CONSTRAINT chat_room_pkey PRIMARY KEY (id),
+            CONSTRAINT chat_room_author_fkey FOREIGN KEY (author)
+                REFERENCES public.users (id) MATCH SIMPLE
+                ON UPDATE CASCADE
+                ON DELETE CASCADE
+                NOT VALID
+        )
+        `);
+
+        console.log("Chat rooms table created successfully");
+    } catch (error) {
+        console.error("Error creating chat rooms table:", error);
+    } finally {
+        conn.end();
+    }
+}
+
+async function seedLastMessage() {
+    const conn = await Connect();
+
+    try {
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS public.last_message
+            (
+                id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
+                last_message_id integer NOT NULL,
+                user_id uuid NOT NULL,
+                room_id uuid NOT NULL,
+                CONSTRAINT last_message_pkey PRIMARY KEY (id),
+                CONSTRAINT last_message_user_id_room_id_key UNIQUE (user_id, room_id)
+            )
+        `);
+
+        console.log("Last message table created successfully");
+    } catch (error) {
+        console.error("Error creating lLast message table:", error);
+    } finally {
+        conn.end();
+    }
+}
+
+async function seedMessages() {
+    const conn = await Connect();
+
+    try {
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS public.messages
+            (
+                id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
+                room_id uuid NOT NULL,
+                user_id uuid NOT NULL,
+                message text COLLATE pg_catalog."default",
+                sent_at timestamp with time zone NOT NULL,
+                file_url text[] COLLATE pg_catalog."default",
+                CONSTRAINT messages_pkey PRIMARY KEY (id),
+                CONSTRAINT messages_room_id_fkey FOREIGN KEY (room_id)
+                    REFERENCES public.chat_room (id) MATCH SIMPLE
+                    ON UPDATE CASCADE
+                    ON DELETE CASCADE
+                    NOT VALID
+            )
+        `);
+
+        console.log("Messages table created successfully");
+    } catch (error) {
+        console.error("Error creating messages table:", error);
+    } finally {
+        conn.end();
+    }
+}
+
+async function seedParticipants() {
+    const conn = await Connect();
+
+    try {
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS public.participants
+            (
+                id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
+                user_id uuid NOT NULL,
+                room_id uuid NOT NULL,
+                CONSTRAINT participants_pkey PRIMARY KEY (id),
+                CONSTRAINT participants_user_id_room_id_key UNIQUE (user_id, room_id),
+                CONSTRAINT participants_room_id_fkey FOREIGN KEY (room_id)
+                    REFERENCES public.chat_room (id) MATCH SIMPLE
+                    ON UPDATE CASCADE
+                    ON DELETE CASCADE
+                    NOT VALID
+            )
+        `);
+
+        console.log("Users participants created successfully");
+    } catch (error) {
+        console.error("Error creating participants table:", error);
+    } finally {
+        conn.end();
+    }
+}
+
+async function seedPasswordReset() {
+    const conn = await Connect();
+
+    try {
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS public.password_reset
+            (
+                id uuid NOT NULL,
+                user_id uuid NOT NULL,
+                token text COLLATE pg_catalog."default" NOT NULL,
+                expires_at timestamp with time zone NOT NULL,
+                CONSTRAINT password_reset_pkey PRIMARY KEY (id),
+                CONSTRAINT password_reset_token_key UNIQUE (token),
+                CONSTRAINT "password_reset_user_Id_fkey" FOREIGN KEY (user_id)
+                    REFERENCES public.users (id) MATCH SIMPLE
+                    ON UPDATE NO ACTION
+                    ON DELETE CASCADE
+            )
+        `);
+
+        console.log("Password reset table created successfully");
+    } catch (error) {
+        console.error("Error creating Password reset table:", error);
+    } finally {
+        conn.end();
+    }
+}
+
 async function universeSeed() {
     await seedTerritories();
     await seedCharacters();
@@ -430,4 +537,10 @@ async function universeSeed() {
 }
 
 seedUsers();
+seedNews();
 universeSeed();
+seedChatRooms();
+seedPasswordReset();
+seedParticipants();
+seedMessages();
+seedLastMessage();
