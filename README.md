@@ -4,11 +4,17 @@
 ## О проекте
 
 <div>
+
+  <div align="center">
+      <img align="center" width="45%" src="https://github.com/LAKKERT/Fox-Tale-NextJS/blob/main/public/preview/preScreen.png" />
+      <img align="center" width="45%" src="https://github.com/LAKKERT/Fox-Tale-NextJS/blob/main/public/preview/preScreen2.png" />
+  </div>
+  
   <p>Fox Tale это Сайт-портал для онлайн RPG игры, решающий ключевые задачи:</p>
     <ul>      
       <li>Лента последних новостей проекта</li>
       <li>Система тикетов для технической поддержки</li>
-      <li>Интерактивная вики по игровому миру   </li> 
+      <li>Интерактивная вики по игровому миру</li> 
       </li>
     </ul>
 
