@@ -1,7 +1,9 @@
 'use client';
 import { K2D } from "next/font/google";
 import { motion } from 'framer-motion';
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useCookies } from "react-cookie";
 import Link from "next/link";
 import { Loader } from "@/app/components/load";
 const MainFont = K2D({
@@ -17,6 +19,31 @@ type OpenCardsState = {
 export function SupportPageComponent() {
     const [isLoading, setIsLoading] = useState(true);
     const [openCards, setOpenCards] = useState<OpenCardsState>({});
+    const [currentUserRole, setCurrentUserRole] = useState('');
+    const [cookies] = useCookies(['auth_token']);
+    const router = useRouter();
+
+        useEffect(() => {
+            const checkUserRole = async () => {
+                try {
+                    const response = await fetch('/api/fetchUserRoleAPI', {
+                        headers: {
+                            'Authorization': `Bearer ${cookies.auth_token}`,
+                        }
+                    })
+    
+                    const result = await response.json();
+    
+                    if (result.userRole !== 'admin') {
+                        setCurrentUserRole(result.userRole);
+                    }
+                } catch (error) {
+                    console.error('Error fetching user role:', error);
+                }
+            }
+        
+            checkUserRole()
+        }, [cookies, router] )
 
     setTimeout(() => {
         setIsLoading(false);
@@ -106,6 +133,11 @@ export function SupportPageComponent() {
                     <div className="flex flex-col items-center gap-5">
                         <p className="text-lg md:text-2xl text-balance text-center">If you want to view the history of your requests, please follow the link.</p>
                         <Link href='/support/requests_history' className="flex justify-center items-center w-[250px] h-[50px] text-lg tracking-wider transition-colors duration-75 rounded border border-[#F5DEB3] bg-[#C2724F] hover:bg-[#b66847] uppercase select-none">HISTORY</Link>
+                    </div>
+
+                    <div className={`flex flex-col items-center gap-5 ${currentUserRole === 'admin' ? '' : 'hidden'}`}>
+                        <p className={`text-lg md:text-2xl text-balance text-center`}>All requests</p>
+                        <Link href='/support/requests_list' className="flex justify-center items-center w-[250px] h-[50px] text-lg tracking-wider transition-colors duration-75 rounded border border-[#F5DEB3] bg-[#C2724F] hover:bg-[#b66847] uppercase select-none">ALL REQUESTS</Link>
                     </div>
 
                 </div>

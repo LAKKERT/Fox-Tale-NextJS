@@ -107,7 +107,7 @@ export function RequestsHistoryComponent() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: .3 }}
-                    className="h-full flex flex-col gap-5 mt-4"
+                    className="h-full w-full flex flex-col items-center gap-5 mt-3"
                 >
                     <h1 className="text-xl text-balance text-center">Welcome to your inquiries page! You may view your previous requests here.</h1>
                     <input
@@ -151,7 +151,7 @@ export function RequestsHistoryComponent() {
                                     {request.status === true ? 'solved' : 'not solved'}
                                 </div>
 
-                                <Link href={`/support/${request.id}`} className="w-full flex justify-center">
+                                <Link href={`/support/${request.id}`} className={`w-full flex justify-center`}>
                                     <div className="flex justify-center items-center w-[150px] h-[50px] text-lg tracking-wider transition-colors duration-75 rounded border border-[#F5DEB3] bg-[#C2724F] hover:bg-[#b66847] uppercase select-none">
                                         OPEN
                                     </div>
