@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { K2D } from "next/font/google";
 import { motion } from "framer-motion";
+import { useUserStore } from "@/stores/userStore";
 
 const ITEMS_PER_PAGE = 8;
 
@@ -30,10 +31,10 @@ type AllNews = {
 
 export function NewsPageComponent() {
     const [allNews, setAllNews] = useState<AllNews | null>(null);
-    const [currentUserRole, setCurrentUserRole] = useState('');
     const [countOfNews, setCountOfNews] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
     const [cookies] = useCookies(['auth_token']);
+    const userData = useUserStore((state) => state.userData);
     const router = useRouter();
     const [showContent, setShowContent] = useState(false);
 
@@ -52,7 +53,6 @@ export function NewsPageComponent() {
 
                 if (response.ok) {
                     setAllNews(result);
-                    setCurrentUserRole(result.userRole);
                     setCountOfNews(result.result.length);
                     setTimeout(() => {
                         setShowContent(true);
@@ -105,7 +105,7 @@ export function NewsPageComponent() {
                         <div className="h-[120px] flex flex-col gap-4 text-center justify-center items-center">
                             <h2 className="uppercase text-base md:text-2xl">-NEWS-</h2>
                             <p className="text-base md:text-lg">Here you can learn something new about FOX TALE</p>
-                            <Link href={'/news/create_new'} className={`flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out ${currentUserRole === 'admin' ? '' : 'hidden'} `}>
+                            <Link href={'/news/create_new'} className={`flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out ${userData?.role === 'admin' ? '' : 'hidden'} `}>
                                     add post
                             </Link>
                         </div>

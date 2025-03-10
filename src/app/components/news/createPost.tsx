@@ -7,7 +7,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useCookies } from "react-cookie";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useTime } from "framer-motion";
+import { useUserStore } from "@/stores/userStore";
 import _ from "lodash"
 import { saveFile } from "@/pages/api/news/saveImagesAPI";
 import { K2D } from "next/font/google";
@@ -62,6 +63,7 @@ const validationSchema = Yup.object().shape({
 export function CreatePostComponent() {
     const [isLoading, setIsLoading] = useState(true);
     const [userID, setUserID] = useState('');
+    const userData = useUserStore((state) => state.userData);
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
 
@@ -78,38 +80,25 @@ export function CreatePostComponent() {
     })
 
     useEffect(() => {
-        if (!cookies.auth_token) router.push('/');
-    }, [cookies, router]);
 
-    useEffect(() => {
-        if (!cookies || !cookies.auth_token) {
-            return router.push('/');
+        if (!cookies) {
+            return router.push('/login');
         }
 
-        const checkUserRole = async () => {
-            try {
-                const response = await fetch('/api/fetchUserRoleAPI', {
-                    headers: {
-                        'Authorization': `Bearer ${cookies.auth_token}`,
-                    }
-                })
-
-                const result = await response.json();
-
-                if (result.userRole === 'admin') {
-                    setUserID(result.userID);
-                    setTimeout(() => setIsLoading(false), 200);
-
-                } else {
-                    router.push(result.redirectUrl);
-                }
-            } catch (error) {
-                console.error('Error fetching user role:', error);
+        const timeout = setTimeout(() => {
+            if (!userData || userData.role !== 'admin') {
+                router.push('/'); 
             }
+        }, 5000);
+
+        setIsLoading(false);
+
+        if (userData) {
+            clearTimeout(timeout);
         }
 
-        checkUserRole();
-    }, [cookies, router]);
+        return () => clearTimeout(timeout);
+    }, [userData, router]);
 
     const addParagraph = () => {
         append({
@@ -192,81 +181,70 @@ export function CreatePostComponent() {
     }, []);
 
     const onSubmit = async (data: FormValues) => {
-        try {
-            const covers = await processFiles(
-                data.paragraphs.map(p => p.cover).filter(Boolean)
-            );
-            const coversMetadata = getFileMetadata(
-                data.paragraphs.map(p => p.cover).filter(Boolean)
-            );
-            const coversURL = coversMetadata.map(meta =>
-                meta.size > 0 ? `/uploads/news/${Date.now()}_${meta.name}.${meta.extension}` : null
-            );
-            await saveFile(covers, coversURL.filter((url): url is string => url !== '' && url !== null));
-
-            data.paragraphs.forEach((paragraph, index) => {
-                if (paragraph.cover) {
-                    paragraph.cover = coversURL[index];
-                }
-            });
-
-            const allContentImages = data.paragraphs
-                .flatMap(p => p.contents.map(c => c.image))
-                .filter(img => img instanceof File) as File[];
-            const images = await processFiles(allContentImages);
-            const imagesMetadata = getFileMetadata(allContentImages);
-            const imagesURL = imagesMetadata.map(meta =>
-                meta.size > 0 ? `/uploads/news/${Date.now()}_${meta.name}.${meta.extension}` : null
-            );
-            await saveFile(images.flat(), imagesURL.flat());
-
-            let imageIndex = 0;
-            data.paragraphs.forEach(paragraph => {
-                paragraph.contents.forEach(content => {
-                    if (content.image) {
-                        content.image = imagesURL[imageIndex];
-                        imageIndex++;
+        if (userData) {
+            try {
+                const covers = await processFiles(
+                    data.paragraphs.map(p => p.cover).filter(Boolean)
+                );
+                const coversMetadata = getFileMetadata(
+                    data.paragraphs.map(p => p.cover).filter(Boolean)
+                );
+                const coversURL = coversMetadata.map(meta =>
+                    meta.size > 0 ? `/uploads/news/${Date.now()}_${meta.name}.${meta.extension}` : null
+                );
+                await saveFile(covers, coversURL.filter((url): url is string => url !== '' && url !== null));
+    
+                data.paragraphs.forEach((paragraph, index) => {
+                    if (paragraph.cover) {
+                        paragraph.cover = coversURL[index];
                     }
                 });
-            });
-
-            const payload = {
-                data,
-                userID: userID,
-            };
-
-            const response = await fetch('/api/news/addNewsAPI', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${cookies.auth_token}`,
-                },
-                body: JSON.stringify(payload),
-            });
-
-            if (response.ok) {
-                router.push('/');
-            } else {
-                console.log('Error saving post');
+    
+                const allContentImages = data.paragraphs
+                    .flatMap(p => p.contents.map(c => c.image))
+                    .filter(img => img instanceof File) as File[];
+                const images = await processFiles(allContentImages);
+                const imagesMetadata = getFileMetadata(allContentImages);
+                const imagesURL = imagesMetadata.map(meta =>
+                    meta.size > 0 ? `/uploads/news/${Date.now()}_${meta.name}.${meta.extension}` : null
+                );
+                await saveFile(images.flat(), imagesURL.flat());
+    
+                let imageIndex = 0;
+                data.paragraphs.forEach(paragraph => {
+                    paragraph.contents.forEach(content => {
+                        if (content.image) {
+                            content.image = imagesURL[imageIndex];
+                            imageIndex++;
+                        }
+                    });
+                });
+    
+                const payload = {
+                    data,
+                    userID: userData.id,
+                };
+    
+                const response = await fetch('/api/news/addNewsAPI', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${cookies.auth_token}`,
+                    },
+                    body: JSON.stringify(payload),
+                });
+    
+                if (response.ok) {
+                    router.push('/');
+                } else {
+                    console.log('Error saving post');
+                }
+            } catch (error) {
+                console.error('Submission error:', error);
+                alert('Error submitting form');
             }
-        } catch (error) {
-            console.error('Submission error:', error);
-            alert('Error submitting form');
         }
     };
-
-    if (isLoading) {
-        return (
-            <motion.div
-                initial={{ opacity: 1 }}
-                animate={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="bg-black fixed inset-0 flex justify-center items-center"
-            >
-                <Loader />
-            </motion.div>
-        );
-    }
 
     const handlePositionChange = (paragraphIndex: number, hValue: number, vValue: number) => {
         if (imgRef.current) {

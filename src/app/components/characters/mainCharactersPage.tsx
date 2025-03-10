@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useUserStore } from "@/stores/userStore";
 import { useCookies } from "react-cookie";
 import { motion } from "framer-motion";
 import { K2D } from "next/font/google";
@@ -24,8 +25,8 @@ interface charactersType {
 
 export function CharacretsPageComponent() {
     const [isLoading, setIsLoading] = useState(true);
-    const [currentUserRole, setCurrentUserRole] = useState('');
     const [charactersData, setcharactersData] = useState<charactersType[]>([]);
+    const userData = useUserStore((state) => state.userData);
 
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
@@ -36,15 +37,13 @@ export function CharacretsPageComponent() {
                 const response = await fetch('/api/characters/fetchAllCharacters', {
                     method: 'GET',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${cookies.auth_token}`
+                        'Content-Type': 'application/json'
                     }
                 })
 
                 const result = await response.json();
 
                 if (response.ok) {
-                    setCurrentUserRole(result.userRole);
                     setcharactersData(result.data);
                     setIsLoading(false);
                 } else {
@@ -84,7 +83,7 @@ export function CharacretsPageComponent() {
                                 CHARACTERS
                             </h1>
 
-                            <Link href={'/characters/add_character'} className={`flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out ${currentUserRole === 'admin' ? '' : 'hidden'} `}>
+                            <Link href={'/characters/add_character'} className={`flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out ${userData?.role === 'admin' ? '' : 'hidden'} `}>
                                     add character
                             </Link>
                         </div>

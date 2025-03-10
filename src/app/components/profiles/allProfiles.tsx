@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useCookies } from "react-cookie";
 import { useRouter } from "next/navigation";
+import { useUserStore } from "@/stores/userStore";
 import Link from "next/link";
 
 import { K2D } from "next/font/google";
@@ -9,6 +10,7 @@ import { K2D } from "next/font/google";
 const ITEMS_PER_PAGE = 8;
 
 export function AllProfilesTable({ placeholder }: { placeholder: string }) {
+    const userData = useUserStore((state) => state.userData);
     const [usersData, setUsersData] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [sortedUsersData, setSortedUsersData] = useState<any[]>([]);
@@ -17,11 +19,16 @@ export function AllProfilesTable({ placeholder }: { placeholder: string }) {
     const router = useRouter();
 
     useEffect(() => {
+        if (!cookies.auth_token) {
+            router.push("/");
+            return;
+        }
+
+        if (userData?.role !== 'admin') {
+            return router.push("/");
+        }
+
         const fetchAllUsers = async () => {
-            if (!cookies.auth_token) {
-                router.push("/");
-                return;
-            }
             try {
                 const response = await fetch(`/api/users/getAllusersAPI`, {
                     method: "GET",

@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { saveFile } from "@/pages/api/news/saveImagesAPI";
+import { useUserStore } from "@/stores/userStore";
 import Image from "next/image";
 import { K2D } from "next/font/google";
 import { PT_Serif } from "next/font/google";
@@ -63,6 +64,7 @@ export function AddCharacter() {
     const [territories, setTerritories] = useState<territories[]>([]);
     const [allTerritories, setAllTerritories] = useState<territories[]>([]);
     const [allUniverses, setAllUniverses] = useState<territories[]>([]);
+    const userData = useUserStore((state) => state.userData);
 
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
@@ -72,29 +74,24 @@ export function AddCharacter() {
     })
 
     useEffect(() => {
-
-        if (!cookies || !cookies.auth_token) {
-            return router.push('/');
-        }
-
-        const checkUserRole = async () => {
-            try {
-                const response = await fetch('/api/fetchUserRoleAPI', {
-                    headers: {
-                        'Authorization': `Bearer ${cookies.auth_token}`,
-                    }
-                })
-
-                const result = await response.json();
-
-                if (result.userRole !== 'admin') {
-                    router.push(result.redirectUrl);
-                }
-            } catch (error) {
-                console.error('Error fetching user role:', error);
+        const timeout = setTimeout(() => {
+            if (!cookies || userData?.role !== 'admin') {
+                return router.push('/');
             }
+        }, 5000)
+
+        setIsLoading(false);
+
+        if (userData) {
+            clearTimeout(timeout);
         }
 
+        return () => {
+            clearTimeout(timeout);
+        }
+    }, [router, cookies, userData])
+
+    useEffect(() => {
         const getTerritories = async () => {
             try {
                 const response = await fetch('/api/universe/fetchUniverseData', {
@@ -118,12 +115,8 @@ export function AddCharacter() {
                 console.error('Error fetching territories:', error);
             }
         }
-
-        checkUserRole();
         getTerritories()
     }, [cookies, router]);
-
-    console.log(territories)
 
     const onSubmit = async (data: characterType) => {
         try {

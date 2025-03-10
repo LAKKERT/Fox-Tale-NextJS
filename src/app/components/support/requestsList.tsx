@@ -1,7 +1,9 @@
 'use client'
+
 import { Loader } from "@/app/components/load";
 import { useState, useEffect } from "react";
 import { useCookies } from "react-cookie";
+import { useUserStore } from "@/stores/userStore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -25,6 +27,7 @@ export function RequestsListComponent() {
     const [isLoading, setIsLoading] = useState(true);
     const [requests, setRequests] = useState<requestsType[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
+    const userData = useUserStore((state) => state.userData);
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
 
@@ -32,11 +35,21 @@ export function RequestsListComponent() {
     const [filteredRequests, setFilteredRequests] = useState<requestsType[]>([]);
 
     useEffect(() => {
-        const fetchAllRequests = async () => {
-            if (!cookies.auth_token) {
-                router.push("/");
-                return;
+        if (!cookies.auth_token) {
+            return router.push("/");
+        }
+
+        const timeout = setTimeout(() => {
+            if (userData?.role !== 'admin') {
+                return router.push("/");
             }
+        }, 5000);
+
+        if (userData) {
+            clearTimeout(timeout);
+        }
+
+        const fetchAllRequests = async () => {
 
             try {
                 const response = await fetch('/api/support/getAllRequestsAPI', {
@@ -62,7 +75,11 @@ export function RequestsListComponent() {
         };
 
         fetchAllRequests();
-    }, [cookies]);
+
+        return () => {
+            clearTimeout(timeout);
+        };
+    }, [cookies,router, userData]);
 
     useEffect(() => {
         if (Array.isArray(requests)) {

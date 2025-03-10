@@ -5,6 +5,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useCookies } from "react-cookie";
 import Cookies from 'js-cookie';
+import { useUserStore } from '@/stores/userStore';
+
 
 const MainFont = K2D({
     style: "normal",
@@ -25,18 +27,18 @@ const MobileMode: React.FC<{ isMenuOpen: boolean; toggleMenu: () => void }> = ({
     </div>
 );
 
-type usersData = {
-    id: number;
-    username: string;
-}
-
 export function Header() {
-    const [userData, setUserData] = useState<usersData | null>(null);
+    const { 
+        isAuth, 
+        userData,
+        setUserData, 
+        setIsAuth 
+    } = useUserStore();
+    
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
-    const [isAuth, setIsAuth] = useState(false);
-
     const [cookies] = useCookies(['auth_token']);
+
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -55,31 +57,36 @@ export function Header() {
         if (cookies.auth_token) {
             setIsAuth(true);
             const fetchUserData = async () => {
-                try {
-                    const response = await fetch('/api/users/getAllUserDataAPI', {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${cookies.auth_token}`
-                        },
-                    })
-
-                    const result = await response.json();
-                    
-                    if (response.ok) {
-                        setUserData(result.result);
-                    }else {
-                        console.error("Error fetching user data", result.message);
+                if (cookies.auth_token && (!userData || !isAuth)) {
+                    try {
+                        const response = await fetch('/api/users/getAllUserDataAPI', {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${cookies.auth_token}`
+                            },
+                        });
+    
+                        const result = await response.json();
+                        
+                        if (response.ok) {
+                            setUserData(result.result);
+                        } else {
+                            console.error("Error fetching user data", result.message);
+                            setUserData(null);
+                        }
+    
+                    } catch (error) {
+                        console.error("Fetching data error", error);
+                        setUserData(null);
                     }
-
-                } catch (error) {
-                    console.error("fetching data error", error);
                 }
             };
             fetchUserData();
         } else {
             setIsAuth(false);
+            setUserData(null);
         }
-    }, [cookies]);
+    }, [cookies, setUserData, setIsAuth]);
 
     return (
         <div 
@@ -105,12 +112,6 @@ export function Header() {
                         </div>
                     </Link>
 
-                    <Link href="/support">
-                        <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out ">
-                            Support
-                        </div>
-                    </Link>
-
                     <Link href="/universe">
                         <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out ">
                             Universe
@@ -120,6 +121,12 @@ export function Header() {
                     <Link href="/characters">
                         <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out ">
                             Characters
+                        </div>
+                    </Link>
+
+                    <Link href="/support">
+                        <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out ">
+                            Support
                         </div>
                     </Link>
                 </div>
@@ -196,12 +203,6 @@ export function Header() {
                         </div>
                     </Link>
 
-                    <Link href="/support" className="w-full">
-                        <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.7)] transition duration-150 ease-in-out ">
-                            Support
-                        </div>
-                    </Link>
-
                     <Link href="/universe" className="w-full">
                         <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.7)] transition duration-150 ease-in-out ">
                             Universe
@@ -211,6 +212,12 @@ export function Header() {
                     <Link href="/characters" className="w-full">
                         <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.7)] transition duration-150 ease-in-out ">
                             Characters
+                        </div>
+                    </Link>
+
+                    <Link href="/support" className="w-full">
+                        <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.7)] transition duration-150 ease-in-out ">
+                            Support
                         </div>
                     </Link>
 

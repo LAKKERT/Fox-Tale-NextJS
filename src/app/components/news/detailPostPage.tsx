@@ -3,6 +3,7 @@ import { Loader } from "@/app/components/load";
 import Image from "next/image";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useCookies } from "react-cookie";
+import { useUserStore } from "@/stores/userStore";
 import { K2D } from "next/font/google";
 import { motion, AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
 import { v4 as uuidv4 } from "uuid";
@@ -61,7 +62,7 @@ const validationSchema = Yup.object().shape({
 
 export function PostDetailComponent({ postID }) {
     const [postData, setPostData] = useState<{ result?: FormValues[] }>();
-    const [currentUserRole, setCurrentUserRole] = useState('');
+    const userData = useUserStore((state) => state.userData);
     const [isLoading, setIsLoading] = useState(true);
     const [editModeActive, setEditModeActive] = useState(false);
     const [deletePost, setDeletePost] = useState(false);
@@ -104,60 +105,57 @@ export function PostDetailComponent({ postID }) {
         keyName: uuidv4(),
     });
 
-    const fetchPostData = useCallback(async () => {
-        try {
-            const response = await fetch(`/api/news/fetchPostDataAPI?postID=${postID.id}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${cookies ? cookies.auth_token : null}`
-                }
-            });
-
-            const result = await response.json();
-
-            const formedResult = result.result[0].content.map((content: string[]) => content.filter(item => item !== null))
-
-            if (response.ok) {
-                console.log(result);
-
-                const formattedData = result.result[0].paragraph_heading.map((heading: string, index: number) => ({
-                    id: uuidv4(),
-                    heading,
-                    cover: result.result[0].covers[index],
-                    horizontalPosition: Number(result.result[0].covers_horizontal_position[index]),
-                    verticalPosition: Number(result.result[0].covers_vertical_position[index]),
-                    contents: formedResult[index].map((text: string, contentIndex: number) => ({
-                        id: uuidv4(),
-                        text,
-                        image: result.result[0].images[index]?.[contentIndex] || null
-                    }))
-                }));
-
-                console.log(formattedData);
-
-                reset({
-                    title: result.result[0].title,
-                    description: result.result[0].description,
-                    paragraphs: formattedData
-                });
-
-                setHorizontalAlign(result.result[0].covers_horizontal_position);
-                setVerticalAlign(result.result[0].covers_vertical_position);
-                setPostData(result);
-                setCurrentUserRole(result.userRole);
-                setTimeout(() => {
-                    setIsLoading(false);
-                }, 300)
-            }
-        } catch (error) {
-            console.error('Error fetching post data:', error);
-            setIsLoading(false);
-        }
-    }, [postID, cookies.auth_token, reset]);
-
     useEffect(() => {
-        fetchPostData();
-    }, [fetchPostData]);
+        const fetchPostData = async () => {
+            try {
+                const response = await fetch(`/api/news/fetchPostDataAPI?postID=${postID.id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // 'Authorization': `Bearer ${cookies ? cookies.auth_token : null}`
+                    }
+                });
+    
+                const result = await response.json();
+    
+                const formedResult = result.result[0].content.map((content: string[]) => content.filter(item => item !== null))
+    
+                if (response.ok) {
+                    const formattedData = result.result[0].paragraph_heading.map((heading: string, index: number) => ({
+                        id: uuidv4(),
+                        heading,
+                        cover: result.result[0].covers[index],
+                        horizontalPosition: Number(result.result[0].covers_horizontal_position[index]),
+                        verticalPosition: Number(result.result[0].covers_vertical_position[index]),
+                        contents: formedResult[index].map((text: string, contentIndex: number) => ({
+                            id: uuidv4(),
+                            text,
+                            image: result.result[0].images[index]?.[contentIndex] || null
+                        }))
+                    }));
+    
+                    reset({
+                        title: result.result[0].title,
+                        description: result.result[0].description,
+                        paragraphs: formattedData
+                    });
+    
+                    setHorizontalAlign(result.result[0].covers_horizontal_position);
+                    setVerticalAlign(result.result[0].covers_vertical_position);
+                    setPostData(result);
+                    // setCurrentUserRole(result.userRole);
+                    setTimeout(() => {
+                        setIsLoading(false);
+                    }, 300)
+                }
+            } catch (error) {
+                console.error('Error fetching post data:', error);
+                setIsLoading(false);
+            }
+        }
+
+        fetchPostData()
+    }, [userData, cookies, router]);
 
     const editMode = () => {
         if (deletePost === true) {
@@ -262,7 +260,6 @@ export function PostDetailComponent({ postID }) {
     }, []);
 
     const onSubmit = async (data: FormValues) => {
-        console.log(data);
         try {
             const newCovers = data.paragraphs
                 .map(p => p.cover)
@@ -322,7 +319,7 @@ export function PostDetailComponent({ postID }) {
 
             if (response.ok) {
                 setEditModeActive(false);
-                fetchPostData();
+                window.location.reload();
             } else {
                 console.error('Error adding new post:');
             }
@@ -496,7 +493,7 @@ export function PostDetailComponent({ postID }) {
                                                 :
                                                 'Н/Д'}
                                         </p>
-                                        {currentUserRole === "admin" && (
+                                        {userData?.role === "admin" && (
                                             <div className="flex flex-row gap-3">
                                                 <button type="button" onClick={editMode}>EDIT</button>
                                                 <button type="button" onClick={deletePostHandle}>DELETE</button>
@@ -508,7 +505,7 @@ export function PostDetailComponent({ postID }) {
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: deletePost ? '60px' : '0px', opacity: deletePost ? 1 : 0 }}
                                         transition={{ duration: .3 }}
-                                        className={`${currentUserRole === 'admin' ? 'block' : 'hidden'}`}
+                                        className={`${userData?.role === 'admin' ? 'block' : 'hidden'}`}
                                     >
                                         <p>Do you really want to delete this article?</p>
                                         <div className="flex flex-row justify-center gap-2">

@@ -2,7 +2,8 @@
 import { Loader } from '@/app/components/load';
 import { Header } from '@/app/components/header';
 import { saveFile } from '@/pages/api/support/sendMessageAPI';
-import { useEffect, useState, useRef, useCallback, useReducer, KeyboardEvent } from 'react';
+import { useEffect, useState, useRef, useCallback, useReducer, KeyboardEvent, ChangeEvent } from 'react';
+import { useUserStore } from '@/stores/userStore';
 import { useCookies } from 'react-cookie';
 import { useRouter } from 'next/navigation';
 import { io, Socket } from "socket.io-client";
@@ -81,7 +82,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
     const [showImage, setShowImage] = useState<string | null>(null);
     const [chatData, setChatData] = useState<ChatData>({} as ChatData);
     const [usersData, setUsersData] = useState<UsersData[]>([]);
-    const [currentUser, setCurrentUser] = useState<User>({} as User);
+    const userData = useUserStore((state) => state.userData);
     const [cookies] = useCookies(['auth_token']);
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -126,7 +127,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
         const handleUnloadOrPopState = async (event) => {
             if (state.lastSeenMessage !== null) {
                 const payload = {
-                    userID: currentUser.userID,
+                    userID: userData?.id,
                     roomID: chatData.id,
                     lastSeenMessage: state.lastSeenMessage,
                 };
@@ -160,7 +161,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
             window.removeEventListener('beforeunload', handleUnloadOrPopState);
             window.removeEventListener('popstate', handleUnloadOrPopState);
         };
-    }, [state.lastSeenMessage, currentUser.userID, chatData.id]);
+    }, [state.lastSeenMessage, userData?.id, chatData.id]);
 
     useEffect(() => {
         let isMounted = true;
@@ -194,7 +195,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                     setIsLoading(false);
                     setChatData(result.chatData)
                     setUsersData(result.usersData);
-                    setCurrentUser(result.currentUserId);
+                    // setCurrentUser(result.currentUserId);
                     setMessages(result.messages);
 
                     if (socket) {
@@ -227,13 +228,13 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
 
     useEffect(() => {
         const fetchLastSeenMessage = async () => {
-            if (!currentUser.userID || !chatData.id) {
+            if (!userData?.id|| !chatData.id) {
                 console.error('User ID or Chat Data ID is undefined');
                 return;
             }
 
             try {
-                const lastSeenMessage = await fetch(`/api/support/lastMessageAPI?userID=${currentUser.userID}&roomID=${chatData.id}`, {
+                const lastSeenMessage = await fetch(`/api/support/lastMessageAPI?userID=${userData?.id}&roomID=${chatData.id}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -257,10 +258,10 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
             }
         };
 
-        if (currentUser.userID && chatData.id) {
+        if (userData?.id && chatData.id) {
             fetchLastSeenMessage();
         }
-    }, [chatData.id, currentUser.userID]);
+    }, [chatData.id, userData?.id]);
 
     function getFile(selectedFiles: FileList) {
         const fileProperty = [];
@@ -337,7 +338,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                 content: message,
                 fileUrl: fileUrl,
                 roomID: chatData?.id,
-                user_id: currentUser.userID,
+                user_id: userData?.id,
                 status: chatData.status
             }
             socket.emit("message", messageData);
@@ -547,7 +548,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                     className={`min-h-[calc(100vh-100px)] mt-[100px] flex flex-col justify-center items-center bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat`}
                 >
                     <div className='w-full flex flex-row justify-center sm:min-w-[500px] md:min-w-[750px]'>
-                        {currentUser.userRole === 'admin' ? (
+                        {userData?.role === 'admin' ? (
                             <div className='flex flex-col justify-between bg-[rgba(6,6,6,.65)] rounded-xl px-3 py-3 h-1/2 w-[250px]'>
                                 <div className={`h-full pb-4 overflow-auto overflow-x-hidden ${styles.custom_chat_scroll}`}>
                                     <p className='uppercase text-center'>participants</p>
@@ -626,7 +627,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                                                 return (
                                                     <motion.div
                                                         key={index}
-                                                        className={`flex flex-col w-full last:pb-5 ${currentUser.userID === msg.user_id || currentUser.userID === msg.user_id
+                                                        className={`flex flex-col w-full last:pb-5 ${userData?.id === msg.user_id || userData?.id === msg.user_id
                                                             ? 'items-end'
                                                             : 'items-start'
                                                             }`}

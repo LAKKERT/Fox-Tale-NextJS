@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useCookies } from "react-cookie";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { useUserStore } from "@/stores/userStore";
 import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { saveFile } from "@/pages/api/news/saveImagesAPI";
@@ -61,6 +62,7 @@ export function AddUniverse() {
 
     const [selectedFile, setSelectedFiles] = useState<File | null>();
     const [selectedCharacters, setSelectedCharacters] = useState<number[]>([]);
+    const userData = useUserStore((state) => state.userData);
 
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
@@ -71,33 +73,21 @@ export function AddUniverse() {
 
     useEffect(() => {
 
-        if (!cookies || !cookies.auth_token) {
-            return router.push('/');
-        }
-
-        const checkUserRole = async () => {
-            try {
-                const response = await fetch('/api/fetchUserRoleAPI', {
-                    headers: {
-                        'Authorization': `Bearer ${cookies.auth_token}`,
-                    }
-                })
-
-                const result = await response.json();
-
-                if (result.userRole === 'admin') {
-                    setTimeout(() => setIsLoading(false), 200);
-
-                } else {
-                    router.push(result.redirectUrl);
-                }
-            } catch (error) {
-                console.error('Error fetching user role:', error);
+        const timeout = setTimeout(() => {
+            if (!cookies || userData?.role !== 'admin') {
+                return router.push('/');
             }
+        }, 5000)
+
+        setIsLoading(false);
+
+        if (userData) {
+            clearTimeout(timeout);
         }
 
-        checkUserRole();
-
+        return () => {
+            clearTimeout(timeout);
+        }
     }, [cookies, router]);
 
     const onSubmit = async (data: universeType) => {

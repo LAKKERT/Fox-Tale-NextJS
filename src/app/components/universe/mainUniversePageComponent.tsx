@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useCookies } from "react-cookie";
 import { motion } from "framer-motion";
 import { K2D } from "next/font/google";
+import { useUserStore } from "@/stores/userStore";
 
 
 const MainFont = K2D({
@@ -25,9 +26,10 @@ interface universeType {
 export function UniversePageComponent() {
 
     const [isLoading, setIsLoading] = useState(true);
-    const [currentUserRole, setCurrentUserRole] = useState('');
-    const [universeData, setUniverseData] = useState<universeType[]>([])
-    const [cookies] = useCookies(['auth_token'])
+    // const [currentUserRole, setCurrentUserRole] = useState('');
+    const [universeData, setUniverseData] = useState<universeType[]>([]);
+    const [cookies] = useCookies(['auth_token']);
+    const userData = useUserStore((state) => state.userData);
 
     const router = useRouter();
 
@@ -46,7 +48,6 @@ export function UniversePageComponent() {
 
                 if (response.ok) {
                     setUniverseData(result.data);
-                    setCurrentUserRole(result.userRole)
                     setIsLoading(false);
                 } else {
                     console.error(`Error fetching data`);
@@ -84,7 +85,7 @@ export function UniversePageComponent() {
                                 territories
                             </h1>
 
-                            <Link href={'/universe/add_universe'} className={`flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out ${currentUserRole === 'admin' ? '' : 'hidden'} `}>
+                            <Link href={'/universe/add_universe'} className={`flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out ${userData?.role === 'admin' ? '' : 'hidden'} `}>
                                 add territory
                             </Link>
                         </div>

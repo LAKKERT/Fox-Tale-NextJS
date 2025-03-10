@@ -68,17 +68,15 @@ export default function CreateSupportChat() {
     const router = useRouter();
 
     useEffect(() => {
+        if (!cookies.auth_token) {
+            router.push('/login')
+        }
+        
         const timeout = setTimeout(() => {
             setIsLoading(false);
         }, 300)
         return () => clearTimeout(timeout);
     }, [])
-
-    useEffect(() => {
-        if (!cookies.auth_token) {
-            router.push('/login')
-        }
-    }, [cookies]);
 
     const { register, handleSubmit, formState: { errors } } = useForm<dataState>({
         resolver: yupResolver(validationSchema),

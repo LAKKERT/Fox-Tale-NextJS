@@ -31,6 +31,9 @@ export default async function getUserProfile(req: NextApiRequest, res: NextApiRe
 
             try {
                 const result = await conn.query('SELECT * FROM users WHERE id = $1', [userID]);
+                if (result.rows.length === 0) {
+                    return res.status(401).json({ error: 'user not found' });
+                }
                 return res.status(200).json({ profile: result.rows[0], userRole: currentUserRole, accessProfile: accessProfile });
             }catch (error) {
                 console.error('Error fetching user data', error);

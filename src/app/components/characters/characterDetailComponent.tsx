@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useCookies } from "react-cookie";
+import { useUserStore } from "@/stores/userStore";
 import { saveFile } from "@/pages/api/news/saveImagesAPI";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -53,7 +54,7 @@ const validationSchema = Yup.object().shape({
 
 export function CharacterPageDetailComponent({ params }) {
     const [isLoading, setIsLoading] = useState(true);
-    const [currentUserRole, setCurrentUserRole] = useState('');
+    const userData = useUserStore((state) => state.userData)
     const [selectedFile, setSelectedFiles] = useState<File | null>();
     const [isEditMode, setIsEditMode] = useState<boolean>(false);
     const [isDelete, setIsDelete] = useState(false);
@@ -120,7 +121,6 @@ export function CharacterPageDetailComponent({ params }) {
 
                 if (response.ok) {
                     setCharacterData(result.data[0]);
-                    setCurrentUserRole(result.userRole);
                     setTerritories(result.data[0].territories);
                     setSelectedTerritories(result.data[0].territories.map(item => item.id));
                     setIsLoading(false);
@@ -409,7 +409,7 @@ export function CharacterPageDetailComponent({ params }) {
                             >
                                 <div className="flex flex-col items-center">
                                     <div className="flex flex-row justify-between mt-2">
-                                        {currentUserRole === "admin" && (
+                                        {userData?.role === "admin" && (
                                             <div className="flex flex-row gap-3">
                                                 <button type="button" onClick={editMode}>EDIT</button>
                                                 <button type="button" onClick={deletePostHandle} >DELETE</button>
@@ -421,7 +421,7 @@ export function CharacterPageDetailComponent({ params }) {
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: isDelete ? '60px' : '0px', opacity: isDelete ? 1 : 0 }}
                                         transition={{ duration: .3 }}
-                                        className={`${currentUserRole === 'admin' ? 'block' : 'hidden'}`}
+                                        className={`${userData?.role === 'admin' ? 'block' : 'hidden'}`}
                                     >
                                         <p className={`${isDelete ? 'block' : 'hidde pointer-events-none'}`}>Do you really want to delete this article?</p>
                                         <div className={`flex flex-row justify-center gap-2 ${isDelete ? 'block' : 'hidde pointer-events-none'}`}>

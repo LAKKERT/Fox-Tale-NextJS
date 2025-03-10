@@ -3,6 +3,11 @@ import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import jwt from "jsonwebtoken";
 
+interface JwtPayload {
+    userId: number;
+    userRole: string;
+}
+
 export default async function getAllUserData(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'GET') {
         const authHeader = req.headers['authorization'];
@@ -15,14 +20,14 @@ export default async function getAllUserData(req: NextApiRequest, res: NextApiRe
     
         let decoded;
         try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+            decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
         }catch ( error ) {
             console.error('Invalid token:', error);
             res.status(401).json({ error: 'Token is not vailed' });
         }
         
         const currentUserId = decoded?.userId;
-        
+
         const conn = await Connect();
         try {
             const result = await conn.query('SELECT * FROM users WHERE id = $1', [currentUserId]);

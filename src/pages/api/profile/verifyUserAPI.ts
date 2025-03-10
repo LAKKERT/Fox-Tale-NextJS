@@ -81,9 +81,6 @@ export default async function VerifyUser(req: NextApiRequest, res: NextApiRespon
                         access: true,
                         redirectUrl: `/profile/${userID}`,
                     })
-                }else if (req.method === "GET") {
-                    const result = await conn.query(`select email from users where id = $1`, [userID])
-                    return res.status(200).json({ email: result.rows[0] })
                 }
 
             } catch (error) {
