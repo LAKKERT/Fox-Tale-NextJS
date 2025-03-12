@@ -41,12 +41,14 @@ export default function UserProfile({ params }: { params: { id: string } }) {
     
         const loadProfile = async () => {
             try {
-                if (!cookies.auth_token) {
-                    router.push("/");
+                if (!userData) return;
+    
+                if (!profileAccess && userData.role !== 'admin') {
+                    router.push('/profile/verify');
                     return;
                 }
     
-                if (userData?.id === params.id) {
+                if (userData.id === params.id) {
                     if (isMounted) {
                         setCurrentUserProfile(userData);
                         setIsLoading(false);
@@ -54,12 +56,12 @@ export default function UserProfile({ params }: { params: { id: string } }) {
                     return;
                 }
     
-                if (userData?.role === 'admin' && userData.id !== params.id) {
+                if (userData.role === 'admin' && userData.id !== params.id) {
                     const response = await fetch(`/api/users/getUserProfileAPI?userID=${params.id}`, {
                         signal: controller.signal,
                         headers: { 'Authorization': `Bearer ${cookies.auth_token}` }
                     });
-    
+                    
                     if (!response.ok) throw new Error('Profile not found');
                     
                     const { profile } = await response.json();
@@ -67,7 +69,10 @@ export default function UserProfile({ params }: { params: { id: string } }) {
                         setCurrentUserProfile(profile);
                         setIsLoading(false);
                     }
+                    return;
                 }
+    
+                router.push('/');
     
             } catch (error) {
                 console.error(error);
@@ -81,10 +86,8 @@ export default function UserProfile({ params }: { params: { id: string } }) {
             isMounted = false;
             controller.abort();
         };
-    }, [cookies, router, params, userData]);
+    }, [cookies, router, params, userData, profileAccess]);
 
-    console.log(userData)
-    console.log(currentUserProfile)
     return (
         <div className={`w-full min-h-[calc(100vh-100px)] bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat ${MainFont.className} caret-transparent`}>
             <Header />

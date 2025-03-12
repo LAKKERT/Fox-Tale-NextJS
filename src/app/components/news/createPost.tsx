@@ -7,9 +7,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useCookies } from "react-cookie";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence, useTime } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useUserStore } from "@/stores/userStore";
-import _ from "lodash"
 import { saveFile } from "@/pages/api/news/saveImagesAPI";
 import { K2D } from "next/font/google";
 import styles from "@/app/styles/home/variables.module.scss";
@@ -93,24 +92,13 @@ export function CreatePostComponent() {
     })
 
     useEffect(() => {
-
-        if (!cookies) {
-            return router.push('/login');
-        }
-
-        const timeout = setTimeout(() => {
-            if (!userData || userData.role !== 'admin') {
-                router.push('/');
-            }
-        }, 5000);
-
-        setIsLoading(false);
-
         if (userData) {
-            clearTimeout(timeout);
+            if (userData?.role !== 'admin') {
+                return router.push("/");
+            }else {
+                setIsLoading(false)
+            }
         }
-
-        return () => clearTimeout(timeout);
     }, [userData, router]);
 
     const addParagraph = () => {

@@ -8,6 +8,7 @@ import { K2D } from "next/font/google";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion"
 import { yupResolver } from "@hookform/resolvers/yup";
+import { useUserStore } from "@/stores/userStore";
 
 const MainFont = K2D({
     style: "normal",
@@ -33,6 +34,9 @@ export function LoginPage() {
         username: '',
         password: ''
     });
+    const {
+        setProfileAccess
+    } = useUserStore()
 
     const {register, handleSubmit, formState: {errors}} = useForm({
         resolver: yupResolver(validationSchema)
@@ -55,6 +59,7 @@ export function LoginPage() {
             const result = await response.json();
 
             if (response.ok) {
+                setProfileAccess(false)
                 router.push(result.redirectUrl);
             }else {
                 setServerMessage(result.message);

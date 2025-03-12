@@ -13,7 +13,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 
 
 const validationSchema = Yup.object().shape({
-    code: Yup.number().min(1000, 'Number must be a 4-digit number').max(9999, 'Number must be a 4-digit number').typeError('Please enter a 4-digit number'),
+    code: Yup.number().min(1000, 'Number must be a 4-digit number').max(9999, 'Number must be a 4-digit number').typeError('Please enter a 4-digit number').required(),
 })
 
 export default function VerifyPage() {
@@ -25,7 +25,10 @@ export default function VerifyPage() {
 
     const userData = useUserStore((state) => state.userData);
 
+    const maskedEmail = maskEmail(userData?.email)
+
     const {
+        profileAccess,
         setProfileAccess,
     } = useUserStore();
 
@@ -34,50 +37,60 @@ export default function VerifyPage() {
     })
 
     useEffect(() => {
-        const fetchUserEmail = async () => {
-            if (userData) {
-                setIsLoading(false);
-                try {
+        if (!cookies.auth_token) {
+            router.push('/')
+        } 
 
-                    if (userData.role === 'admin') {
-                        router.push(`/profile/${userData.id}`);
-                    }
-    
-                    const payload = {
-                        cookiesName: 'auth_token',
-                        userEmail: userData.email,
-                    }
-                    
-                    const createCodeResponse = await fetch(`/api/profile/createVerificationCodeAPI`, {
-                        method: 'POST',
-                        headers: {
-                            'content-type': 'application/json',
-                            'Authorization': `Bearer ${cookies['auth_token']}`,
-                        },
-                        body: JSON.stringify(payload),
-                    })
-    
-                    const codeResponse = await createCodeResponse.json();
-    
-                    if (createCodeResponse.ok) {
-                        setProfileAccess(true);
-                        if (codeResponse.redirectUrl) {
-                            router.push(codeResponse.redirectUrl)
+    }, [cookies, router])
+
+    useEffect(() => {
+        const fetchUserEmail = async () => {
+            if (profileAccess) {
+                router.push(`/profile/${userData?.id}`)
+            }else {
+                if (userData) {
+                    setIsLoading(false);
+                    try {
+                        if (userData.role === 'admin') {
+                            router.push(`/profile/${userData.id}`);
                         }
-                    }else {
-                        console.error('Server error occurred');
+        
+                        const payload = {
+                            cookiesName: 'auth_token',
+                            userEmail: userData.email,
+                        }
+                        
+                        const createCodeResponse = await fetch(`/api/profile/createVerificationCodeAPI`, {
+                            method: 'POST',
+                            headers: {
+                                'content-type': 'application/json',
+                                'Authorization': `Bearer ${cookies['auth_token']}`,
+                            },
+                            body: JSON.stringify(payload),
+                        })
+        
+                        const codeResponse = await createCodeResponse.json();
+        
+                        if (createCodeResponse.ok) {
+                            setProfileAccess(true);
+                            if (codeResponse.redirectUrl) {
+                                router.push(codeResponse.redirectUrl)
+                            }
+                        }else {
+                            console.error('Server error occurred');
+                        }
+        
+                    }catch (error) {
+                        console.log(error);
+                        setServerMessage("An unexpected error occurred.");
                     }
-    
-                }catch (error) {
-                    console.log(error);
-                    setServerMessage("An unexpected error occurred.");
                 }
             }
         }
 
         fetchUserEmail();
 
-    }, [router, userData])
+    }, [router, userData, cookies])
 
     const onSubmit = async (data: {code: number}) => {
         try {
@@ -110,6 +123,16 @@ export default function VerifyPage() {
         }
     }
 
+    function maskEmail(email: string) {
+        const index = email?.indexOf("@");
+    
+        const visiblePart = email?.slice(0, index - 4);
+        const hiddenPart = "*".repeat(4);
+        const domain = email?.slice(index);
+    
+        return `${visiblePart}${hiddenPart}${domain}`;
+    }
+
     return (
         <div>
             <Header />
@@ -133,7 +156,7 @@ export default function VerifyPage() {
                 >
                     <div className="h-full min-h-[calc(100vh-100px)] flex justify-center items-center">
                         <div className="bg-[rgba(6,6,6,.65)] flex flex-col gap-4 py-9 px-5 rounded-lg text-center">
-                            <p>the code was sent to the email: {userData?.email}</p>
+                            <p>the code was sent to the email: {maskedEmail}</p>
                             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col justify-center items-center text-center gap-6">
                                 <div className="flex flex-col text-center">
                                     <motion.p

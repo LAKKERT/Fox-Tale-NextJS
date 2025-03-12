@@ -1,6 +1,5 @@
 'use client';
 import { Loader } from "@/app/components/load";
-import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useCookies } from "react-cookie";
 import { useForm } from "react-hook-form";
@@ -13,7 +12,6 @@ import Image from "next/image";
 import { K2D } from "next/font/google";
 import { PT_Serif } from "next/font/google";
 import { motion } from "framer-motion";
-import _ from "lodash";
 
 const MainFont = K2D({
     style: "normal",
@@ -31,7 +29,6 @@ type universeType = {
     cover: File
     name: string;
     description: string;
-    // characters: number[];
 }
 
 const validationSchema = Yup.object().shape({
@@ -48,7 +45,6 @@ export function AddUniverse() {
     const [isLoading, setIsLoading] = useState(false);
 
     const [selectedFile, setSelectedFiles] = useState<File | null>();
-    // const [selectedCharacters, setSelectedCharacters] = useState<number[]>([]);
     const userData = useUserStore((state) => state.userData);
 
     const [cookies] = useCookies(['auth_token']);
@@ -59,23 +55,25 @@ export function AddUniverse() {
     })
 
     useEffect(() => {
-
+        if (!cookies.auth_token || (userData && userData.role !== 'admin')) {
+            router.push('/');
+            return;
+        }
+    
+        if (userData?.role === 'admin') {
+            setIsLoading(false);
+        } else {
+            setIsLoading(true); 
+        }
+    
         const timeout = setTimeout(() => {
-            if (!cookies || userData?.role !== 'admin') {
-                return router.push('/');
+            if (!userData) {
+                router.push('/');
             }
-        }, 5000)
-
-        setIsLoading(false);
-
-        if (userData) {
-            clearTimeout(timeout);
-        }
-
-        return () => {
-            clearTimeout(timeout);
-        }
-    }, [cookies, router, userData]);
+        }, 5000);
+    
+        return () => clearTimeout(timeout);
+    }, [cookies, userData, router]);
 
     const onSubmit = async (data: universeType) => {
         try {
@@ -83,8 +81,6 @@ export function AddUniverse() {
             const fileData = await processFile(selectedFile)
 
             saveFile(fileData, fileProperty)
-
-            // data.characters = selectedCharacters;
 
             const payload = {
                 ...data,

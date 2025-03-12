@@ -35,18 +35,10 @@ export function RequestsListComponent() {
     const [filteredRequests, setFilteredRequests] = useState<requestsType[]>([]);
 
     useEffect(() => {
-        if (!cookies.auth_token) {
-            return router.push("/");
-        }
-
-        const timeout = setTimeout(() => {
+        if (userData) {
             if (userData?.role !== 'admin') {
                 return router.push("/");
             }
-        }, 5000);
-
-        if (userData) {
-            clearTimeout(timeout);
         }
 
         const fetchAllRequests = async () => {
@@ -76,9 +68,6 @@ export function RequestsListComponent() {
 
         fetchAllRequests();
 
-        return () => {
-            clearTimeout(timeout);
-        };
     }, [cookies,router, userData]);
 
     useEffect(() => {

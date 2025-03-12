@@ -70,22 +70,28 @@ export function AddCharacter() {
     })
 
     useEffect(() => {
-        const timeout = setTimeout(() => {
-            if (!cookies || userData?.role !== 'admin') {
-                return router.push('/');
+        let isMounted = true;
+        const checkAccess = () => {
+            if (!cookies.auth_token || (userData && userData.role !== 'admin')) {
+                router.push('/');
+                if (isMounted) setIsLoading(true);
+                return;
             }
-        }, 5000)
 
-        setIsLoading(false);
+            if (userData?.role === 'admin' && isMounted) {
+                setIsLoading(false);
+            }
+        };
 
-        if (userData) {
-            clearTimeout(timeout);
-        }
+        const timeoutId = setTimeout(() => {
+            checkAccess();
+        }, 0);
 
         return () => {
-            clearTimeout(timeout);
-        }
-    }, [router, cookies, userData])
+            isMounted = false;
+            clearTimeout(timeoutId);
+        };
+    }, [cookies, userData, router]);
 
     useEffect(() => {
         const getTerritories = async () => {
