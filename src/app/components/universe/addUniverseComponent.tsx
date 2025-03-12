@@ -31,28 +31,15 @@ type universeType = {
     cover: File
     name: string;
     description: string;
-    characters: number[];
-}
-
-interface fileProperty {
-    name: string;
-    type: string;
-    size: number;
-}
-
-interface characterType {
-    id: number;
-    name: string;
-    description: string;
-    cover: string;
-}
-
-const cardAnimation = {
-    tap: { scale: 0.8 },
+    // characters: number[];
 }
 
 const validationSchema = Yup.object().shape({
-    cover: Yup.mixed().required("Cover is required"),
+    cover: Yup.mixed<File>()
+        .test("required", "Cover is required", (value) => {
+            return value instanceof File;
+        })
+        .required(),
     name: Yup.string().required("Name is required"),
     description: Yup.string().required("Description is required"),
 })
@@ -61,13 +48,13 @@ export function AddUniverse() {
     const [isLoading, setIsLoading] = useState(false);
 
     const [selectedFile, setSelectedFiles] = useState<File | null>();
-    const [selectedCharacters, setSelectedCharacters] = useState<number[]>([]);
+    // const [selectedCharacters, setSelectedCharacters] = useState<number[]>([]);
     const userData = useUserStore((state) => state.userData);
 
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
 
-    const { register, handleSubmit, formState: { errors } } = useForm<universeType>({
+    const { register, handleSubmit, formState: { errors }, trigger, setValue } = useForm<universeType>({
         resolver: yupResolver(validationSchema)
     })
 
@@ -88,7 +75,7 @@ export function AddUniverse() {
         return () => {
             clearTimeout(timeout);
         }
-    }, [cookies, router]);
+    }, [cookies, router, userData]);
 
     const onSubmit = async (data: universeType) => {
         try {
@@ -97,7 +84,7 @@ export function AddUniverse() {
 
             saveFile(fileData, fileProperty)
 
-            data.characters = selectedCharacters;
+            // data.characters = selectedCharacters;
 
             const payload = {
                 ...data,
@@ -170,7 +157,6 @@ export function AddUniverse() {
                     className={`lg:max-w-6xl w-full mx-auto ${MainFont.className} text-white bg-black py-4`}
                 >
                     <form onSubmit={handleSubmit(onSubmit)}>
-
                         <motion.div className={`w-full bg-white`}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -184,7 +170,7 @@ export function AddUniverse() {
                                         transition={{ duration: .3 }}
                                         placeholder="NAME"
                                         {...register('name')}
-                                        className={`absolute w-full bg-transparent outline-none top-0 bottom-0 my-auto text-white placeholder:text-white text-xl md:text-4xl tracking-[5px] text-center caret-white ${introductionFont.className}`}
+                                        className={`absolute w-full bg-transparent outline-none top-0 bottom-0 my-auto text-white placeholder:text-white text-xl md:text-4xl tracking-[5px] text-center focus:caret-white ${introductionFont.className}`}
                                     />
 
                                     <Image
@@ -204,26 +190,48 @@ export function AddUniverse() {
                         </motion.div>
 
                         <motion.div className="w-full flex flex-col items-center gap-3">
-
                             <input
                                 type="file"
                                 {...register('cover')}
                                 onChange={(e) => {
                                     if (e.target.files) {
                                         setSelectedFiles(e.target.files[0]);
+                                        setValue("cover", e.target.files[0]);
+                                        trigger('cover')
                                     }
                                 }}
                                 id="inputFile"
                                 className="hidden"
                             />
 
-                            <label htmlFor="inputFile"
-                                className={` min-w-[185px] text-center py-2 mt-3 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3] transition-colors duration-75 hover:bg-[#c2724f91]`}
-                            >
-                                {selectedFile ? 'Change cover' : 'Upload cover'}
-                            </label>
+                            <div className="flex flex-col">
+                                <motion.p
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: errors.cover?.message || errors.name?.message ? 1 : 0, height: errors.cover?.message || errors.name?.message ? 30 : 0 }}
+                                    transition={{ duration: .3 }}
+                                    className="text-center text-orange-300 text-[13px] sm:text-[18px]"
+                                >
+                                    {errors.cover?.message || errors.name?.message}
+                                </motion.p>
+
+                                <label htmlFor="inputFile"
+                                    className={` min-w-[185px] text-center py-2 mt-3 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3] transition-colors duration-75 hover:bg-[#c2724f91]`}
+                                >
+                                    {selectedFile ? 'Change cover' : 'Upload cover'}
+                                </label>
+                            </div>
+
 
                             <div className="max-w-[640px] w-full h-auto flex flex-col gap-3 px-2 md:px-0">
+                                <motion.p
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: errors.description?.message ? 1 : 0, height: errors.description?.message ? 30 : 0 }}
+                                    transition={{ duration: .3 }}
+                                    className="text-center text-orange-300 text-[13px] sm:text-[18px]"
+                                >
+                                    {errors.description?.message}
+                                </motion.p>
+
                                 <textarea
                                     {...register('description')}
                                     onInput={(e) => {
@@ -233,7 +241,7 @@ export function AddUniverse() {
                                         target.style.minHeight = "50px";
                                         target.style.height = `${target.scrollHeight}px`;
                                     }}
-                                    className={`text-left text-sm md:text-base text-balance text-[#F5DEB3] overflow-hidden p-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 caret-white`}
+                                    className={`text-left text-sm md:text-base text-balance text-[#F5DEB3] overflow-hidden p-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 focus:caret-white`}
                                     style={{
                                         maxHeight: "70vh",
                                         boxSizing: "border-box"
@@ -242,7 +250,7 @@ export function AddUniverse() {
                                 >
                                 </textarea>
                             </div>
-                            
+
                             <button type="submit" className={`mt-4 px-6 py-2 bg-green-500 rounded`}>
                                 SAVE CHANGES
                             </button>

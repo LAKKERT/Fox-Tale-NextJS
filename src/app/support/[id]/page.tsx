@@ -2,11 +2,12 @@
 import { Loader } from '@/app/components/load';
 import { Header } from '@/app/components/header';
 import { saveFile } from '@/pages/api/support/sendMessageAPI';
-import { useEffect, useState, useRef, useCallback, useReducer, KeyboardEvent, ChangeEvent } from 'react';
+import { useEffect, useState, useRef, useCallback, useReducer, KeyboardEvent } from 'react';
 import { useUserStore } from '@/stores/userStore';
 import { useCookies } from 'react-cookie';
 import { useRouter } from 'next/navigation';
 import { io, Socket } from "socket.io-client";
+import _ from "lodash";
 import { motion } from 'framer-motion';
 import Image from "next/image";
 import styles from "@/app/styles/home/variables.module.scss";
@@ -34,11 +35,6 @@ type ChatData = {
     description: string
     status: boolean,
     files: string[],
-};
-
-type User = {
-    userID: string;
-    userRole: string;
 };
 
 type Message = {
@@ -195,7 +191,6 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                     setIsLoading(false);
                     setChatData(result.chatData)
                     setUsersData(result.usersData);
-                    // setCurrentUser(result.currentUserId);
                     setMessages(result.messages);
 
                     if (socket) {
@@ -410,6 +405,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
 
     const handleScrollAndMessages = useCallback(() => {
         const element = scrollContainerRef.current;
+
         if (element) {
             const isBottom = Math.ceil(element.scrollTop + element.clientHeight) >= element.scrollHeight - 20;
             dispatch({ type: 'SCROLL_TO_BOTTOM', payload: isBottom });
@@ -437,7 +433,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
 
     useEffect(() => {
         handleScrollAndMessages();
-    }, [messages, handleScrollAndMessages])
+    }, [handleScrollAndMessages])
 
     useEffect(() => {
         const element = scrollContainerRef.current;

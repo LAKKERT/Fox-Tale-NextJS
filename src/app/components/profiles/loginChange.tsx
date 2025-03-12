@@ -6,31 +6,25 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { clearTimeout } from "timers";
 import { motion } from "framer-motion";
 
+interface userData {
+    login: string;
+}
+
 const validationSchema = Yup.object().shape({
     login: Yup.string().min(4, "Login must be at least 4 characters").required("Enter your new login")
 })
 
-export function ChangeLogin({ userData }) {
-    const [clientError, setClientError] = useState({});
-    const [serverError, setServerError] = useState({});
+export function ChangeLogin({ userData }: {userData: {id: string}}) {
+    const [serverError, setServerError] = useState<{login: string}>({
+        login: "",
+    });
     const [serverMessage, setServerMessage] = useState("")
 
-    const { register, handleSubmit, reset, formState: { errors } } = useForm({
+    const { register, handleSubmit, reset, formState: { errors } } = useForm<userData>({
         resolver: yupResolver(validationSchema),
-    });
+    });errors
 
-    useEffect(() => {
-        if (errors) {
-            setClientError(errors);
-        } else {
-            const timeout = setTimeout(() => {
-                setClientError(errors);
-                return () => clearTimeout(timeout)
-            })
-        }
-    }, [errors]);
-
-    const onSubmit = async (data) => {
+    const onSubmit = async (data: userData) => {
         try {
             const payload = {
                 ...data,
@@ -74,13 +68,13 @@ export function ChangeLogin({ userData }) {
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3 text-balance">
                     <motion.p
                         initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: clientError.login?.message || serverError?.login || serverMessage ? 1 : 0, height: clientError.login?.message || serverError?.login || serverMessage ? 30 : 0 }}
+                        animate={{ opacity: errors.login?.message || serverError?.login || serverMessage ? 1 : 0, height: errors.login?.message || serverError?.login || serverMessage ? 30 : 0 }}
                         transition={{ duration: .3 }}
                         className="text-orange-300 text-[13px] sm:text-[18px]"
                     >
-                        {clientError.login?.message || serverError?.login || serverMessage}
+                        {errors.login?.message || serverError?.login || serverMessage}
                     </motion.p>
-                    <input type="text" {...register("login")} placeholder="Your new username" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white" />
+                    <input type="text" {...register("login")} placeholder="Your new username" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline focus:caret-white" />
                     <input type="submit" value="Save changes" className="w-full h-11 bg-[#C67E5F] hover:bg-[rgba(198,126,95,.80)] rounded text-white text-center cursor-pointer transition-all duration-150 ease-in-out" />
                 </form>
             </div>

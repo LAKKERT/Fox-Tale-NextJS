@@ -26,7 +26,6 @@ interface universeType {
 export function UniversePageComponent() {
 
     const [isLoading, setIsLoading] = useState(true);
-    // const [currentUserRole, setCurrentUserRole] = useState('');
     const [universeData, setUniverseData] = useState<universeType[]>([]);
     const [cookies] = useCookies(['auth_token']);
     const userData = useUserStore((state) => state.userData);

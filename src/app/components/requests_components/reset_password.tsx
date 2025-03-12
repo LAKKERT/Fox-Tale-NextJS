@@ -1,20 +1,26 @@
 "use client";
 import { useForm } from "react-hook-form";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { motion } from "framer-motion";
-import { redirect, useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
+
+interface userData {
+    password: string;
+    repeatPassword: string;
+}
 
 const validationSchema = Yup.object().shape({
     password: Yup.string().min(6, 'Password must be at least 6 characters').required('Enter your password'),
-    repeatPassword: Yup.string().oneOf([Yup.ref('password'), null], 'Passwords must match').required('Repeat your password'),
+    repeatPassword: Yup.string().oneOf([Yup.ref('password')], 'Passwords must match').required('Repeat your password'),
 })
 
 export function PasswordResetComponent() {
-    const [clientError, setClientError] = useState({});
-    const [serverError, setServerError] = useState({});
+    const [serverError, setServerError] = useState<{password: string, repeatPassword: string}>({
+        password: "",
+        repeatPassword: "",
+    });
     const [serverMessage, setServerMessage] = useState("");
 
     const router = useRouter();
@@ -26,19 +32,7 @@ export function PasswordResetComponent() {
         resolver: yupResolver(validationSchema)
     });
 
-    useEffect(() => {
-        if (errors) {
-            setClientError(errors);
-        } else {
-            const timeout = setTimeout(() => {
-                setClientError(errors);
-                return () => clearTimeout(timeout);
-            }, 300);
-        }
-
-    }, [errors]);
-
-    const onSubmit = async (data) => {
+    const onSubmit = async (data: userData) => {
         try {
             const payload = {
                 ...data,
@@ -83,11 +77,11 @@ export function PasswordResetComponent() {
                 <div className="flex flex-col text-center">
                     <motion.p
                         initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: clientError.password?.message || serverError?.password ? 1 : 0, height: clientError.password?.message || serverError?.password ? 30 : 0 }}
+                        animate={{ opacity: errors.password?.message || serverError?.password ? 1 : 0, height: errors.password?.message || serverError?.password ? 30 : 0 }}
                         transition={{ duration: .3 }}
                         className="text-orange-300 text-[13px] sm:text-[18px]"
                     >
-                        {clientError.password?.message || serverError?.password}
+                        {errors.password?.message || serverError?.password}
                     </motion.p>
                     <input type="password" {...register("password")} placeholder="New password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white" />
                 </div>
@@ -95,11 +89,11 @@ export function PasswordResetComponent() {
                 <div className="h-auto flex flex-col text-center">
                     <motion.p
                         initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: clientError.repeatPassword?.message || serverError?.repeatPassword ? 1 : 0, height: clientError.repeatPassword?.message || serverError?.repeatPassword ? 30 : 0 }}
+                        animate={{ opacity: errors.repeatPassword?.message || serverError?.repeatPassword ? 1 : 0, height: errors.repeatPassword?.message || serverError?.repeatPassword ? 30 : 0 }}
                         transition={{ duration: .3 }}
                         className="text-orange-300 text-[13px] sm:text-[18px]"
                     >
-                        {clientError.repeatPassword?.message || serverError?.repeatPassword}
+                        {errors.repeatPassword?.message || serverError?.repeatPassword}
                     </motion.p>
                     <input type="password" {...register("repeatPassword")} placeholder="Repeat new password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white" />
                 </div>

@@ -227,7 +227,7 @@ export default function CreateSupportChat() {
                                     >
                                         {errors.title?.message || serverErrors?.title}
                                     </motion.p>
-                                    <input type="text" {...register("title")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center outline-none border-[#F5DEB3] select-none text-base md:text-2xl" placeholder="Title" />
+                                    <input type="text" {...register("title")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center outline-none border-[#F5DEB3] select-none text-base md:text-2xl focus:caret-white" placeholder="Title" />
                                 </div>
 
                                 <div className="w-full flex flex-col text-center">
@@ -245,7 +245,7 @@ export default function CreateSupportChat() {
                                             handleInputChange(e);
                                         }
                                     })} 
-                                    className={`w-full bg-transparent outline-none font-extralight tracking-[1px] py-2 px-3 text-balance resize-none border-2 rounded text-base md:text-lg ${styles.custom_scroll} border-[#F5DEB3]`} />
+                                    className={`focus:caret-white w-full bg-transparent outline-none font-extralight tracking-[1px] py-2 px-3 text-balance resize-none border-2 rounded text-base md:text-lg ${styles.custom_scroll} border-[#F5DEB3]`} />
                                 </div>
 
                                 <div className={`w-full flex flex-col items-start ${selectedFiles?.length === 0 || selectedFiles === null ? null : 'gap-2'}`}>

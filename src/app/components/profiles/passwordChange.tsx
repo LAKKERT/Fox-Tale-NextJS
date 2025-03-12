@@ -24,32 +24,20 @@ type UserData = {
 const validationSchema = Yup.object().shape({
     password1: Yup.string().min(6, 'Old password must be at least 6 characters').required('Enter your password'),
     password2: Yup.string().min(6, 'New password must be at least 6 characters').required('Enter your new password'),
-    repeatPassword2: Yup.string().oneOf([Yup.ref('password2'), null], 'Passwords must match').required('Repeat your new password'),
+    repeatPassword2: Yup.string().oneOf([Yup.ref('password2')], 'Passwords must match').required('Repeat your new password'),
 })
 
-export function ChangePassword({ userData }) {
+export function ChangePassword({ userData }: {userData: {id: string}}) {
     const [successMessage, setSuccessMessage] = useState("");
     const [serverMessage, setServerMessage] = useState("");
     const [serverError, setServerError] = useState<ServerErrors>({});
-    const [clientError, setClientError] = useState<ServerErrors>({});
 
     const { register, handleSubmit, reset, formState: { errors } } = useForm({
         resolver: yupResolver(validationSchema)
     });
 
-    useEffect(() => {
-        if (errors) {
-            setClientError(errors);
-        } else {
-            const timeout = setTimeout(() => {
-                setClientError(errors);
-                return () => clearTimeout(timeout);
-            }, 300);
-        }
 
-    }, [errors]);
-
-    const onSubmit = async (data) => {
+    const onSubmit = async (data: FormData) => {
         try {
             const payload = {
                 ...data,
@@ -104,21 +92,21 @@ export function ChangePassword({ userData }) {
                             transition={{ duration: 0.3 }}
                             className="text-orange-300 text-[13px] sm:text-[18px]"
                         >
-                            {clientError.password1?.message || serverError?.password1 || serverMessage}
+                            {errors.password1?.message || serverError?.password1 || serverMessage}
                         </motion.p>
-                        <input type="password" {...register("password1")} placeholder="Current password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white" />
+                        <input type="password" {...register("password1")} placeholder="Current password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline focus:caret-white" />
                     </div>
 
                     <div className="flex flex-col gap-2">
                         <motion.p
-                            initial={{ opacity: 0, heigth: 0 }}
+                            initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: errors.password2 || serverError?.password2 ? 1 : 0, height: errors.password2 || serverError?.password2 ? 30 : 0 }}
                             transition={{ duration: 0.3 }}
                             className="text-orange-300 text-[13px] sm:text-[18px]"
                         >
-                            {clientError.password2?.message || serverError?.password2}
+                            {errors.password2?.message || serverError?.password2}
                         </motion.p>
-                        <input type="password" {...register("password2")} placeholder="New password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white" />
+                        <input type="password" {...register("password2")} placeholder="New password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline focus:caret-white" />
                     </div>
                     <div className="flex flex-col gap-2">
                         <motion.p
@@ -129,7 +117,7 @@ export function ChangePassword({ userData }) {
                         >
                             {errors.repeatPassword2?.message || serverError?.repeatPassword2}
                         </motion.p>
-                        <input type="password" {...register("repeatPassword2")} placeholder="Repeat new password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white" />
+                        <input type="password" {...register("repeatPassword2")} placeholder="Repeat new password" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline focus:caret-white" />
                     </div>
                     <input type="submit" value="Save changes" className="w-full h-11 bg-[#C67E5F] hover:bg-[rgba(198,126,95,.80)] rounded text-white text-center cursor-pointer transition-all duration-150 ease-in-out" />
                 </form>

@@ -1,6 +1,6 @@
 'use client'
 import { Loader } from "@/app/components/load";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, ChangeEvent } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as Yup from "yup";
 import { v4 as uuidv4 } from 'uuid';
@@ -25,15 +25,15 @@ type FormValues = {
     title: string;
     description: string;
     paragraphs: {
-        id: string,
+        id: string;
         heading: string;
-        cover: File | Blob | string | null;
+        cover?: File | Blob | string | null;
         horizontalPosition: number;
         verticalPosition: number;
         contents: {
             id: string;
             text: string;
-            image: File | string | null;
+            image?: File | string | null;
         }[];
     }[];
 };
@@ -50,19 +50,32 @@ const validationSchema = Yup.object().shape({
     description: Yup.string().required("Description is required"),
     paragraphs: Yup.array().of(
         Yup.object().shape({
+            id: Yup.string().required(),
             heading: Yup.string().required("Heading is required"),
+            cover: Yup.mixed<File | Blob | string>() 
+                .nullable(),
+            horizontalPosition: Yup.number()
+                .min(0)
+                .max(100)
+                .required(),
+            verticalPosition: Yup.number()
+                .min(0)
+                .max(100)
+                .required(),
             contents: Yup.array().of(
                 Yup.object().shape({
+                    id: Yup.string().required(),
                     text: Yup.string().required("Content is required"),
+                    image: Yup.mixed<File | string>()
+                        .nullable()
                 })
-            ),
+            ).required(),
         })
-    ),
+    ).required(),
 });
 
 export function CreatePostComponent() {
     const [isLoading, setIsLoading] = useState(true);
-    const [userID, setUserID] = useState('');
     const userData = useUserStore((state) => state.userData);
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
@@ -87,7 +100,7 @@ export function CreatePostComponent() {
 
         const timeout = setTimeout(() => {
             if (!userData || userData.role !== 'admin') {
-                router.push('/'); 
+                router.push('/');
             }
         }, 5000);
 
@@ -156,7 +169,7 @@ export function CreatePostComponent() {
 
     const processFiles = useCallback(async (files: File[]) => {
         return Promise.all(
-            files.map(file =>
+            files.map((file: File) =>
                 new Promise((resolve, reject) => {
                     if (!file) resolve(null);
                     const reader = new FileReader();
@@ -169,7 +182,7 @@ export function CreatePostComponent() {
     }, []);
 
     const getFileMetadata = useCallback((files: File[]): FileMetadata[] => {
-        return files.map(file => {
+        return files.map((file: File) => {
             const fileName = file?.name || '';
             const lastDotIndex = fileName.lastIndexOf(".");
             return {
@@ -184,22 +197,26 @@ export function CreatePostComponent() {
         if (userData) {
             try {
                 const covers = await processFiles(
-                    data.paragraphs.map(p => p.cover).filter(Boolean)
+                    data.paragraphs
+                        .map(p => p.cover)
+                        .filter((item): item is File => item instanceof File)
                 );
                 const coversMetadata = getFileMetadata(
-                    data.paragraphs.map(p => p.cover).filter(Boolean)
+                    data.paragraphs
+                        .map(p => p.cover)
+                        .filter((item): item is File => item instanceof File)
                 );
                 const coversURL = coversMetadata.map(meta =>
                     meta.size > 0 ? `/uploads/news/${Date.now()}_${meta.name}.${meta.extension}` : null
                 );
                 await saveFile(covers, coversURL.filter((url): url is string => url !== '' && url !== null));
-    
+
                 data.paragraphs.forEach((paragraph, index) => {
                     if (paragraph.cover) {
                         paragraph.cover = coversURL[index];
                     }
                 });
-    
+
                 const allContentImages = data.paragraphs
                     .flatMap(p => p.contents.map(c => c.image))
                     .filter(img => img instanceof File) as File[];
@@ -208,8 +225,9 @@ export function CreatePostComponent() {
                 const imagesURL = imagesMetadata.map(meta =>
                     meta.size > 0 ? `/uploads/news/${Date.now()}_${meta.name}.${meta.extension}` : null
                 );
-                await saveFile(images.flat(), imagesURL.flat());
-    
+
+                await saveFile(images.flat(), imagesURL.flat().filter((url): url is string => url !== null));
+
                 let imageIndex = 0;
                 data.paragraphs.forEach(paragraph => {
                     paragraph.contents.forEach(content => {
@@ -219,12 +237,12 @@ export function CreatePostComponent() {
                         }
                     });
                 });
-    
+
                 const payload = {
                     data,
                     userID: userData.id,
                 };
-    
+
                 const response = await fetch('/api/news/addNewsAPI', {
                     method: 'POST',
                     headers: {
@@ -233,7 +251,7 @@ export function CreatePostComponent() {
                     },
                     body: JSON.stringify(payload),
                 });
-    
+
                 if (response.ok) {
                     router.push('/');
                 } else {
@@ -252,23 +270,23 @@ export function CreatePostComponent() {
         }
     }
 
-    const handleSliderChange = (paragraphIndex: number, isHorizontal: boolean, e) => {
+    const handleSliderChange = (paragraphIndex: number, isHorizontal: boolean, e: ChangeEvent<HTMLInputElement>) => {
         const value = Number(e.target.value);
-        
+
         const currentH = paragraphs[paragraphIndex].horizontalPosition;
         const currentV = paragraphs[paragraphIndex].verticalPosition;
-      
+
         const newH = isHorizontal ? value : currentH;
         const newV = !isHorizontal ? value : currentV;
-      
+
         handlePositionChange(paragraphIndex, newH, newV);
-        
+
         update(paragraphIndex, {
-          ...paragraphs[paragraphIndex],
-          horizontalPosition: newH,
-          verticalPosition: newV
+            ...paragraphs[paragraphIndex],
+            horizontalPosition: newH,
+            verticalPosition: newV
         });
-      };
+    };
 
     return (
         <div className={`max-w-[768px] xl:max-w-[1110px] flex flex-col items-center gap-0 lg:max-w-8xl mx-auto mt-[100px] ${MainFont.className} text-[#F5DEB3] caret-transparent pt-4 pb-8`}>
@@ -305,7 +323,7 @@ export function CreatePostComponent() {
                                     transition={{ duration: .3 }}
                                     placeholder="TITLE"
                                     {...register('title')}
-                                    className={`w-full bg-transparent outline-none border-b-2 border-white focus:border-orange-400 transition-colors duration-300 text-xl md:text-2xl text-center caret-white`}
+                                    className={`w-full bg-transparent outline-none border-b-2 border-white focus:border-orange-400 transition-colors duration-300 text-xl md:text-2xl text-center focus:caret-white`}
                                 />
 
                                 <motion.p
@@ -324,7 +342,7 @@ export function CreatePostComponent() {
                                     transition={{ duration: .3 }}
                                     placeholder="DESCRIPTION"
                                     {...register('description')}
-                                    className={`text-base text-center md:text-lg w-full h-[150px] border-2 bg-transparent outline-none resize-none rounded border-white caret-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll}`}
+                                    className={`text-base text-center md:text-lg w-full h-[150px] border-2 bg-transparent outline-none resize-none rounded border-white focus:caret-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll}`}
                                 />
 
                                 <motion.p
@@ -354,7 +372,7 @@ export function CreatePostComponent() {
                                                 layout={'position'}
                                                 placeholder={`Heading ${paragraphIndex + 1}`}
                                                 {...register(`paragraphs.${paragraphIndex}.heading`)}
-                                                className={`w-full h-[34px] bg-transparent outline-none border-b-2 border-white focus:border-orange-400 text-xl md:text-2xl text-center caret-white`}
+                                                className={`w-full h-[34px] bg-transparent outline-none border-b-2 border-white focus:border-orange-400 text-xl md:text-2xl text-center focus:caret-white`}
                                             />
 
                                             <motion.p
@@ -390,7 +408,11 @@ export function CreatePostComponent() {
 
                                             <input
                                                 type="file"
-                                                onChange={(e) => handleCoverChange(paragraphIndex, e.target.files?.[0])}
+                                                onChange={(e) =>  {
+                                                    if (e.target.files) {
+                                                        handleCoverChange(paragraphIndex, e.target.files[0])
+                                                    }
+                                                }}
                                                 className="hidden"
                                                 id={`cover-${paragraphIndex}`}
                                             />
@@ -438,7 +460,11 @@ export function CreatePostComponent() {
 
                                                                 <input
                                                                     type="file"
-                                                                    onChange={(e) => handleImageChange(paragraphIndex, contentIndex, e.target.files?.[0])}
+                                                                    onChange={(e) => {
+                                                                        if (e.target.files) {
+                                                                            handleImageChange(paragraphIndex, contentIndex, e.target.files?.[0])
+                                                                        }
+                                                                    }}
                                                                     className="hidden"
                                                                     id={`image-${paragraphIndex}-${contentIndex}`}
                                                                 />
@@ -453,7 +479,7 @@ export function CreatePostComponent() {
                                                                     placeholder={`Content ${contentIndex + 1}`}
                                                                     {...register(`paragraphs.${paragraphIndex}.contents.${contentIndex}.text`)}
 
-                                                                    className={`text-left text-sm md:text-base text-balance text-white w-full h-[150px] border-2 bg-transparent outline-none resize-none rounded border-white caret-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll}`}
+                                                                    className={`text-left text-sm md:text-base text-balance text-white w-full h-[150px] border-2 bg-transparent outline-none resize-none rounded border-white focus:caret-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll}`}
                                                                 />
 
                                                                 <motion.p
@@ -498,16 +524,16 @@ export function CreatePostComponent() {
                             </AnimatePresence>
 
 
-                            <div className="flex flex-col">
+                            <div className="w-full flex flex-col items-center">
                                 <button
                                     type="button"
                                     onClick={addParagraph}
-                                    className={`max-w-[185px] bg-slate-500  py-2 rounded`}
+                                    className={`w-[185px] bg-slate-500  py-2 rounded`}
                                 >
                                     Add New Paragraph
                                 </button>
 
-                                <button type="submit" className={`max-w-[185px] mt-4 px-6 py-2 bg-green-500 rounded`}>
+                                <button type="submit" className={`w-[185px] mt-4 px-6 py-2 bg-green-500 rounded`}>
                                     SUBMIT
                                 </button>
                             </div>

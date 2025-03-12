@@ -23,7 +23,7 @@ function maskEmail(email: string) {
     return `${visiblePart}${hiddenPart}${domain}`;
 }
 
-export function EmailChange({ userData }) {
+export function EmailChange({ userData }: {userData: {id: string, email: string}}) {
     const [ isCodeGenerated, setIsCodeGenerated] = useState(false);
     const [codeIncorrect, setCodeIncorrect] = useState("");
     const [serverMessage, setServerMessage] = useState("");
@@ -140,7 +140,7 @@ export function EmailChange({ userData }) {
                     >
                         {errors.newEmail?.message || serverError?.newEmail || serverMessage }
                     </motion.p>
-                    <input type="email" {...register("newEmail")} placeholder="New email" disabled={isCodeGenerated} className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white" />
+                    <input type="email" {...register("newEmail")} placeholder="New email" disabled={isCodeGenerated} className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline focus:caret-white" />
                     <motion.input
                         initial={{ height: 44 }}
                         animate={{ height: isCodeGenerated ? 0 : 44}}
@@ -170,7 +170,7 @@ export function EmailChange({ userData }) {
                             { errorsCode.code?.message || serverError?.code || codeIncorrect }
                         </motion.p>
                         
-                        <input type="text" {...registerCode("code")} maxLength={4} placeholder="Code" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline caret-white" />
+                        <input type="text" {...registerCode("code")} maxLength={4} placeholder="Code" className="w-full h-11 bg-[rgba(73,73,73,.56)] rounded text-white text-center outline-[#C67E5F] focus:outline focus:caret-white" />
                         <input type="submit" value="Save changes" className="w-full h-11 bg-[#C67E5F] hover:bg-[rgba(198,126,95,.80)] rounded text-white text-center cursor-pointer transition-all duration-150 ease-in-out" />
                     </form>
                 </motion.div>

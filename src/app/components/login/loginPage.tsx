@@ -1,7 +1,7 @@
 "use client";
 import { Loader } from "@/app/components/load";
 import { useForm } from "react-hook-form";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import * as Yup from "yup";
 import Link from "next/link";
 import { K2D } from "next/font/google";
@@ -15,6 +15,11 @@ const MainFont = K2D({
     weight: "400",
 });
 
+interface userInterface {
+    username: string;
+    password: string;
+}
+
 const validationSchema = Yup.object().shape({
     username: Yup.string().min(4, 'Username must be at least 4 characters').required('Enter your username'),
     password: Yup.string().min(6, 'Password must be at least 6 characters').required('Enter your password'),
@@ -24,8 +29,10 @@ export function LoginPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const [serverMessage, setServerMessage] = useState('');
-    const [serverError, setServerError] = useState('');
-    const [clientErrors, setClientErrors] = useState({})
+    const [serverError, setServerError] = useState<userInterface>({
+        username: '',
+        password: ''
+    });
 
     const {register, handleSubmit, formState: {errors}} = useForm({
         resolver: yupResolver(validationSchema)
@@ -33,21 +40,9 @@ export function LoginPage() {
 
     setTimeout(() => {
         setIsLoading(false);
-        
     }, 300)
-    
-    useEffect(() => {
-        if (errors) {
-            setClientErrors(errors);
-        }else {
-            const timeout = setTimeout(() => {
-                setClientErrors(errors);
-                return () => clearTimeout(timeout);
-            }, 300)
-        }
-    }, [errors]);
 
-    const onSubmit = async(data) => {
+    const onSubmit = async(data: userInterface) => {
         try {
             const response = await fetch('/api/users/loginAPI', {
                 method: 'POST',
@@ -89,25 +84,25 @@ export function LoginPage() {
                         <div className="flex flex-col text-center">
                             <motion.p
                                 initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: clientErrors.username?.message || serverError?.username || serverMessage ? 1 : 0, height: clientErrors.username?.message || serverError?.username || serverMessage ? 30 : 0}}
+                                animate={{ opacity: errors.username?.message || serverError?.username || serverMessage ? 1 : 0, height: errors.username?.message || serverError?.username || serverMessage ? 30 : 0}}
                                 transition={{ duration: .3}}
                                 className="text-orange-300 text-[13px] sm:text-[18px]"
                             >
-                                {clientErrors.username?.message || serverError?.username || serverMessage}
+                                {errors.username?.message || serverError?.username || serverMessage}
                             </motion.p>
-                            <input type="text" {...register("username")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none caret-white" placeholder="Login"/>
+                            <input type="text" {...register("username")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none focus:caret-white" placeholder="Login"/>
                         </div>
 
                         <div className="flex flex-col text-center">
                             <motion.p
                                 initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: clientErrors.password?.message || serverError?.password ? 1 : 0, height: clientErrors.password?.message || serverError?.password ? 30 : 0}}
+                                animate={{ opacity: errors.password?.message || serverError?.password ? 1 : 0, height: errors.password?.message || serverError?.password ? 30 : 0}}
                                 transition={{ duration: .3}}
                                 className="text-orange-300 text-[13px] sm:text-[18px]"
                             >
-                                {clientErrors.password?.message || serverError?.password}
+                                {errors.password?.message || serverError?.password}
                             </motion.p>
-                            <input type="password" {...register("password")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none caret-white" placeholder="Password" />
+                            <input type="password" {...register("password")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none focus:caret-white" placeholder="Password" />
                         </div>
                         <input type="submit" value="LOG IN" className="w-[250px] h-[50px] text-lg tracking-wider transition-colors duration-75 rounded border border-[#F5DEB3] bg-[#C2724F] hover:bg-[#c2724f91]" />
                     </form>

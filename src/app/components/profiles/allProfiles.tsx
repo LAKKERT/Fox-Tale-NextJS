@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, ChangeEvent } from "react";
 import { useCookies } from "react-cookie";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/stores/userStore";
@@ -24,8 +24,14 @@ export function AllProfilesTable({ placeholder }: { placeholder: string }) {
             return;
         }
 
-        if (userData?.role !== 'admin') {
-            return router.push("/");
+        const timeout = setTimeout(() => {
+            if (userData?.role !== 'admin') {
+                return router.push("/");
+            }
+        }, 5000)
+
+        if (userData) {
+            clearTimeout(timeout);
         }
 
         const fetchAllUsers = async () => {
@@ -42,7 +48,7 @@ export function AllProfilesTable({ placeholder }: { placeholder: string }) {
                 if (response.ok) {
                     setUsersData(users.result || []);
                 } else {
-                    console.error("Error fetching users:", error);
+                    console.error("Error fetching users:");
                 }
 
             } catch (error) {
@@ -51,7 +57,11 @@ export function AllProfilesTable({ placeholder }: { placeholder: string }) {
         };
 
         fetchAllUsers();
-    }, [cookies, router]);
+
+        return () => {
+            clearTimeout(timeout);
+        }
+    }, [cookies, router, userData]);
 
     useEffect(() => {
         if (Array.isArray(usersData)) {
@@ -71,7 +81,7 @@ export function AllProfilesTable({ placeholder }: { placeholder: string }) {
         currentPage * ITEMS_PER_PAGE
     );
 
-    const handlePageChange = (page) => {
+    const handlePageChange = (page: number) => {
         setCurrentPage(page);
     }
 

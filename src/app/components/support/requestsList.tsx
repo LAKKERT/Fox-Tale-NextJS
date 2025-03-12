@@ -123,7 +123,7 @@ export function RequestsListComponent() {
                     className="h-full w-full flex flex-col items-center gap-5 mt-3"
                 >
                     <input
-                        className="peer w-full max-w-[1070px] h-11 block rounded-md outline-none focus:outline-none transition duration-75 ease-in-out focus:outline-2 focus:outline-white border-0 py-[9px] px-[10px] text-lg tracking-wider shadow-[8px_9px_6px_0px_rgba(34,60,80,0.2)] bg-[rgba(6,6,6,.65)] placeholder:text-white"
+                        className="focus:caret-white peer w-full max-w-[1070px] h-11 block rounded-md outline-none focus:outline-none transition duration-75 ease-in-out focus:outline-2 focus:outline-white border-0 py-[9px] px-[10px] text-lg tracking-wider shadow-[8px_9px_6px_0px_rgba(34,60,80,0.2)] bg-[rgba(6,6,6,.65)] placeholder:text-white"
                         type="text"
                         onChange={(e) => setSearchTerm(e.target.value)}
                         value={searchTerm}
@@ -148,7 +148,7 @@ export function RequestsListComponent() {
                         </div>
                     </div>
 
-                    <div className={`flex flex-col gap-5 w-full`}>
+                    <div className={`flex flex-col items-center gap-5 w-full`}>
                         {paginatedRequests.map(request => (
                             <motion.div 
                                 key={request.id}

@@ -1,7 +1,7 @@
 'use client'
 import { Loader } from "@/app/components/load";
 import Image from "next/image";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, ChangeEvent } from "react";
 import { useCookies } from "react-cookie";
 import { useUserStore } from "@/stores/userStore";
 import { K2D } from "next/font/google";
@@ -24,17 +24,17 @@ const MainFont = K2D({
 type FormValues = {
     title: string;
     description: string;
-    add_at: string;
+    add_at?: Date | null;
     paragraphs: {
         id: string;
         heading: string;
-        cover: File | string | null;
+        cover?: File | Blob | string | null;
         horizontalPosition: number;
         verticalPosition: number;
         contents: {
             id: string;
             text: string;
-            image: File | string | null;
+            image?: File | string | null;
         }[];
     }[];
 };
@@ -48,19 +48,34 @@ type FileMetadata = {
 const validationSchema = Yup.object().shape({
     title: Yup.string().required("Title is required"),
     description: Yup.string().required("Description is required"),
+    add_at: Yup.date().nullable(),
     paragraphs: Yup.array().of(
         Yup.object().shape({
+            id: Yup.string().required(),
             heading: Yup.string().required("Heading is required"),
+            cover: Yup.mixed<File | Blob | string>() 
+                .nullable(),
+            horizontalPosition: Yup.number()
+                .min(0)
+                .max(100)
+                .required(),
+            verticalPosition: Yup.number()
+                .min(0)
+                .max(100)
+                .required(),
             contents: Yup.array().of(
                 Yup.object().shape({
+                    id: Yup.string().required(),
                     text: Yup.string().required("Content is required"),
+                    image: Yup.mixed<File | string>()
+                        .nullable()
                 })
-            ),
+            ).required(),
         })
-    ),
+    ).required(),
 });
 
-export function PostDetailComponent({ postID }) {
+export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
     const [postData, setPostData] = useState<{ result?: FormValues[] }>();
     const userData = useUserStore((state) => state.userData);
     const [isLoading, setIsLoading] = useState(true);
@@ -112,7 +127,6 @@ export function PostDetailComponent({ postID }) {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        // 'Authorization': `Bearer ${cookies ? cookies.auth_token : null}`
                     }
                 });
     
@@ -358,7 +372,7 @@ export function PostDetailComponent({ postID }) {
         }
     }
 
-    const handleSliderChange = (paragraphIndex: number, isHorizontal: boolean, e) => {
+    const handleSliderChange = (paragraphIndex: number, isHorizontal: boolean, e: ChangeEvent<HTMLInputElement>) => {
         const value = Number(e.target.value);
 
         const newH = isHorizontal ? value : horizontalAlign[paragraphIndex];
@@ -440,7 +454,7 @@ export function PostDetailComponent({ postID }) {
 
                                     <motion.input
                                         {...register('title')}
-                                        className={` w-full bg-transparent outline-none border-b-2 border-white focus:border-orange-400 transition-colors duration-300 text-xl md:text-2xl text-center caret-white ${editModeActive ? 'block' : 'hidden'}`}
+                                        className={` w-full bg-transparent outline-none border-b-2 border-white focus:border-orange-400 transition-colors duration-300 text-xl md:text-2xl text-center focus:caret-white ${editModeActive ? 'block' : 'hidden'}`}
                                     />
 
                                     <motion.p
@@ -467,7 +481,7 @@ export function PostDetailComponent({ postID }) {
                                             target.style.minHeight = "50px";
                                             target.style.height = `${target.scrollHeight}px`;
                                         }}
-                                        className={`text-center text-sm md:text-base text-balance text-[#F5DEB3] overflow-hidden py-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll} ${editModeActive ? 'block' : 'hidden'} caret-white`}
+                                        className={`text-center text-sm md:text-base text-balance text-[#F5DEB3] overflow-hidden py-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll} ${editModeActive ? 'block' : 'hidden'} focus:caret-white`}
                                         style={{
 
                                             maxHeight: "70vh",
@@ -532,7 +546,7 @@ export function PostDetailComponent({ postID }) {
 
                                                 <input
                                                     {...register(`paragraphs.${paragraphIndex}.heading`)}
-                                                    className={` w-full bg-transparent outline-none border-b-2 border-white focus:border-orange-400 transition-colors duration-300 text-xl text-center caret-white ${editModeActive ? 'block' : 'hidden'}`}
+                                                    className={` w-full bg-transparent outline-none border-b-2 border-white focus:border-orange-400 transition-colors duration-300 text-xl text-center focus:caret-white ${editModeActive ? 'block' : 'hidden'}`}
                                                 />
 
                                                 <motion.p
@@ -579,7 +593,7 @@ export function PostDetailComponent({ postID }) {
 
                                                 <motion.div
                                                     layout={'position'}
-                                                    className=" w-full flex flex-col items-center gap-6"
+                                                    className={`w-full flex flex-col items-center ${paragraphs[paragraphIndex].cover ? "gap-0" : ""}  `}
                                                 >
                                                     <input
                                                         type="file"
@@ -601,13 +615,12 @@ export function PostDetailComponent({ postID }) {
                                                     </label>
 
                                                     <div
-                                                        className=" w-full flex flex-col items-center gap-6"
+                                                        className={`w-full flex flex-col items-center gap-6`}
                                                     >
-                                                        <input type="range" {...register(`paragraphs.${paragraphIndex}.horizontalPosition`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(paragraphIndex, true, e)} min="0" max="100" className={`${styles.custom_input_range} ${editModeActive ? 'block' : 'hidden'}`} />
-                                                        <input type="range" {...register(`paragraphs.${paragraphIndex}.verticalPosition`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(paragraphIndex, false, e)} min="0" max="100" className={`${styles.custom_input_range} ${editModeActive ? 'block' : 'hidden'}`} />
+                                                        <input type="range" {...register(`paragraphs.${paragraphIndex}.horizontalPosition`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(paragraphIndex, true, e)} min="0" max="100" className={`${styles.custom_input_range} ${editModeActive ? 'block' : 'hidden'} ${paragraphs[paragraphIndex].cover ? 'block' : 'hidden'}`} />
+                                                        <input type="range" {...register(`paragraphs.${paragraphIndex}.verticalPosition`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(paragraphIndex, false, e)} min="0" max="100" className={`${styles.custom_input_range} ${editModeActive ? 'block' : 'hidden'} ${paragraphs[paragraphIndex].cover ? 'block' : 'hidden'}`} />
                                                     </div>
                                                 </motion.div>
-
 
                                                 <div className="w-full relative flex-col flex gap-4">
                                                     <AnimatePresence mode="popLayout">
@@ -682,7 +695,7 @@ export function PostDetailComponent({ postID }) {
                                                                             target.style.minHeight = "50px";
                                                                             target.style.height = `${target.scrollHeight}px`;
                                                                         }}
-                                                                        className={`text-left text-sm md:text-base text-balance text-[#F5DEB3] overflow-hidden py-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll} ${editModeActive ? 'block' : 'hidden'} caret-white`}
+                                                                        className={`text-left text-sm md:text-base text-balance text-[#F5DEB3] overflow-hidden py-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll} ${editModeActive ? 'block' : 'hidden'} focus:caret-white`}
                                                                         style={{
 
                                                                             maxHeight: "70vh",
@@ -732,18 +745,20 @@ export function PostDetailComponent({ postID }) {
 
                                     )}
                                 </AnimatePresence>
+                                
+                                <div className="w-full flex flex-col items-center">
+                                    <button
+                                        type="button"
+                                        onClick={addParagraph}
+                                        className={`w-[185px] bg-slate-500 px-4 py-2 rounded ${editModeActive ? 'block' : 'hidden'}`}
+                                    >
+                                        Add New Paragraph
+                                    </button>
 
-                                <button
-                                    type="button"
-                                    onClick={addParagraph}
-                                    className={`bg-slate-500 px-4 py-2 rounded ${editModeActive ? 'block' : 'hidden'}`}
-                                >
-                                    Add New Paragraph
-                                </button>
-
-                                <button type="submit" className={`${editModeActive ? 'block' : 'hidden'} mt-4 px-6 py-2 bg-green-500 rounded`}>
-                                    SAVE CHANGES
-                                </button>
+                                    <button type="submit" className={`w-[185px] ${editModeActive ? 'block' : 'hidden'} mt-4 px-6 py-2 bg-green-500 rounded`}>
+                                        SAVE CHANGES
+                                    </button>
+                                </div>
                             </form>
                         </motion.div>
                     </motion.div>

@@ -43,7 +43,7 @@ interface characterData {
 const validationSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     description: Yup.string().required('Description is required'),
-    cover: Yup.mixed().required('Cover is required')
+    cover: Yup.mixed<File | string>().required('Cover is required')
         .test(
             'is-file-or-string',
             'Cover must be a file or string',
@@ -51,7 +51,7 @@ const validationSchema = Yup.object().shape({
         )
 });
 
-export function UniversePageDetailComponent({ params }) {
+export function UniversePageDetailComponent({ params }: { params: { id: number } }) {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedFile, setSelectedFiles] = useState<File | null>();
     const [isEditMode, setIsEditMode] = useState(false);
@@ -289,7 +289,7 @@ export function UniversePageDetailComponent({ params }) {
                                     transition={{ duration: .3 }}
                                     placeholder="TITLE"
                                     {...register('name')}
-                                    className={`absolute uppercase w-full bg-transparent outline-none top-0 bottom-0 my-auto text-white placeholder:text-white text-xl md:text-7xl tracking-[5px] text-center caret-white ${isEditMode ? 'block' : 'hidden'}`}
+                                    className={`absolute uppercase w-full bg-transparent outline-none top-0 bottom-0 my-auto text-white placeholder:text-white text-xl md:text-7xl tracking-[5px] text-center focus:caret-white ${isEditMode ? 'block' : 'hidden'}`}
                                 />
 
                                 <Image
@@ -370,30 +370,40 @@ export function UniversePageDetailComponent({ params }) {
                                     }}
                                 >
                                     {isEditMode && (
-                                        <motion.label
-                                            htmlFor="inputFile"
-                                            initial={{
-                                                opacity: 0,
-                                                scale: 0.95,
-                                                y: 10
-                                            }}
-                                            animate={{
-                                                opacity: 1,
-                                                scale: 1,
-                                                y: 0
-                                            }}
-                                            exit={{
-                                                opacity: 0,
-                                                y: 10
-                                            }}
-                                            transition={{
-                                                duration: 0.2,
-                                                ease: "easeInOut"
-                                            }}
-                                            className={`min-w-[185px] max-h-[42px] text-center py-2 mt-3 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3]`}
-                                        >
-                                            Change cover
-                                        </motion.label>
+                                        <div className="flex flex-col">
+                                            <motion.p
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: errors.cover?.message || errors.name?.message ? 1 : 0, height: errors.cover?.message || errors.name?.message ? 30 : 0 }}
+                                                transition={{ duration: .3 }}
+                                                className="text-center text-orange-300 text-[13px] sm:text-[18px]"
+                                            >
+                                                {errors.cover?.message || errors.name?.message}
+                                            </motion.p>
+                                            <motion.label
+                                                htmlFor="inputFile"
+                                                initial={{
+                                                    opacity: 0,
+                                                    scale: 0.95,
+                                                    y: 10
+                                                }}
+                                                animate={{
+                                                    opacity: 1,
+                                                    scale: 1,
+                                                    y: 0
+                                                }}
+                                                exit={{
+                                                    opacity: 0,
+                                                    y: 10
+                                                }}
+                                                transition={{
+                                                    duration: 0.2,
+                                                    ease: "easeInOut"
+                                                }}
+                                                className={`min-w-[185px] max-h-[42px] text-center py-2 mt-3 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3]`}
+                                            >
+                                                Change cover
+                                            </motion.label>
+                                        </div>
                                     )}
                                 </motion.div>
 
@@ -410,7 +420,7 @@ export function UniversePageDetailComponent({ params }) {
                                             target.style.minHeight = "50px";
                                             target.style.height = `${target.scrollHeight}px`;
                                         }}
-                                        className={`text-left text-sm md:text-base text-balance px-2 text-[#F5DEB3] overflow-hidden py-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${isEditMode ? 'block' : 'hidden'} caret-white`}
+                                        className={`text-left text-sm md:text-base text-balance px-2 text-[#F5DEB3] overflow-hidden py-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${isEditMode ? 'block' : 'hidden'} focus:caret-white`}
                                         style={{
                                             maxHeight: "70vh",
                                             boxSizing: "border-box"
@@ -418,11 +428,11 @@ export function UniversePageDetailComponent({ params }) {
                                     />
                                 </motion.div>
 
-                                <motion.div layout={'position'} className="w-full flex flex-col items-center gap-3">
-                                    <h3 className="uppercase text-2xl">CHARACTERS</h3>
-                                    <div className="w-full max-w-xl sm:max-w-2xl lg:max-w-4xl xl:max-w-5xl flex flex-wrap flex-row justify-center gap-3 ">
-                                        {characters ? (
-                                            characters.map((item) => (
+                                {characters.length > 0 ? (
+                                    <motion.div layout={'position'} className={`w-full flex flex-col items-center gap-3`}>
+                                        <h3 className={`uppercase text-2xl`}>CHARACTERS</h3>
+                                        <div className="w-full max-w-xl sm:max-w-2xl lg:max-w-4xl xl:max-w-5xl flex flex-wrap flex-row justify-center gap-3 ">
+                                            {characters.map((item) => (
                                                 <motion.div
                                                     key={item.id}
                                                     initial={{ scale: 1 }}
@@ -486,12 +496,12 @@ export function UniversePageDetailComponent({ params }) {
                                                         </motion.div>
                                                     </Link>
                                                 </motion.div>
-                                            ))
-                                        ) : (
-                                            <div>No territories</div>
-                                        )}
-                                    </div>
-                                </motion.div>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                ) : (
+                                    null
+                                )}
                                 <motion.button
                                     layout
 

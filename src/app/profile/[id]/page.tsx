@@ -20,14 +20,14 @@ const MainFont = K2D({
 });
 
 interface userDataState {
+    id: string;
+    email: string;
     username: string;
-
 }
 
-export default function UserProfile({ params }) {
+export default function UserProfile({ params }: { params: { id: string } }) {
     const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
-    const [access, setAccess] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [cookies] = useCookies(['auth_token']);
     const [currentUserProfile, setCurrentUserProfile] = useState<userDataState | null>(null);
     const userData = useUserStore((state) => state.userData)
@@ -36,56 +36,63 @@ export default function UserProfile({ params }) {
     } = useUserStore();
 
     useEffect(() => {
-        if (!cookies.auth_token) {
-            router.push("/");
-        }
-
-        if (userData) {
-            if (profileAccess || !profileAccess && userData.role === 'admin') {
-                if (userData.role === 'admin' && userData.id !== params.id) {
-                    const fetchUserData = async () => {
-                        try {
-                            const response = await fetch(`/api/users/getUserProfileAPI?userID=${params.id}`, {
-                                method: 'GET',
-                                headers: {
-                                    'Authorization': `Bearer ${cookies.auth_token}`,
-                                }
-                            })
+        let isMounted = true;
+        const controller = new AbortController();
     
-                            const userProfile = await response.json();
-    
-                            if (response.ok) {
-                                setIsLoading(false);
-                                setCurrentUserProfile(userProfile?.profile);
-    
-                            } else {
-                                console.error('Error fetching user profile');
-                                router.push('/');
-                            }
-    
-                        } catch (error) {
-                            router.push('/');
-                            console.error("fetching data error", error);
-                        }
-                    };
-                    fetchUserData();
-                } else if (userData.id !== params.id && userData.role !== 'admin') {
-                    router.push('/');
+        const loadProfile = async () => {
+            try {
+                if (!cookies.auth_token) {
+                    router.push("/");
+                    return;
                 }
-            }else if (userData.role !== 'admin') {
-                router.push('/profile/verify');
+    
+                if (userData?.id === params.id) {
+                    if (isMounted) {
+                        setCurrentUserProfile(userData);
+                        setIsLoading(false);
+                    }
+                    return;
+                }
+    
+                if (userData?.role === 'admin' && userData.id !== params.id) {
+                    const response = await fetch(`/api/users/getUserProfileAPI?userID=${params.id}`, {
+                        signal: controller.signal,
+                        headers: { 'Authorization': `Bearer ${cookies.auth_token}` }
+                    });
+    
+                    if (!response.ok) throw new Error('Profile not found');
+                    
+                    const { profile } = await response.json();
+                    if (isMounted) {
+                        setCurrentUserProfile(profile);
+                        setIsLoading(false);
+                    }
+                }
+    
+            } catch (error) {
+                console.error(error);
+                if (isMounted) router.push('/');
             }
-        }
+        };
+    
+        loadProfile();
+    
+        return () => {
+            isMounted = false;
+            controller.abort();
+        };
     }, [cookies, router, params, userData]);
 
+    console.log(userData)
+    console.log(currentUserProfile)
     return (
         <div className={`w-full min-h-[calc(100vh-100px)] bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat ${MainFont.className} caret-transparent`}>
             <Header />
             <div className="h-full mt-[100px] flex flex-col items-center">
-                {!userData ? (
+                {isLoading ? (
                     <motion.div
                         initial={{ opacity: 1 }}
-                        animate={{ opacity: isLoading ? 1 : 0 }}
+                        animate={{ opacity: 0 }}
                         transition={{ duration: .3 }}
                         className="bg-black w-full h-[100vh]"
                     >
@@ -94,15 +101,16 @@ export default function UserProfile({ params }) {
                 ) : (
                     <motion.div
                         initial={{ opacity: 0 }}
-                        animate={{ opacity: isLoading ? 0 : 1 }}
+                        animate={{ opacity: 1 }}
                         transition={{ duration: .3 }}
                         className="px-3"
                     >
+                        {/* <h1 className="h-[100vh] w-[100vh] bg-black text-2xl font-bold text-white">Profile</h1> */}
                         <h1>WELCOME TO YOUR TEMPLE {currentUserProfile ? currentUserProfile.username : userData?.username}</h1>
                         <div className="max-w-2xl flex flex-col gap-3">
-                            <ChangeLogin userData={currentUserProfile ? currentUserProfile : userData} />
-                            <ChangePassword userData={currentUserProfile ? currentUserProfile : userData} />
-                            <EmailChange userData={currentUserProfile ? currentUserProfile : userData} />
+                            <ChangeLogin userData={currentUserProfile || userData!} />
+                            <ChangePassword userData={currentUserProfile || userData!} />
+                            <EmailChange userData={currentUserProfile || userData!} />
                         </div>
                     </motion.div>
                 )}
