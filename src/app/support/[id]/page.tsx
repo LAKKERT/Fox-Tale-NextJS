@@ -317,7 +317,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
             fullFileName = getFile(selectedFiles);
             for (let i = 0; i < selectedFiles.length; i++) {
                 const fileName = `${Date.now()}_${fullFileName[i].name}.${fullFileName[i].extension}`;
-                fileUrl.push(`/uploads/${fileName}`);
+                fileUrl.push(`/uploads/supportFiles/${fileName}`);
             }
 
             try {

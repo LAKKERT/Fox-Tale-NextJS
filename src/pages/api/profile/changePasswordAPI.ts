@@ -9,10 +9,10 @@ const bcrypt = require("bcrypt");
 const schema = Yup.object().shape({
     password1: Yup.string().min(6, 'Password must be at least 6 characters').required('Enter your password'),
     password2: Yup.string().min(6, 'Password must be at least 6 characters').required('Enter your new password'),
-    repeatPassword2: Yup.string().oneOf([Yup.ref('password2'), null], 'Passwords must match').required('Repeat your new password'),
+    repeatPassword2: Yup.string().oneOf([Yup.ref('password2')], 'Passwords must match').required('Repeat your new password'),
 })
 
-async function checkPassword(userID, password) {
+async function checkPassword(userID: string, password: string) {
     try {
         const conn = await Connect();
         const result = await conn.query('SELECT password FROM users WHERE id = $1', [userID]);

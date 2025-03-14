@@ -1,9 +1,8 @@
 "use client";
 import { useForm } from "react-hook-form";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { clearTimeout } from "timers";
 import { motion } from "framer-motion";
 
 interface userData {
@@ -22,7 +21,7 @@ export function ChangeLogin({ userData }: {userData: {id: string}}) {
 
     const { register, handleSubmit, reset, formState: { errors } } = useForm<userData>({
         resolver: yupResolver(validationSchema),
-    });errors
+    });
 
     const onSubmit = async (data: userData) => {
         try {

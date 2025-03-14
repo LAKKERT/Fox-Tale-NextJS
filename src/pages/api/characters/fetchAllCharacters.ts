@@ -2,7 +2,6 @@
 
 import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
-import jwt from 'jsonwebtoken';
 
 export default async function fetchUniverse(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === "GET") {

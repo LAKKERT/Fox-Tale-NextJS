@@ -3,6 +3,10 @@ import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import jwt from "jsonwebtoken";
 
+interface JwtPayload {
+    userRole: string;
+}
+
 export default async function getAllUsers(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'GET') {
         const authHeader = req.headers['authorization'];
@@ -16,7 +20,7 @@ export default async function getAllUsers(req: NextApiRequest, res: NextApiRespo
         let decoded;
         
         try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+            decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
         } catch ( error ) {
             console.error('Invalid token', error);
             return res.status(403).json({ error: 'Token is not vailed' });

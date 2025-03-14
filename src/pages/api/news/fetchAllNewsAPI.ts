@@ -3,6 +3,10 @@ import Connect from '@/db/dbConfig';
 import { NextApiRequest, NextApiResponse } from "next";
 import jwt from 'jsonwebtoken'
 
+interface JwtPayload {
+    userRole: string;
+}
+
 export default async function GetAllNews(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'GET') {
 

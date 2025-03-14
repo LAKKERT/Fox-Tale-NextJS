@@ -4,7 +4,7 @@ import Connect from "@/db/dbConfig";
 import fs from "fs";
 import path from "path";
 
-export async function saveMessageToDB(content: any, roomID: any, userID: any, file_url: any) {
+export async function saveMessageToDB(content: string, roomID: string, userID: string, file_url: string[]) {
     const conn = await Connect();
 
     try {
@@ -19,7 +19,7 @@ export async function saveMessageToDB(content: any, roomID: any, userID: any, fi
     }
 }
 
-export async function saveFile(file: string | any[] | null, imageUrl: string[]) {
+export async function saveFile(file: string | null, imageUrl: string[]) {
     try {
         if (file) {
             for (let i = 0; i < file.length; i++) {

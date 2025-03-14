@@ -10,6 +10,13 @@ import { K2D } from "next/font/google";
 
 const ITEMS_PER_PAGE = 8;
 
+interface usersdata {
+    id: string;
+    username: string;
+    role: string;
+    email: string;
+}
+
 const MainFont = K2D({
     style: "normal",
     subsets: ["latin"],
@@ -19,9 +26,9 @@ const MainFont = K2D({
 export function AllProfilesTable() {
     const userData = useUserStore((state) => state.userData);
     const [isLoading, setIsLoading] = useState(true);
-    const [usersData, setUsersData] = useState<any[]>([]);
+    const [usersData, setUsersData] = useState<usersdata[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
-    const [sortedUsersData, setSortedUsersData] = useState<any[]>([]);
+    const [sortedUsersData, setSortedUsersData] = useState<usersdata[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [cookies] = useCookies(["auth_token"]);
     const router = useRouter();
@@ -41,7 +48,7 @@ export function AllProfilesTable() {
                         });
         
                         const users = await response.json();
-        
+
                         if (response.ok) {
                             setIsLoading(false);
                             setUsersData(users.result || []);
@@ -104,20 +111,24 @@ export function AllProfilesTable() {
                     <h1 className="text-4xl">All Users</h1>
                     <input
                         className="peer max-w-6xl w-[1070px] h-11 block rounded-md outline-none focus:outline-none transition duration-75 ease-in-out focus:outline-2 focus:outline-white border-0 py-[9px] pl-10 text-lg tracking-wider shadow-[8px_9px_6px_0px_rgba(34,60,80,0.2)] bg-[rgba(6,6,6,.65)] placeholder:text-white"
-                        placeholder="Search by ID, Username, or Email"
+                        placeholder="Search by ID, Username, Roles, or Email"
                         onChange={(e) => setSearchTerm(e.target.value)}
                         value={searchTerm}
                     />
         
                     {sortedUsersData.length > 0 ? (
                         <div className="max-w-6xl flex flex-col gap-5">
-                            <div className="grid grid-cols-4 gap-2 p-4 min-w-5xl w-[1070px] text-center text-xl uppercase bg-[rgba(6,6,6,.65)] shadow-[8px_9px_6px_0px_rgba(34,60,80,0.2)] rounded-xl">
+                            <div className="grid grid-cols-5 gap-2 p-4 min-w-5xl w-[1070px] text-center text-xl uppercase bg-[rgba(6,6,6,.65)] shadow-[8px_9px_6px_0px_rgba(34,60,80,0.2)] rounded-xl">
                                 <div className="border-r-2 border-white">
                                     id
                                 </div>
         
                                 <div className="border-r-2 border-white">
                                     username
+                                </div>
+
+                                <div className="border-r-2 border-white">
+                                    Role
                                 </div>
         
                                 <div className="border-r-2 border-white">
@@ -131,13 +142,17 @@ export function AllProfilesTable() {
         
                             <div className="flex flex-col gap-5">
                                 {paginatedRequests.map(data => (
-                                    <div key={data.id} className="grid grid-cols-4 gap-2 p-4 min-w-5xl w-[1070px] text-center text-md text-balance bg-[rgba(6,6,6,.65)] rounded-xl shadow-[8px_9px_6px_0px_rgba(34,60,80,0.2)] transition-all duration-150 ease-in-out hover:outline outline-[#f5885a]">
+                                    <div key={data.id} className="grid grid-cols-5 gap-2 p-4 min-w-5xl w-[1070px] text-center text-md text-balance bg-[rgba(6,6,6,.65)] rounded-xl shadow-[8px_9px_6px_0px_rgba(34,60,80,0.2)] transition-all duration-150 ease-in-out hover:outline outline-[#f5885a]">
                                         <div className="border-r-2 border-white flex justify-center items-center">
                                             {data.id}
                                         </div>
         
                                         <div className="border-r-2 border-white flex justify-center items-center">
                                             {data.username}
+                                        </div>
+
+                                        <div className="border-r-2 border-white flex justify-center items-center">
+                                            {data.role}
                                         </div>
         
                                         <div className="border-r-2 border-white flex justify-center items-center">
@@ -173,7 +188,6 @@ export function AllProfilesTable() {
                             </div>
         
                         </div>
-        
                     ) : (
                         <p>No users found...</p>
                     )}

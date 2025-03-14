@@ -6,7 +6,6 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/stores/userStore";
-import { useCookies } from "react-cookie";
 import { motion } from "framer-motion";
 import { K2D } from "next/font/google";
 
@@ -27,8 +26,6 @@ export function CharacretsPageComponent() {
     const [isLoading, setIsLoading] = useState(true);
     const [charactersData, setcharactersData] = useState<charactersType[]>([]);
     const userData = useUserStore((state) => state.userData);
-
-    const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
 
     useEffect(() => {

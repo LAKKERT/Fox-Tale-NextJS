@@ -76,7 +76,7 @@ export default function CreateSupportChat() {
             setIsLoading(false);
         }, 300)
         return () => clearTimeout(timeout);
-    }, [])
+    }, [cookies, router]);
 
     const { register, handleSubmit, formState: { errors } } = useForm<dataState>({
         resolver: yupResolver(validationSchema),

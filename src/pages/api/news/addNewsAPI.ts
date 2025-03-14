@@ -3,8 +3,25 @@ import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import jwt from "jsonwebtoken";
 
-const normalizeArray = (arr, dimensions: number) => {
-    const normalize = (array, currentDepth: number) => {
+interface JwtPayload {
+    userRole: string;
+}
+
+interface ParagraphInterface {
+    id: string;
+    heading: string;
+    cover?: string | null;
+    horizontalPosition: number;
+    verticalPosition: number;
+    contents: {
+        id: string;
+        text: string;
+        image?: string | null;
+    }[];
+}
+
+const normalizeArray = (arr: (string | null)[] | (number | null)[] | (string | null)[][], dimensions: number) => {
+    const normalize = (array: (string | null)[] | (number | null)[] | (string | null)[][], currentDepth: number): (string | null)[] | (number | null)[] | (string | null)[][] => {
         if (currentDepth > dimensions) return array;
         if (!Array.isArray(array)) {
             return currentDepth < dimensions ? [array] : array;
@@ -33,10 +50,10 @@ const normalizeArray = (arr, dimensions: number) => {
     return normalize(arr, 1);
 };
 
-const formatPGArray = (arr, dimensions: number) => {
+const formatPGArray = (arr: (string | null)[] | (number | null)[] | (string | null)[][] , dimensions: number) => {
     const normalized = normalizeArray(arr, dimensions);
 
-    const escapeElement = (element) => {
+    const escapeElement = (element) : string => {
         if (element === null) return 'NULL';
         if (Array.isArray(element)) {
             return `{${element.map(escapeElement).join(',')}}`;
@@ -77,7 +94,7 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
         let decoded;
 
         try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET as string );
+            decoded = jwt.verify(token, process.env.JWT_SECRET as string ) as JwtPayload;
         } catch (error) {
             console.error('Invalid token:', error);
             return res.status(403).json({ error: 'Invalid token' });
@@ -120,7 +137,7 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
             const paragraphContents: (string | null)[][] = [];
             const paragraphImages: (string | null)[][] = [];
 
-            data.paragraphs.forEach((paragraph) => {
+            data.paragraphs.forEach((paragraph: ParagraphInterface) => {
                 paragraphHeaders.push(paragraph.heading || null);
                 paragraphCovers.push(paragraph.cover || null);
                 verticalPosition.push(paragraph.verticalPosition || null);

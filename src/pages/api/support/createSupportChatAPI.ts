@@ -3,7 +3,11 @@ import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import * as Yup from "yup";
 import { v4 as uuidv4 } from "uuid";
-import jwt from "jsonwebtoken";
+import jwt, { Jwt } from "jsonwebtoken";
+
+interface JwtPayload {
+    userId: string;
+}
 
 const validationSchema = Yup.object().shape({
     title: Yup.string()
@@ -27,7 +31,7 @@ export default async function CreateSupportChat(req: NextApiRequest, res: NextAp
             let decoded
             
             try {
-                decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+                decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
             } catch (error) {
                 console.error(error);
                 return res.status(401).json({ message: 'Invalid token' });

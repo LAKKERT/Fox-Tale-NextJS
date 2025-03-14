@@ -2,7 +2,7 @@
 import fs from "fs";
 import path from "path";
 
-export async function saveFile(file: string | any[] | null, imageUrl: string[] | string) {
+export async function saveFile(file: string | null, imageUrl: string[] | string) {
     try {
         if (file || file !== null) {
             console.log('Saving file')

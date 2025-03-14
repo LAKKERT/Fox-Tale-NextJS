@@ -211,9 +211,7 @@ async function seed() {
     }
     
     async function seedTerritories() {
-        
-    
-        try {
+        try {           
             await conn.query(
                 `CREATE TABLE IF NOT EXISTS public.universe
                 (
@@ -336,8 +334,6 @@ async function seed() {
     }
     
     async function seedNews() {
-        
-    
         try {
             await conn.query(
                 `CREATE TABLE IF NOT EXISTS public.news (

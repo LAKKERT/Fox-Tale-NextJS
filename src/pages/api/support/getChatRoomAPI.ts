@@ -3,6 +3,11 @@ import { NextApiRequest, NextApiResponse } from "next";
 import Connect from '@/db/dbConfig';
 import jwt from "jsonwebtoken";
 
+interface JwtPayload {
+    userId: string;
+    userRole: string;
+}
+
 export default async function getChatRoom(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'POST') {
 
@@ -17,7 +22,7 @@ export default async function getChatRoom(req: NextApiRequest, res: NextApiRespo
         let decoded;
         if (token) {
             try {
-                decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+                decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
             }catch(error) {
                 console.error('Invalid token:', error);
                 return res.status(401).json({ error: 'Invalid token', redirectUrl: '/' });
@@ -52,7 +57,7 @@ export default async function getChatRoom(req: NextApiRequest, res: NextApiRespo
             
             
             const participantsID = await conn.query("SELECT user_id FROM participants WHERE room_id = $1::uuid", [roomId]);
-            const userIds = participantsID.rows.map((row: { user_id: any; }) => row.user_id);
+            const userIds = participantsID.rows.map((row: { user_id: string; }) => row.user_id);
             const participants = await conn.query("SELECT id, username, role FROM users WHERE id = ANY($1::uuid[])", [userIds]);
             
             const result = await conn.query(
