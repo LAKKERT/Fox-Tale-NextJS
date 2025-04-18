@@ -3,7 +3,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import jwt from "jsonwebtoken";
-import { headers } from "next/headers";
 
 interface JwtPayload {
     userRole: string;

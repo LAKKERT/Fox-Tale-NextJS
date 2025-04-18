@@ -27,21 +27,24 @@ interface userDataState {
 
 export default function UserProfile({ params }: { params: { id: string } }) {
     const router = useRouter();
+    const userData = useUserStore((state) => state.userData)
     const [isLoading, setIsLoading] = useState(true);
     const [cookies] = useCookies(['auth_token']);
     const [currentUserProfile, setCurrentUserProfile] = useState<userDataState | null>(null);
-    const userData = useUserStore((state) => state.userData)
+    
     const {
         profileAccess,
     } = useUserStore();
 
     useEffect(() => {
         let isMounted = true;
-        const controller = new AbortController();
     
         const loadProfile = async () => {
             try {
-                if (!userData) return;
+                if (!userData) {
+                    // router.push('/');
+                    return;
+                };
     
                 if (!profileAccess && userData.role !== 'admin') {
                     router.push('/profile/verify');
@@ -58,7 +61,6 @@ export default function UserProfile({ params }: { params: { id: string } }) {
     
                 if (userData.role === 'admin' && userData.id !== params.id) {
                     const response = await fetch(`/api/users/getUserProfileAPI?userID=${params.id}`, {
-                        signal: controller.signal,
                         headers: { 'Authorization': `Bearer ${cookies.auth_token}` }
                     });
                     
@@ -79,12 +81,13 @@ export default function UserProfile({ params }: { params: { id: string } }) {
                 if (isMounted) router.push('/');
             }
         };
-    
-        loadProfile();
+
+        setTimeout(() => {
+            loadProfile();
+        }, 1000)
     
         return () => {
             isMounted = false;
-            controller.abort();
         };
     }, [cookies, router, params, userData, profileAccess]);
 

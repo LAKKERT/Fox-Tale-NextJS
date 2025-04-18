@@ -19,7 +19,7 @@ export async function saveMessageToDB(content: string, roomID: string, userID: s
     }
 }
 
-export async function saveFile(file: string | null, imageUrl: string[]) {
+export async function saveFile(file: (string | ArrayBuffer | null)[] | null | null, imageUrl: string[]) {
     try {
         if (file) {
             for (let i = 0; i < file.length; i++) {

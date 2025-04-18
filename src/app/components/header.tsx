@@ -28,13 +28,13 @@ const MobileMode: React.FC<{ isMenuOpen: boolean; toggleMenu: () => void }> = ({
 );
 
 export function Header() {
-    const { 
+    const {
         isAuth, 
         userData,
         setUserData, 
         setIsAuth 
     } = useUserStore();
-    
+
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
     const [cookies] = useCookies(['auth_token']);

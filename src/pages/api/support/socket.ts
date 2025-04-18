@@ -51,9 +51,23 @@ export default function WebSocketAPI(req, res) {
             }
         })
 
-        socket.on("disconnect", async (messageData) => {
+        socket.on("closeChat", async (chatData) => {
+            try {
+                console.log('chat was closed');
+                
+                io.emit("closeChat", {
+                    ...chatData,
+                    status: true
+                })
+            }catch (error) {
+                console.error("Error close chat:", error);
+            }
+        })
+
+        socket.on("disconnect", async () => {
             console.log("User disconnected");
         });
+
     });
 
     res.end();
