@@ -28,10 +28,6 @@ export function Footer() {
                 </div>
 
                 <div className="flex flex-col gap-3 text-xl text-center">
-                    <Link href="/" className="uppercase text-white hover:text-[#f5885a] transition duration-150 ease-in-out">
-                        About
-                    </Link>
-
                     <Link href="/news" className="uppercase text-white hover:text-[#f5885a] transition duration-150 ease-in-out">
                         News
                     </Link>

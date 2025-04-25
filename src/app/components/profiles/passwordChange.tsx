@@ -2,7 +2,7 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as Yup from "yup";
 import { useForm } from "react-hook-form";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from 'framer-motion';
 
 type FormData = {
@@ -15,10 +15,6 @@ type ServerErrors = {
     password1?: string;
     password2?: string;
     repeatPassword2?: string;
-};
-
-type UserData = {
-    id: string | number;
 };
 
 const validationSchema = Yup.object().shape({

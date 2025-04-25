@@ -7,7 +7,7 @@ import { DefaultEventsMap, Socket } from "socket.io";
 
 interface Props {
     usersData: UsersData[];
-    chatData?: ChatData;
+    chatData: ChatData;
     cookies: {
         auth_token?: any
     };
