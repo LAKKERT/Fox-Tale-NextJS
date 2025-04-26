@@ -3,11 +3,12 @@ import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import * as Yup from "yup";
 
-const bcrypt = require("bcrypt");
+import bcrypt from "bcrypt";
 
 const validationSchema = Yup.object().shape({
+    token: Yup.string(),
     password: Yup.string().min(6, "Password must be at least 6 characters").required("Enter your password"),
-    repeatPassword: Yup.string().oneOf([Yup.ref('password'), null], 'Passwords must match').required('Confirm your password')
+    repeatPassword: Yup.string().oneOf([Yup.ref('password')], 'Passwords must match').required('Confirm your password')
 })
 
 export default async function resetPassword(req: NextApiRequest, res: NextApiResponse) {
@@ -38,10 +39,12 @@ export default async function resetPassword(req: NextApiRequest, res: NextApiRes
         if (error instanceof Yup.ValidationError) {
             const fieldErrors: Record<string, string> = {};
             error.inner.forEach((err) => {
-                const fieldName = err.path;
-                fieldErrors[fieldName] = err.message;
+                if (err.path !== undefined) {
+                    const fieldName = err.path;
+                    fieldErrors[fieldName] = err.message;
+                }
             });
-            res.status(400).json({ message: "Validation error", errors: fieldErrors });
+            return res.status(400).json({ errors: fieldErrors });
         } else {
             res.status(400).json({ message: (error as Error).message });
         }

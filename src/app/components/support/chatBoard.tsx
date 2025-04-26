@@ -1,32 +1,28 @@
 'use client';
 import { motion } from 'framer-motion';
 import Image from "next/image";
-import { useEffect, useState, useRef, useCallback, useReducer, KeyboardEvent } from 'react';
+import { useEffect, useState, useRef, useCallback, useReducer } from 'react';
 import styles from "@/app/styles/home/variables.module.scss";
+import { ChatData, UserData, UsersData, Message } from "@/lib/types/supportChat";
 
-type ChatData = {
-    id: string,
-    title: string,
-    created_at: string,
-    description: string
-    status: boolean,
-    files: string[],
-};
-
-type UsersData = {
-    id: string,
-    username: string,
-    role: string,
+interface Props {
+    userData: UserData;
+    usersData: UsersData[];
+    chatData: ChatData;
+    messages:  Message[];
+    isLoading: boolean;
 }
 
-type Message = {
-    message: string;
-    content: string;
-    user_id: string;
-    file_url: string[];
-    sent_at: string;
-    unreaded: boolean;
-};
+interface State {
+    isAtBottom: boolean;
+    newMessage: boolean;
+    lastSeenMessage: number | null;
+}
+
+type Action =
+    | { type: 'SCROLL_TO_BOTTOM'; payload: boolean }
+    | { type: 'SET_NEW_MESSAGE'; payload: boolean }
+    | { type: 'SET_LAST_SEEN_MESSAGE'; payload: number | null };
 
 const initialState = {
     isAtBottom: false,
@@ -34,7 +30,7 @@ const initialState = {
     lastSeenMessage: null,
 }
 
-const reducer = (state, action) => {
+const reducer = (state: State, action: Action) => {
     switch (action.type) {
         case 'SCROLL_TO_BOTTOM':
             return { ...state, isAtBottom: action.payload };
@@ -47,7 +43,7 @@ const reducer = (state, action) => {
     }
 }
 
-export function ChatBoard({ userData, usersData, chatData, messages, isLoading }) {
+export function ChatBoard({ userData, usersData, chatData, messages, isLoading }: Props) {
     const [showImage, setShowImage] = useState<string | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const messageRefs = useRef<HTMLElement[]>([]);
@@ -63,7 +59,7 @@ export function ChatBoard({ userData, usersData, chatData, messages, isLoading }
     }, []);
 
     useEffect(() => {
-        const handleUnloadOrPopState = async (event) => {
+        const handleUnloadOrPopState = async () => {
             if (state.lastSeenMessage !== null) {
                 const payload = {
                     userID: userData?.id,
@@ -149,7 +145,7 @@ export function ChatBoard({ userData, usersData, chatData, messages, isLoading }
             if (isBottom) {
                 messages.forEach((msg, index) => {
                     msg.unreaded = false;
-                    if (index > state.lastSeenMessage) {
+                    if (state.lastSeenMessage === null || index > state.lastSeenMessage) {
                         dispatch({ type: 'SET_LAST_SEEN_MESSAGE', payload: index })
                     }
                 });
@@ -383,14 +379,6 @@ export function ChatBoard({ userData, usersData, chatData, messages, isLoading }
                             </motion.div>
                         )}
                     </div>
-                    {/* <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: clientErrors?.maxFilesAllowed ? 1 : 0, height: clientErrors?.maxFilesAllowed ? 30 : 0 }}
-                        transition={{ duration: .3 }}
-                        className="text-orange-300 text-[13px] sm:text-[18px]"
-                    >
-                        {clientErrors?.maxFilesAllowed}
-                    </motion.p> */}
                 </div>
             </motion.div>
         </div>

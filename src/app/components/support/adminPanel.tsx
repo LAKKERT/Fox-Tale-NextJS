@@ -1,17 +1,17 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styles from "@/app/styles/home/variables.module.scss";
 import { motion } from 'framer-motion';
-import { DefaultEventsMap, Socket } from "socket.io";
-
+import { ChatData, UsersData } from "@/lib/types/supportChat";
 interface Props {
     usersData: UsersData[];
     chatData: ChatData;
     cookies: {
-        auth_token?: any
+        auth_token?: string
     };
-    socket: Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap> | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    socket: any
 }
 
 export function AdminPanel({ usersData, chatData, cookies, socket }: Props) {
@@ -32,16 +32,11 @@ export function AdminPanel({ usersData, chatData, cookies, socket }: Props) {
     
             if (socket) {
                 socket.emit('closeChat', chatData);
-                console.log('closeChat', chatData)
             }
         }catch (error) {
             console.error('Error close chat:', error);
         }
     };
-
-    useEffect(() => {
-        console.log('closeChat', chatData)
-    }, [socket, chatData])
 
     return (
         <div className='flex flex-col justify-between bg-[rgba(6,6,6,.65)] rounded-xl px-3 py-3 h-1/2 w-[250px]'>

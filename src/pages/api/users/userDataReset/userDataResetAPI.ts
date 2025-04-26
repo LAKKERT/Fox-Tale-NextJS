@@ -16,7 +16,7 @@ export default async function sendToken(req: NextApiRequest, res: NextApiRespons
             res.status(401).json({ message: "Invailed choice" });
             console.error("invailed choice");
         }
-        
+
         if (req.body.clientChoice === "forgetLogin") {
             try {
 
@@ -49,10 +49,12 @@ export default async function sendToken(req: NextApiRequest, res: NextApiRespons
                 if (error instanceof Yup.ValidationError) {
                     const fieldErrors: Record<string, string> = {};
                     error.inner.forEach((err) => {
-                        const fieldName = err.path;
-                        fieldErrors[fieldName] = err.message;
+                        if (err.path !== undefined) {
+                            const fieldName = err.path;
+                            fieldErrors[fieldName] = err.message;
+                        }
                     });
-                    res.status(400).json({ message: "Validation error", errors: fieldErrors });
+                    return res.status(400).json({ errors: fieldErrors });
                 } else {
                     res.status(400).json({ message: (error as Error).message });
                 }
@@ -61,27 +63,27 @@ export default async function sendToken(req: NextApiRequest, res: NextApiRespons
         } else if (req.body.clientChoice === "forgetPassword") {
             try {
                 const { email } = await validationSchema.validate(req.body, { abortEarly: false });
-                
+
                 const conn = await Connect();
                 const result = await conn.query('SELECT id, email FROM users WHERE email = $1', [email]);
-                
+
                 if (!result.rows.length) {
                     return res.status(400).json({ message: "Email not found" });
                 }
-                
+
                 const uniqueID = uuidv4();
                 const userID = result.rows[0].id;
                 const token = crypto.randomBytes(32).toString('hex');
                 const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
-                
+
                 try {
                     await conn.query('INSERT INTO password_reset (id, user_id, token, expires_at) VALUES ($1, $2, $3, $4)', [uniqueID, userID, token, expiresAt]);
                     await conn.end();
-                }catch (errors) {
+                } catch (errors) {
                     console.error("Failed to create password reset:", errors);
                     return res.status(500).json({ message: "Failed to create password reset" });
                 }
-                
+
                 const resetLink = `http://localhost:3000/restoring_access/resetPassword?token=${token}`;
 
                 const mailOptions = {
@@ -90,7 +92,7 @@ export default async function sendToken(req: NextApiRequest, res: NextApiRespons
                     subject: "Password Reset",
                     html: `Click the link to reset your password: ${resetLink}`
                 }
-                
+
                 try {
                     await transporter.sendMail(mailOptions);
                 } catch (error) {
@@ -103,10 +105,12 @@ export default async function sendToken(req: NextApiRequest, res: NextApiRespons
                 if (error instanceof Yup.ValidationError) {
                     const fieldErrors: Record<string, string> = {};
                     error.inner.forEach((err) => {
-                        const fieldName = err.path;
-                        fieldErrors[fieldName] = err.message;
+                        if (err.path !== undefined) {
+                            const fieldName = err.path;
+                            fieldErrors[fieldName] = err.message;
+                        }
                     });
-                    res.status(400).json({ message: "Validation error", errors: fieldErrors });
+                    return res.status(400).json({ errors: fieldErrors });
                 } else {
                     res.status(400).json({ message: (error as Error).message });
                 }

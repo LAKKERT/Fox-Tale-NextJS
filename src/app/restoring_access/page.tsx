@@ -10,6 +10,17 @@ import { motion } from "framer-motion";
 import { K2D } from "next/font/google";
 import Image from "next/image";
 
+type ErrorType = {
+    email?: {
+        message?: string;
+    };
+}
+
+type ServerErrors = {
+    email: string;
+    message: string
+}
+
 const MainFont = K2D({
     style: "normal",
     subsets: ["latin"],
@@ -22,13 +33,12 @@ const validationSchema = Yup.object().shape({
 
 export default function SendRequest() {
     const [isLoading, setIsLoading] = useState(true);
-    const [showContent, setShowContent] = useState(false);
 
     const [clientChoice, setClientChoice] = useState("");
     const [backButton, setBackButton] = useState(false);
 
-    const [clientError, setClientError] = useState({});
-    const [serverError, setServerError] = useState({});
+    const [clientError, setClientError] = useState<ErrorType>({});
+    const [serverError, setServerError] = useState<ServerErrors>();
     const [serverMessage, setServerMessage] = useState("");
 
     const [cookies] = useCookies();
@@ -47,7 +57,6 @@ export default function SendRequest() {
     useEffect(() => {
         const timeout = setTimeout(() => {
             setIsLoading(false);
-            setTimeout(() => setShowContent(true), 300);
         }, 300);
 
         return () => clearTimeout(timeout);
@@ -81,7 +90,7 @@ export default function SendRequest() {
         setClientChoice('forgetPassword');
     }
 
-    const onSubmit = async (data) => {
+    const onSubmit = async (data: {email: string}) => {
         try {
             const payload = {
                 ...data,
@@ -139,7 +148,7 @@ export default function SendRequest() {
 
                     <div className="text-center text-balance flex flex-col gap-3">
                         <h2 className="text-xl md:text-2xl tracking-wider uppercase">- restoring access -</h2>
-                        <p className="md:text-lg">If you're having trouble accessing your account, please select one of the options below</p>
+                        <p className="md:text-lg">If you`&apos;`re having trouble accessing your account, please select one of the options below</p>
                     </div>
 
                     <div className="h-full w-full flex flex-col justify-center items-center gap-5">

@@ -111,7 +111,7 @@ export function NewsPageComponent() {
                         </div>
 
                         <div className="flex flex-col justify-center items-center flex-wrap gap-5">
-                            {paginatedNews?.length > 0 ? (
+                            {paginatedNews && paginatedNews?.length > 0 ? (
                                 paginatedNews?.map((newsItem: NewsItem) => (
                                     <div key={newsItem.id} className="lg:max-h-[220px] flex flex-col lg:grid lg:grid-cols-[320px_minmax(656px,1fr)] xl:grid-cols-[350px_minmax(716px,1fr)] gap-3">
                                         <div className="h-full w-[290px] md:w-[320px] xl:w-[350px]">

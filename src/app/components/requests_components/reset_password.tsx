@@ -25,8 +25,10 @@ export function PasswordResetComponent() {
 
     const router = useRouter();
 
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
+    const token = typeof window !== 'undefined' 
+    ? new URLSearchParams(window.location.search).get('token') 
+    : null;
+    console.log('token', token)
 
     const { register, handleSubmit, formState: { errors } } = useForm({
         resolver: yupResolver(validationSchema)

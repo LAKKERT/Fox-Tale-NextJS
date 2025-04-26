@@ -1,11 +1,12 @@
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
+import { MouseEvent } from 'react';
 
 export function Loader() {
     const [offset, setOffset] = useState({ x: 0, y: 0 });
     const targetOffset = useRef({ x: 0, y: 0 });
 
-    const lerp = (start, end, factor) => start * (1 - factor) + end * factor;
+    const lerp = (start: number, end: number, factor: number) => start * (1 - factor) + end * factor;
 
     useEffect(() => {
         const animate = () => {
@@ -18,7 +19,7 @@ export function Loader() {
         animate();
     }, []);
 
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
         const { clientX, clientY, currentTarget } = e;
         const { width, height, left, top } = currentTarget.getBoundingClientRect();
         const centerX = left + width / 2;

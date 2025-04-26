@@ -1,10 +1,8 @@
 'use client';
 import { K2D } from "next/font/google";
 import { motion } from 'framer-motion';
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useUserStore } from "@/stores/userStore";
-import { useCookies } from "react-cookie";
 import Link from "next/link";
 import { Loader } from "@/app/components/load";
 const MainFont = K2D({
@@ -21,8 +19,6 @@ export function SupportPageComponent() {
     const [isLoading, setIsLoading] = useState(true);
     const [openCards, setOpenCards] = useState<OpenCardsState>({});
     const userData = useUserStore((state) => state.userData);
-    const [cookies] = useCookies(['auth_token']);
-    const router = useRouter();
 
     setTimeout(() => {
         setIsLoading(false);

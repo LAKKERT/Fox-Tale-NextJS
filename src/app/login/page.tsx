@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Header } from "../components/header";
 import { LoginPage } from "../components/login/loginPage";
 import { useCookies } from "react-cookie";

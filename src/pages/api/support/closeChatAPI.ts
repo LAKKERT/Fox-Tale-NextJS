@@ -2,6 +2,11 @@
 import Connect from '@/db/dbConfig';
 import jwt from 'jsonwebtoken';
 import { NextApiRequest, NextApiResponse } from "next";
+
+interface JwtPayload {
+    userRole: string;
+}
+
 export default async function closeChat(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'POST') {
         const { roomID, cookies } = req.body;
@@ -18,7 +23,7 @@ export default async function closeChat(req: NextApiRequest, res: NextApiRespons
     
         let decoded;
         try {
-            decoded = jwt.verify(cookies, process.env.JWT_SECRET as string);
+            decoded = jwt.verify(cookies, process.env.JWT_SECRET as string) as JwtPayload;
         } catch (error) {
             console.error('Invalid token:', error);
             return res.status(401).json({ error: 'Invalid token' });

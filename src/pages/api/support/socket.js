@@ -4,13 +4,23 @@ import { Server } from "socket.io";
 import { saveMessageToDB } from "@/pages/api/support/sendMessageAPI";
 
 export default function WebSocketAPI(req, res) {
-    if (req.socket.server.io) {
+    if (!res.socket) {
         res.end();
         return;
     }
 
-    const io = new Server(res.socket.server, { path: "/api/support/socket" });
-    res.socket.server.io = io;
+
+    const io = new Server(res.socket.server, {
+        path: "/api/support/socket",
+        cors: {
+            origin: process.env.NODE_ENV === "production" 
+                ? "https://your-production-domain.com" 
+                : "http://localhost:3000",
+            methods: ["GET", "POST"],
+            credentials: true
+        }
+    });
+
     io.on("connection", (socket) => {
         socket.on("message", async (messageData) => {
             if (messageData.status === false) {

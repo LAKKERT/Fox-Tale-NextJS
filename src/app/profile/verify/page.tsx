@@ -25,7 +25,7 @@ export default function VerifyPage() {
 
     const userData = useUserStore((state) => state.userData);
 
-    const maskedEmail = maskEmail(userData?.email)
+    const maskedEmail = maskEmail(userData?.email ?? '')
 
     const {
         profileAccess,

@@ -77,13 +77,14 @@ export default async function ChangeEmail(req: NextApiRequest, res: NextApiRespo
                 if (error instanceof Yup.ValidationError) {
                     const fieldErrors: Record<string, string> = {};
                     error.inner.forEach((err) => {
-                        const fieldName = err.path;
-                        fieldErrors[fieldName] = err.message;
-                    })
+                        if (err.path !== undefined) {
+                            const fieldName = err.path;
+                            fieldErrors[fieldName] = err.message;
+                        }
+                    });
                     return res.status(400).json({ errors: fieldErrors });
                 }
             }
-        
         } 
         else {
             try {
@@ -120,9 +121,11 @@ export default async function ChangeEmail(req: NextApiRequest, res: NextApiRespo
                 if (error instanceof Yup.ValidationError) {
                     const fieldErrors: Record<string, string> = {};
                     error.inner.forEach((err) => {
-                        const fieldName = err.path;
-                        fieldErrors[fieldName] = err.message;
-                    })
+                        if (err.path !== undefined) {
+                            const fieldName = err.path;
+                            fieldErrors[fieldName] = err.message;
+                        }
+                    });
                     return res.status(400).json({ errors: fieldErrors });
                 }
             }

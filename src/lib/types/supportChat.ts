@@ -1,17 +1,17 @@
-type UsersData = {
+export type UsersData = {
     id: string,
     username: string,
     role: string,
 }
 
-type UserData = {
+export type UserData = {
     id: string;
     username: string;
     role: string;
     email: string;
-};
+} | null;
 
-type ChatData = {
+export type ChatData = {
     id: string,
     title: string,
     created_at: string,
@@ -20,7 +20,7 @@ type ChatData = {
     files: string[],
 };
 
-type Message = {
+export type Message = {
     message: string;
     content: string;
     user_id: string;

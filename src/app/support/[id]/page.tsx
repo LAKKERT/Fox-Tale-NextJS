@@ -8,8 +8,10 @@ import { useEffect, useState} from 'react';
 import { useUserStore } from '@/stores/userStore';
 import { useCookies } from 'react-cookie';
 import { useRouter } from 'next/navigation';
-import { io, Socket } from "socket.io-client";
+import { io } from "socket.io-client";
+// import { socket } from '@/app/socket';
 import { motion } from 'framer-motion';
+import { UsersData, Message, ChatData } from "@/lib/types/supportChat";
 
 import { K2D } from "next/font/google";
 
@@ -20,7 +22,14 @@ const MainFont = K2D({
 });
 
 export default function SupportChatRoom(params: { params: { id: number; }; }) {
-    const [chatData, setChatData] = useState<ChatData>();
+    const [chatData, setChatData] = useState<ChatData>({
+        id: '',
+        title: '',
+        created_at: '',
+        description: '',
+        status: false,
+        files: [],
+    });
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [usersData, setUsersData] = useState<UsersData[]>([]);
@@ -29,7 +38,9 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
 
     const router = useRouter();
 
-    const [socket, setSocket] = useState<Socket | null>(null);
+    // const [socket, setSocket] = useState<Socket | null>(null);
+    const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
+
 
     useEffect(() => {
         if (!socket) {
@@ -115,6 +126,8 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
         }
 
     }, [cookies, params.params.id, router, socket]);
+
+    console.log('socket', socket)
 
     return (
         <div className={`w-full ${MainFont.className} text-white caret-transparent`}>

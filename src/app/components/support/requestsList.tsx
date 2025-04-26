@@ -89,7 +89,7 @@ export function RequestsListComponent() {
         currentPage * ITEMS_PER_PAGE
     );
 
-    const handlePageChange = (page) => {
+    const handlePageChange = (page: number) => {
         setCurrentPage(page);
     }
 

@@ -4,7 +4,7 @@ import Connect from "@/db/dbConfig";
 import { compare } from "bcrypt";
 import * as Yup from "yup";
 
-const bcrypt = require("bcrypt");
+import bcrypt from "bcrypt";
 
 const schema = Yup.object().shape({
     password1: Yup.string().min(6, 'Password must be at least 6 characters').required('Enter your password'),
@@ -26,7 +26,7 @@ async function checkPassword(userID: string, password: string) {
         const hashedPassword = result.rows[0].password;
 
         const passwordMatch = await compare(password, hashedPassword);
-        
+
         return passwordMatch;
     } catch (error) {
         console.error("Error during password check:", error);
@@ -38,33 +38,35 @@ export default async function ChangePassword(req: NextApiRequest, res: NextApiRe
     if (req.method === "POST") {
         const conn = await Connect();
         try {
-            const { password1, password2, repeatPassword2 } = await schema.validate(req.body, {abortEarly: false});
-            
+            const { password1, password2 } = await schema.validate(req.body, { abortEarly: false });
+
             const passwordCompare = await checkPassword(req.body.id, password1)
 
-            if(!passwordCompare) {
+            if (!passwordCompare) {
                 console.error("password do not match");
-                res.status(400).json({message: "Current password is incorrect"});
+                res.status(400).json({ message: "Current password is incorrect" });
             }
 
             const hashedNewPassword = await bcrypt.hash(password2, 10)
-            
+
             await conn.query(`UPDATE users SET password = $1 WHERE id = $2`, [hashedNewPassword, req.body.id]);
 
-            return res.status(200).json({message: "Password updated successfully"});
-        }catch (error) {
+            return res.status(200).json({ message: "Password updated successfully" });
+        } catch (error) {
             if (error instanceof Yup.ValidationError) {
                 const fieldErrors: Record<string, string> = {};
                 error.inner.forEach((err) => {
-                    const fieldName = err.path;
-                    fieldErrors[fieldName] = err.message;
-                })
-                res.status(400).json({ errors: fieldErrors });
+                    if (err.path !== undefined) {
+                        const fieldName = err.path;
+                        fieldErrors[fieldName] = err.message;
+                    }
+                });
+                return res.status(400).json({ errors: fieldErrors });
             }
-        }finally {
+        } finally {
             await conn.end();
         }
-    }else {
-        return res.status(405).json({message: "method not allowed"});
+    } else {
+        return res.status(405).json({ message: "method not allowed" });
     }
 }

@@ -15,7 +15,7 @@ export default async function GetPostData(req: NextApiRequest, res: NextApiRespo
 
     let currentUserRole = '';
     const authHeader = req.headers['authorization'];
-    let conn;
+    const conn = await Connect();
 
     try {
         if (authHeader?.startsWith('Bearer ')) {
@@ -30,8 +30,6 @@ export default async function GetPostData(req: NextApiRequest, res: NextApiRespo
                 }
             }
         }
-
-        conn = await Connect();
         const result = await conn.query(
             `SELECT * FROM news WHERE id = $1`,
             [postID]

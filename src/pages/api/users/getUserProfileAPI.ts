@@ -3,6 +3,12 @@ import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import jwt from "jsonwebtoken";
 
+interface JwtPayload {
+    userId: string;
+    userRole: string;
+    profileAccess: boolean;
+}
+
 export default async function getUserProfile(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'GET') {
         const authHeader = req.headers['authorization'];
@@ -15,7 +21,7 @@ export default async function getUserProfile(req: NextApiRequest, res: NextApiRe
 
         let decoded;
         try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+            decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
         } catch ( error ) {
             console.error('Invalid token', error);
             return res.status(401).json({ error: 'Unauthorized' });

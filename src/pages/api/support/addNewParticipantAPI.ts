@@ -3,6 +3,10 @@ import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import jwt from "jsonwebtoken";
 
+interface JwtPayload {
+    userId: string;
+}
+
 export default async function addNewParticipant(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === "POST") {
         const { cookies, roomID } = req.body;
@@ -13,10 +17,14 @@ export default async function addNewParticipant(req: NextApiRequest, res: NextAp
         }
 
         const token = req.cookies.auth_token;
+
+        if (!token) {
+            return res.status(401).json({ error: "Token not provided" });
+        }
         let decoded;
 
         try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+            decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
         } catch (errors) {
             console.error("Invalid token:", errors);
             return res.status(401).json({ error: "Invalid token" });
@@ -31,7 +39,7 @@ export default async function addNewParticipant(req: NextApiRequest, res: NextAp
                 [decoded.userId, roomID]
             );
 
-            if (existingParticipant.rowCount > 0) {
+            if (existingParticipant.rowCount !== null && existingParticipant.rowCount > 0) {
                 return res.status(200).json({ message: "Participant already exists" });
             }
 

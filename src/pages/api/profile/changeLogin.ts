@@ -19,7 +19,7 @@ async function checkLoginExists(login: string) {
             return false;
         }
 
-    }catch (errors) {
+    } catch (errors) {
         console.error(errors);
         return;
     }
@@ -28,30 +28,31 @@ async function checkLoginExists(login: string) {
 export default async function ChangeLogin(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === "POST") {
         try {
-            const { login } = await validationSchema.validate(req.body, {abortEarly: false});
+            const { login } = await validationSchema.validate(req.body, { abortEarly: false });
 
             const usernameExist = await checkLoginExists(login);
 
             if (usernameExist) {
-                return res.status(400).json({message: "This username already exists"});
+                return res.status(400).json({ message: "This username already exists" });
             }
 
             const conn = await Connect();
             await conn.query('UPDATE users SET username = $1 WHERE id = $2', [login, req.body.id]);
             await conn.end();
-            
-            return res.status(200).json({message: "username updated successfully"});
+
+            return res.status(200).json({ message: "username updated successfully" });
         } catch (error) {
             if (error instanceof Yup.ValidationError) {
                 const fieldErrors: Record<string, string> = {};
                 error.inner.forEach((err) => {
-                    const fieldName = err.path;
-                    fieldErrors[fieldName] = err.message;
-                })
+                    if (err.path !== undefined) {
+                        const fieldName = err.path;
+                        fieldErrors[fieldName] = err.message;
+                    }
+                });
                 return res.status(400).json({ errors: fieldErrors });
             }
         }
-        
 
     } else {
         res.status(405).json({ message: "Method not allowed" });

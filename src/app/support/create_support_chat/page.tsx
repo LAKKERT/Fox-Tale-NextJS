@@ -10,6 +10,7 @@ import * as Yup from "yup";
 import { saveFile } from '@/pages/api/support/sendMessageAPI';
 import styles from "@/app/styles/home/variables.module.scss";
 import { motion } from "framer-motion";
+import { ChangeEvent } from 'react';
 
 import { K2D } from "next/font/google";
 
@@ -130,8 +131,8 @@ export default function CreateSupportChat() {
         }
     }
 
-    const handleFileChange = async (e) => {
-        const files: File[] = Array.from(e.target.files);
+    const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+        const files: File[] = Array.from(e.target.files || []);
         const updatedFiles: File[] | null = [...(selectedFiles || []), ...files];
 
         if (updatedFiles.length > MAX_FILES_ALLOWED) {
@@ -150,7 +151,7 @@ export default function CreateSupportChat() {
         return await Promise.all(filePromises)
     }
 
-    const readFileAsDataURL = (file: file): Promise<string | ArrayBuffer | null> => {
+    const readFileAsDataURL = (file: File): Promise<string | ArrayBuffer | null> => {
         return new Promise((resolve, rejects) => {
             const reader = new FileReader();
             reader.onloadend = () => resolve(reader.result);

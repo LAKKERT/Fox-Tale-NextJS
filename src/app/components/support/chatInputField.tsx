@@ -4,7 +4,8 @@ import { useRef, useState } from "react";
 import { saveFile } from '@/pages/api/support/sendMessageAPI';
 import Image from "next/image";
 import styles from "@/app/styles/home/variables.module.scss";
-import { Socket } from "socket.io";
+import { motion } from "framer-motion";
+import { ChatData } from "@/lib/types/supportChat";
 
 const MAX_FILES_ALLOWED = 3;
 
@@ -14,7 +15,8 @@ type ClientErrors = {
 
 interface Props {
     chatData?: ChatData;
-    socket: Socket;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    socket: any;
     userID?: string;
 }
 
@@ -170,6 +172,14 @@ export function ChatInputField({chatData, socket, userID}: Props) {
                 </div>
             ) : (
                 <div className={`flex flex-col ${selectedFiles?.length === 0 || selectedFiles === null ? null : 'gap-2'} bg-[rgba(6,6,6,.65)] p-2 mx-3 rounded-xl`}>
+                    <motion.p
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: clientErrors?.maxFilesAllowed ? 1 : 0, height: clientErrors?.maxFilesAllowed ? 30 : 0 }}
+                        transition={{ duration: .3 }}
+                        className="text-center text-orange-300 text-[13px] sm:text-[18px]"
+                    >
+                        {clientErrors?.maxFilesAllowed}
+                    </motion.p>
                     <div className='flex flex-row gap-2 items-center select-none'>
                         <textarea value={message} rows={1} onChange={handleInputChange} onKeyDown={handleKeyDown} autoFocus maxLength={1000} placeholder='WRITE A MESSAGE...' className={`w-full bg-transparent outline-none font-extralight tracking-[1px] text-balance resize-none ${styles.custom_scroll} caret-white overflow-auto`} />
 

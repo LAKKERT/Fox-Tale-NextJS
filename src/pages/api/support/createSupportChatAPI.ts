@@ -3,7 +3,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import * as Yup from "yup";
 import { v4 as uuidv4 } from "uuid";
-import jwt, { Jwt } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 
 interface JwtPayload {
     userId: string;
@@ -64,10 +64,12 @@ export default async function CreateSupportChat(req: NextApiRequest, res: NextAp
             if (error instanceof Yup.ValidationError) {
                 const fieldErrors: Record<string, string> = {};
                 error.inner.forEach((err) => {
-                    const fieldName = err.path;
-                    fieldErrors[fieldName] = err.message;
-                })
-                res.status(400).json({ errors: fieldErrors });
+                    if (err.path !== undefined) {
+                        const fieldName = err.path;
+                        fieldErrors[fieldName] = err.message;
+                    }
+                });
+                return res.status(400).json({ errors: fieldErrors });
             }
         }
     }else {

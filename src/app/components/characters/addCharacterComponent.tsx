@@ -55,7 +55,7 @@ const validationSchema = Yup.object().shape({
 export function AddCharacter() {
     const [isLoading, setIsLoading] = useState(true);
 
-    const [selectedFile, setSelectedFiles] = useState<File | null>();
+    const [selectedFile, setSelectedFiles] = useState<File | null>(null);
     const [selectedTerritories, setSelectedTerritories] = useState<number[]>([]);
     const [territories, setTerritories] = useState<territories[]>([]);
     const [allTerritories, setAllTerritories] = useState<territories[]>([]);
@@ -122,17 +122,21 @@ export function AddCharacter() {
 
     const onSubmit = async (data: characterType) => {
         try {
-            const fileProperty = filesProperties(selectedFile);
-            const fileData = await processFile(selectedFile);
-
-            saveFile(fileData, fileProperty)
+            let fileData;
+            let fileProperty;
+            if (selectedFile !== null) {
+                fileProperty = filesProperties(selectedFile);
+                fileData = await processFile(selectedFile);
+    
+                saveFile(fileData, fileProperty);
+            }
 
             data.territories = selectedTerritories;
 
             const payload = {
                 ...data,
                 coverName: fileProperty
-            }
+            };
 
             const response = await fetch(`/api/characters/charactersAPI`, {
                 method: 'POST',
@@ -141,7 +145,7 @@ export function AddCharacter() {
                     'Authorization': `Bearer ${cookies.auth_token}`
                 },
                 body: JSON.stringify(payload),
-            })
+            });
 
             if (response.ok) {
                 router.push(`/characters`);
@@ -166,7 +170,7 @@ export function AddCharacter() {
         });
     };
 
-    const filesProperties = (file) => {
+    const filesProperties = (file: File) => {
         let name = file.name;
 
         const lastDot = name.lastIndexOf('.');

@@ -19,41 +19,53 @@ interface ParagraphInterface {
         image?: string | null;
     }[];
 }
+type NormalizedArray = Array<string | number | null | NormalizedArray>;
 
-const normalizeArray = (arr: (string | null)[] | (number | null)[] | (string | null)[][], dimensions: number) => {
-    const normalize = (array: (string | null)[] | (number | null)[] | (string | null)[][], currentDepth: number): (string | null)[] | (number | null)[] | (string | null)[][] => {
+type NestedElement = string | number | null;
+type NestedArray = (NestedElement | NestedArray)[];
+
+const normalizeArray = (
+    arr: (string | null)[] | (number | null)[] | (string | null)[][],
+    dimensions: number
+): NormalizedArray => {
+    const normalize = (
+        array: NormalizedArray,
+        currentDepth: number
+    ): NormalizedArray => {
         if (currentDepth > dimensions) return array;
-        if (!Array.isArray(array)) {
-            return currentDepth < dimensions ? [array] : array;
-        }
 
-        const maxLength = Math.max(...array.map(sub =>
-            Array.isArray(sub) ? sub.length : 1
-        ));
+        const maxLength = Math.max(
+            ...array.map(sub => Array.isArray(sub) ? sub.length : 1)
+        );
 
         return array.map(item => {
-            const normalized = Array.isArray(item)
-                ? normalize(item, currentDepth + 1)
-                : currentDepth < dimensions
-                    ? normalize([item], currentDepth + 1)
-                    : item;
-
-            if (Array.isArray(normalized)) {
+            if (Array.isArray(item)) {
+                const normalized = normalize(item, currentDepth + 1);
                 while (normalized.length < maxLength) {
                     normalized.push(null);
                 }
+                return normalized;
+            } else {
+                if (currentDepth < dimensions) {
+                    const normalized = normalize([item], currentDepth + 1);
+                    while (normalized.length < maxLength) {
+                        normalized.push(null);
+                    }
+                    return normalized;
+                } else {
+                    return [item];
+                }
             }
-            return normalized;
         });
     };
 
-    return normalize(arr, 1);
+    return normalize(arr as NormalizedArray, 1);
 };
 
-const formatPGArray = (arr: (string | null)[] | (number | null)[] | (string | null)[][] , dimensions: number) => {
+const formatPGArray = (arr: (string | null)[] | (number | null)[] | (string | null)[][], dimensions: number) => {
     const normalized = normalizeArray(arr, dimensions);
 
-    const escapeElement = (element) : string => {
+    const escapeElement = (element: NestedElement | NestedArray): string => {
         if (element === null) return 'NULL';
         if (Array.isArray(element)) {
             return `{${element.map(escapeElement).join(',')}}`;
@@ -65,9 +77,9 @@ const formatPGArray = (arr: (string | null)[] | (number | null)[] | (string | nu
         return `"${escaped}"`;
     };
 
-    const formatNested = (array, depth: number) => {
+    const formatNested = (array: NestedArray, depth: number): string => {
         if (depth < dimensions) {
-            return `{${array.map(item =>
+            return `{${array.map((item: NestedElement | NestedArray) =>
                 Array.isArray(item)
                     ? formatNested(item, depth + 1)
                     : escapeElement(item)
@@ -94,7 +106,7 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
         let decoded;
 
         try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET as string ) as JwtPayload;
+            decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
         } catch (error) {
             console.error('Invalid token:', error);
             return res.status(403).json({ error: 'Invalid token' });

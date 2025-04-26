@@ -187,7 +187,7 @@ export function CreatePostComponent() {
                     data.paragraphs
                         .map(p => p.cover)
                         .filter((item): item is File => item instanceof File)
-                );
+                ) as string[];
                 const coversMetadata = getFileMetadata(
                     data.paragraphs
                         .map(p => p.cover)
@@ -207,7 +207,7 @@ export function CreatePostComponent() {
                 const allContentImages = data.paragraphs
                     .flatMap(p => p.contents.map(c => c.image))
                     .filter(img => img instanceof File) as File[];
-                const images = await processFiles(allContentImages);
+                const images = await processFiles(allContentImages) as string[];
                 const imagesMetadata = getFileMetadata(allContentImages);
                 const imagesURL = imagesMetadata.map(meta =>
                     meta.size > 0 ? `/uploads/news/${Date.now()}_${meta.name}.${meta.extension}` : null

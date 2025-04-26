@@ -1,6 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import Connect from '@/db/dbConfig';
-import { v4 as uuidv4 } from "uuid";
 import transporter from "@/helpers/nodeMailerConfig";
 import jwt from 'jsonwebtoken';
 

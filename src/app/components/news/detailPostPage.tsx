@@ -279,7 +279,7 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
                 .map(p => p.cover)
                 .filter(cover => cover instanceof File) as File[];
 
-            const processedCovers = await processFiles(newCovers);
+            const processedCovers = await processFiles(newCovers) as string[];
             const coversMetadata = newCovers.map(file => getFileMetadata(file));
             const coversURL = coversMetadata.map(meta =>
                 `/uploads/news/${Date.now()}_${meta.name}.${meta.extension}`
@@ -299,7 +299,7 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
                 .flatMap(p => p.contents.map(c => c.image))
                 .filter(img => img instanceof File) as File[];
 
-            const processedImages = await processFiles(newContentImages);
+            const processedImages = await processFiles(newContentImages) as string[];
             const imagesMetadata = newContentImages.map(file => getFileMetadata(file));
             const imagesURL = imagesMetadata.map(meta =>
                 `/uploads/news/${Date.now()}_${meta.name}.${meta.extension}`

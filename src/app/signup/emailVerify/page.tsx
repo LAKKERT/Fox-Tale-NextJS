@@ -11,23 +11,26 @@ import { motion } from "framer-motion";
 
 
 const validationCode = Yup.object().shape({
-    code: Yup.number().min(1000, 'Number must be a 4-digit number').max(9999, 'Number must be a 4-digit number').typeError('Please enter a 4-digit number'),
+    code: Yup.number().min(1000, 'Number must be a 4-digit number').max(9999, 'Number must be a 4-digit number').typeError('Please enter a 4-digit number').required('Please enter a 4-digit number'),
 })
 
 type userData = {
     email: string
 }
 
+type ServerErrors  = {
+    message: string
+}
+
 export default function EmailVerification() {
     const [isLoading, setIsLoading] = useState(true);
     const [showContent, setShowContent] = useState(false);
     const [userData, setUserData] = useState<userData>();
-    const [serverError, setServerError] = useState(null);
-    const [clientError, setClientError] = useState({});
+    const [serverError, setServerError] = useState<ServerErrors>();
     const [cookies] = useCookies(['regToken'])
     const router = useRouter();
 
-    const { register, handleSubmit, formState: { errors } } = useForm({
+    const { register, handleSubmit, formState: { errors } } = useForm<{code: number}>({
         resolver: yupResolver(validationCode),
     });
 
@@ -40,18 +43,7 @@ export default function EmailVerification() {
         return () => clearTimeout(timeout);
     });
 
-    useEffect(() => {
-        if (errors) {
-            setClientError(errors);
-        } else {
-            const timeout = setTimeout(() => {
-                setClientError(errors);
-                return () => clearTimeout(timeout);
-            }, 300);
-        }
-    }, [errors]);
-
-    const onSubmit = async (data) => {
+    const onSubmit = async (data: {code: number}) => {
         try {
             const payload = {
                 ...data
@@ -116,7 +108,7 @@ export default function EmailVerification() {
 
         window.history.pushState({ page: 'emailVerify' }, '', window.location.href);
 
-        const handleOnBeforeUnload = async (event) => {
+        const handleOnBeforeUnload = async (event: BeforeUnloadEvent) => {
             event.preventDefault();
             event.returnValue = 'Are you sure you want to leave?';
             console.log(cookies.regToken)
@@ -144,7 +136,7 @@ export default function EmailVerification() {
         }
 
         window.history.pushState({ page: 'emailVerify' }, '', window.location.href);
-        const handlePopState = async (event) => {
+        const handlePopState = async () => {
             console.log(cookies)
             try {
                 const response = await fetch('/api/users/verifyEmailAPI', {
@@ -209,7 +201,7 @@ export default function EmailVerification() {
                                         transition={{ duration: .3 }}
                                         className="text-orange-300 text-[13px] sm:text-[18px]"
                                     >
-                                        {errors.code?.message || serverError}
+                                        {errors.code?.message || serverError?.message}
                                     </motion.p>
                                     <input type="text" maxLength={4} autoComplete="off" {...register("code")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 bg-transparent tracking-[25px] text-center text-2xl outline-none caret-white" placeholder="CODE" />
                                 </div>

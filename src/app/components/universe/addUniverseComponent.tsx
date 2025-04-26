@@ -44,7 +44,7 @@ const validationSchema = Yup.object().shape({
 export function AddUniverse() {
     const [isLoading, setIsLoading] = useState(false);
 
-    const [selectedFile, setSelectedFiles] = useState<File | null>();
+    const [selectedFile, setSelectedFiles] = useState<File | null>(null);
     const userData = useUserStore((state) => state.userData);
 
     const [cookies] = useCookies(['auth_token']);
@@ -77,10 +77,14 @@ export function AddUniverse() {
 
     const onSubmit = async (data: universeType) => {
         try {
-            const fileProperty = filesProperties(selectedFile);
-            const fileData = await processFile(selectedFile)
-
-            saveFile(fileData, fileProperty)
+            let fileData;
+            let fileProperty;
+            if (selectedFile !== null) {
+                fileProperty = filesProperties(selectedFile);
+                fileData = await processFile(selectedFile);
+    
+                saveFile(fileData, fileProperty);
+            }
 
             const payload = {
                 ...data,
@@ -119,7 +123,7 @@ export function AddUniverse() {
         });
     };
 
-    const filesProperties = (file) => {
+    const filesProperties = (file: File) => {
         let name = file.name;
 
         const lastDot = name.lastIndexOf('.');

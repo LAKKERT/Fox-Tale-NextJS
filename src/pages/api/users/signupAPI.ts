@@ -6,13 +6,13 @@ import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import { serialize } from "cookie";
 
-const bcrypt = require("bcrypt");
+import bcrypt from "bcrypt";
 
 const schema = Yup.object().shape({
     email: Yup.string().email('EMAIL is not correct server').required('Enter your EMAIL'),
     username: Yup.string().min(4, 'Username must be at least 4 characters').required('Enter your username'),
     password: Yup.string().min(6, 'Password must be at least 6 characters').required('Enter your password'),
-    password2: Yup.string().oneOf([Yup.ref('password'), null], 'Passwords must match').required('Confirm your password')
+    password2: Yup.string().oneOf([Yup.ref('password')], 'Passwords must match').required('Confirm your password')
 });
 
 interface CheckResult {
@@ -93,11 +93,13 @@ export default async function CreateUser(req: NextApiRequest, res: NextApiRespon
             if (error instanceof Yup.ValidationError) {
                 const fieldErrors: Record<string, string> = {};
                 error.inner.forEach((err) => {
-                    const fieldName = err.path;
-                    fieldErrors[fieldName] = err.message;
+                    if (err.path !== undefined) {
+                        const fieldName = err.path;
+                        fieldErrors[fieldName] = err.message;
+                    }
                 });
-                res.status(400).json({ message: "Validation error", errors: fieldErrors });
-            } else {
+                return res.status(400).json({ errors: fieldErrors });
+            }else {
                 res.status(400).json({ message: (error as Error).message });
             }
         }
