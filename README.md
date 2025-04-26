@@ -1,6 +1,13 @@
 <p align="center"><img align="center" src="https://github.com/LAKKERT/Fox-Tale-NextJS/blob/main/public/header/logo.svg" /></p>
 <h1 align="center">FOX TALE</h1>
 
+## Содержание
+- [О проекте](#о-проекте)
+- [Технологии](#технологии)
+- [Структура проекта](#структура-проекта)
+- [Начало работы](#начало-работы)
+- [Использование](#использование)
+
 ## О проекте
 
 <div>
@@ -22,7 +29,7 @@
   Проект создан для освоения Next.js
 </div>
 
-## Built With
+## Технологии
 
 * ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
 * ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
@@ -30,7 +37,20 @@
 * ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 * ![blender](https://img.shields.io/badge/blender-E87D0D?style=for-the-badge&logo=blender&logoColor=white)
 
-## Getting Started
+## Структура проекта
+```
+  Fox_Tale/
+  ├── public                  # Ассеты (изображения, статические файлы)
+  ├── src
+  │   └── app                 # Все страницы и логика Next.js
+  ├── db                      # Подключение к базе данных и модели данных
+  ├── helpers                 # Вспомогательные функции и скрипты
+  ├── lib                     # Типизация и утилиты
+  ├── pages
+  │   └── api                 # API-роуты для обработки запросов
+  ├── stores                  # Локальное хранилище
+```
+## Начало работы
 
 1. Склонируйте репозиторий:
     ```
