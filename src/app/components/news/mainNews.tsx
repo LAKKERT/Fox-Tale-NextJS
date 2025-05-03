@@ -135,25 +135,29 @@ export function NewsPageComponent() {
                                                             })}
                                                         </p>
                                                     </div>
+                                                    <Link href={`/news/${newsItem.id}`} className="py-1 px-3 uppercase flex flex-row gap-1 mt-auto self-end items-center rounded hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out">
+                                                        more •
+                                                        <Image src="/home/Arrow.svg" alt="arrow" width={25} height={25} className="mt-[2px]" />
+                                                    </Link>
                                                 </div>
                                             </div>
 
-                                            <div className="w-full h-full lg:hidden flex flex-col lg:py-4 md:px-4 text-balance">
+                                            {/* <div className="w-full h-full lg:hidden flex flex-col lg:py-4 md:px-4 text-balance">
                                                 <p className="line-clamp-6">{newsItem.content[0][0]}</p>
                                                 <Link href={`/news/${newsItem.id}`} className="py-1 px-3 uppercase flex flex-row gap-1 mt-auto self-end items-center rounded hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out">
                                                     more •
                                                     <Image src="/home/Arrow.svg" alt="arrow" width={25} height={25} className="mt-[2px]" />
                                                 </Link>
-                                            </div>
+                                            </div> */}
                                         </div>
-
+{/* 
                                         <div className="w-full h-full hidden lg:flex flex-col sm:py-4 text-balance">
                                             <p className="line-clamp-6">{newsItem.content[0][0]}</p>
                                             <Link href={`/news/${newsItem.id}`} className="py-1 px-3 uppercase flex flex-row gap-1 mt-auto self-end items-center rounded hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out">
                                                 more •
                                                 <Image src="/home/Arrow.svg" alt="arrow" width={25} height={25} className="mt-[2px]" />
                                             </Link>
-                                        </div>
+                                        </div> */}
 
                                     </div>
                                 ))

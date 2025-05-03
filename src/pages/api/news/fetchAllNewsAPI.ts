@@ -27,15 +27,16 @@ export default async function GetAllNews(req: NextApiRequest, res: NextApiRespon
         const conn = await Connect();
 
         try {
-            const result = await conn.query(`SELECT id, title, description, add_at, content FROM news ORDER BY add_at DESC;`);
-            res.status(200).json({ result: result.rows, userRole: userRole });
+            const result = await conn.query(`SELECT id, title, description, add_at FROM news ORDER BY add_at DESC;`);
+
+            return res.status(200).json({ result: result.rows, userRole: userRole });
         } catch (errors) {
-            res.status(500).json({ errors: errors });
+            return res.status(500).json({ errors: errors });
         } finally {
             conn.end();
         }
     } else {
         console.error("Method not supported");
-        res.status(405).json({ errors: 'Method not supported' });
+        return res.status(405).json({ errors: 'Method not supported' });
     }
 }

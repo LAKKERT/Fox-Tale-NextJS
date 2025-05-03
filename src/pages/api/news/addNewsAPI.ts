@@ -2,94 +2,12 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import jwt from "jsonwebtoken";
+import { ContentBlock, TextContent, ImageContent } from "@/lib/types/news";
 
 interface JwtPayload {
     userRole: string;
+    userId: string;
 }
-
-interface ParagraphInterface {
-    id: string;
-    heading: string;
-    cover?: string | null;
-    horizontalPosition: number;
-    verticalPosition: number;
-    contents: {
-        id: string;
-        text: string;
-        image?: string | null;
-    }[];
-}
-type NormalizedArray = Array<string | number | null | NormalizedArray>;
-
-type NestedElement = string | number | null;
-type NestedArray = (NestedElement | NestedArray)[];
-
-const normalizeArray = (
-    arr: (string | null)[] | (number | null)[] | (string | null)[][],
-    dimensions: number
-): NormalizedArray => {
-    const normalize = (
-        array: NormalizedArray,
-        currentDepth: number
-    ): NormalizedArray => {
-        if (currentDepth > dimensions) return array;
-
-        const maxLength = Math.max(
-            ...array.map(sub => Array.isArray(sub) ? sub.length : 1)
-        );
-
-        return array.map(item => {
-            if (Array.isArray(item)) {
-                const normalized = normalize(item, currentDepth + 1);
-                while (normalized.length < maxLength) {
-                    normalized.push(null);
-                }
-                return normalized;
-            } else {
-                if (currentDepth < dimensions) {
-                    const normalized = normalize([item], currentDepth + 1);
-                    while (normalized.length < maxLength) {
-                        normalized.push(null);
-                    }
-                    return normalized;
-                } else {
-                    return [item];
-                }
-            }
-        });
-    };
-
-    return normalize(arr as NormalizedArray, 1);
-};
-
-const formatPGArray = (arr: (string | null)[] | (number | null)[] | (string | null)[][], dimensions: number) => {
-    const normalized = normalizeArray(arr, dimensions);
-
-    const escapeElement = (element: NestedElement | NestedArray): string => {
-        if (element === null) return 'NULL';
-        if (Array.isArray(element)) {
-            return `{${element.map(escapeElement).join(',')}}`;
-        }
-
-        const escaped = String(element)
-            .replace(/\\/g, '\\\\')
-            .replace(/"/g, '\\"');
-        return `"${escaped}"`;
-    };
-
-    const formatNested = (array: NestedArray, depth: number): string => {
-        if (depth < dimensions) {
-            return `{${array.map((item: NestedElement | NestedArray) =>
-                Array.isArray(item)
-                    ? formatNested(item, depth + 1)
-                    : escapeElement(item)
-            ).join(',')}}`;
-        }
-        return escapeElement(array);
-    };
-
-    return formatNested(normalized, 1);
-};
 
 export default async function createNewAPI(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === "POST" || req.method === "PUT" || req.method === "DELETE") {
@@ -113,18 +31,84 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
         }
 
         const userRole = decoded.userRole;
+        const userID = decoded.userId
 
         if (userRole === "admin") {
 
-            let postID;
-
-            if (req.body.postID) {
-                postID = req.body.postID;
-            }
-
-            if (req.method === "DELETE") {
+            if (req.method === "POST") {
+                const { data, userID } = req.body;
                 const conn = await Connect();
 
+                try {
+                    const createPost = await conn.query(`INSERT INTO news (title, description, add_at, author) VALUES ($1, $2, NOW(), $3) RETURNING id`, [
+                        data.title,
+                        data.description,
+                        userID,
+                    ])
+
+                    const postID = createPost.rows[0].id
+
+                    const contentBlockValues = data.content_blocks.map((item: ContentBlock) => [
+                        item.heading,
+                        item.covers,
+                        postID,
+                        item.order_index,
+                        item.vertical_position,
+                        item.horizontal_position
+                    ]).flat();
+
+                    const contentBlockParams = Array.from({ length: data.content_blocks.length }, (_, i) =>
+                        `($${i * 6 + 1}, $${i * 6 + 2}, $${i * 6 + 3}, $${i * 6 + 4}, $${i * 6 + 5}, $${i * 6 + 6})`
+                    ).join(', ');
+
+                    const createContentQuery = `
+                    INSERT INTO news_content_blocks 
+                        (heading, covers, news_id, content_block_order_index, covers_vertical_position, covers_horizontal_position)
+                    VALUES ${contentBlockParams} RETURNING id`;
+
+                    const createContentBlock = await conn.query(createContentQuery, contentBlockValues);
+
+                    const contentBlocksID = createContentBlock.rows;
+
+                    const contentValues: TextContent[] = [];
+                    const imageValues = [];
+
+                    data.content_blocks.map((p: ContentBlock, index: number) => {
+                        const contentItem = p.content.map((item, contentIndex: number) => [
+                            item.text,
+                            contentBlocksID[index].id,
+                            item.order_index,
+                            item.image
+                        ]).flat();
+
+                        contentValues.push(...contentItem);
+                    });
+
+                    const flatContentValues = contentValues;
+
+                    const ContentParams = Array.from({ length: contentValues.length / 4 }, (_, i) =>
+                        `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`
+                    ).join(', ');
+
+                    const createTextContentQuery = `
+                    INSERT INTO news_content (content, content_block_id, order_index, image) VALUES ${ContentParams}`;
+
+                    await conn.query(createTextContentQuery, flatContentValues);
+
+                    return res.status(200).json({ message: "Post created successfully" });
+
+                } catch (error) {
+                    console.error("Database error:", error);
+                    return res.status(500).json({
+                        message: "Database operation failed",
+                    });
+                } finally {
+                    await conn.end();
+                }
+            } else if (req.method === "DELETE") {
+                const postID = req.body;
+
+                const conn = await Connect();
                 try {
                     await conn.query(`DELETE FROM news WHERE id = $1`, [postID]);
                     return res.status(200).json({ redirectUrl: '/news' });
@@ -134,111 +118,83 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
                 } finally {
                     await conn.end();
                 }
-            }
-
-            const { data, userID } = req.body;
-
-            if (!data?.paragraphs || !Array.isArray(data.paragraphs)) {
-                return res.status(400).json({ message: "Invalid data structure" });
-            }
-
-            const paragraphHeaders: (string | null)[] = [];
-            const paragraphCovers: (string | null)[] = [];
-            const verticalPosition: (number | null)[] = [];
-            const horizontalPosition: (number | null)[] = [];
-            const paragraphContents: (string | null)[][] = [];
-            const paragraphImages: (string | null)[][] = [];
-
-            data.paragraphs.forEach((paragraph: ParagraphInterface) => {
-                paragraphHeaders.push(paragraph.heading || null);
-                paragraphCovers.push(paragraph.cover || null);
-                verticalPosition.push(paragraph.verticalPosition || null);
-                horizontalPosition.push(paragraph.horizontalPosition || null);
-
-                const contentTexts: (string | null)[] = [];
-                const contentImages: (string | null)[] = [];
-                paragraph.contents.forEach((content) => {
-                    contentTexts.push(content.text || null);
-                    contentImages.push(content.image || null);
-                });
-
-                paragraphContents.push(contentTexts);
-                paragraphImages.push(contentImages);
-            });
-
-            const conn = await Connect();
-
-            try {
-                if (req.method === 'POST') {
-                    await conn.query(`
-                        INSERT INTO news (
-                            title, 
-                            description, 
-                            add_at, 
-                            paragraph_heading, 
-                            covers, 
-                            images, 
-                            content, 
-                            author,
-                            covers_vertical_position,
-                            covers_horizontal_position
-                        ) VALUES (
-                            $1, $2, NOW(), 
-                            $3::text[], 
-                            $4::text[], 
-                            $5::text[][], 
-                            $6::text[][], 
-                            $7,
-                            $8::numeric[],
-                            $9::numeric[]
-                        )`,
-                        [
-                            data.title,
-                            data.description || null,
-                            formatPGArray(paragraphHeaders, 1),
-                            formatPGArray(paragraphCovers, 1),
-                            formatPGArray(paragraphImages, 2),
-                            formatPGArray(paragraphContents, 2),
-                            userID,
-                            formatPGArray(verticalPosition, 1),
-                            formatPGArray(horizontalPosition, 1)
-                        ]
-                    );
-                    res.status(200).json({ redirectUrl: '/' });
-                } else {
-                    await conn.query(`
-                        UPDATE news SET 
-                            title = $1, 
-                            description = $2, 
-                            paragraph_heading = $3::text[], 
-                            covers = $4::text[], 
-                            images = $5::text[][], 
-                            content = $6::text[][],
-                            covers_vertical_position = $7::numeric[],
-                            covers_horizontal_position = $8::numeric[]
-                        WHERE id = $9`,
-                        [
-                            data.title,
-                            data.description || null,
-                            formatPGArray(paragraphHeaders, 1),
-                            formatPGArray(paragraphCovers, 1),
-                            formatPGArray(paragraphImages, 2),
-                            formatPGArray(paragraphContents, 2),
-                            formatPGArray(verticalPosition, 1),
-                            formatPGArray(horizontalPosition, 1),
-                            postID
-                        ]
-                    );
-                    res.status(200).json({ message: "Update successful" });
+            } else if (req.method === "PUT") {
+                const { data, postID } = req.body;
+            
+                for (let i = 0; i < data.content_blocks.length; i++) {
+                    delete data.content_blocks[i].id;
                 }
-            } catch (error) {
-                console.error("Database error:", error);
-                return res.status(500).json({
-                    message: "Database operation failed",
-                });
-            } finally {
-                await conn.end();
+            
+                const conn = await Connect();
+            
+                try {
+                    await conn.query('BEGIN');
+            
+                    await conn.query(
+                        `UPDATE news 
+                         SET title = \$1, description = \$2
+                         WHERE id = \$3`,
+                        [data.title, data.description, postID]
+                    );
+            
+                    await conn.query(
+                        `DELETE FROM news_content_blocks 
+                        WHERE news_id = \$1`,
+                        [postID]
+                    );
+            
+                    if (data.content_blocks?.length > 0) {
+                        const contentBlocks = await conn.query(
+                            `INSERT INTO news_content_blocks 
+                             (heading, covers, news_id, content_block_order_index, covers_vertical_position, covers_horizontal_position)
+                             VALUES ${data.content_blocks.map((_, i: number) =>
+                                `($${i * 6 + 1}, $${i * 6 + 2}, $${i * 6 + 3}, $${i * 6 + 4}, $${i * 6 + 5}, $${i * 6 + 6})`
+                            ).join(', ')} RETURNING id`,
+                            data.content_blocks.flatMap((p: ContentBlock) => [
+                                p.heading,
+                                p.covers,
+                                postID,
+                                p.order_index,
+                                p.vertical_position,
+                                p.horizontal_position
+                            ])
+                        );
+            
+                        const contentValues = [];
+            
+                        for (const [idx, p] of data.content_blocks.entries()) {
+                            const blockId = contentBlocks.rows[idx].id;
+            
+                            for (const content of p.content) {
+                                contentValues.push(content.text, blockId, content.order_index, content.image);
+                            }
+                        }
+            
+                        if (contentValues.length > 0) {
+                            const contentParamPlaceholders = Array.from({ length: contentValues.length / 4 }, (_, i) =>
+                                `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`
+                            ).join(', ');
+            
+                            await conn.query(
+                                `INSERT INTO news_content (content, content_block_id, order_index, image)
+                                 VALUES ${contentParamPlaceholders}`,
+                                contentValues
+                            );
+                        }
+                    }
+            
+                    await conn.query('COMMIT');
+                    return res.status(200).json({ success: true, postId: postID });
+            
+                } catch (error) {
+                    await conn.query('ROLLBACK');
+                    console.error("Update error:", error);
+                    return res.status(500).json({ message: "Update failed" });
+                } finally {
+                    conn.end();
+                }
             }
+
         } else {
             res.setHeader('Allow', ['POST', 'PUT', 'DELETE']);
             return res.status(405).json({ message: "Method not allowed" });

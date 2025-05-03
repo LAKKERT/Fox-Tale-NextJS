@@ -20,7 +20,7 @@ export default async function GetPostData(req: NextApiRequest, res: NextApiRespo
     try {
         if (authHeader?.startsWith('Bearer ')) {
             const token = authHeader.split(' ')[1];
-            
+
             if (token && process.env.JWT_SECRET) {
                 try {
                     const decoded = jwt.verify(token, process.env.JWT_SECRET) as { userRole: string };
@@ -31,18 +31,47 @@ export default async function GetPostData(req: NextApiRequest, res: NextApiRespo
             }
         }
         const result = await conn.query(
-            `SELECT * FROM news WHERE id = $1`,
+            `SELECT 
+                n.id AS news_id,
+                n.title,
+                n.description,
+                n.add_at,
+                n.author,
+                COALESCE(json_agg(
+                    json_build_object(
+                        'block_id', ncb.id,
+                        'heading', ncb.heading,
+                        'covers', ncb.covers,
+                        'vertical_position', ncb.covers_vertical_position,
+                        'horizontal_position', ncb.covers_horizontal_position,
+                        'content', COALESCE((
+                            SELECT json_agg(
+                                json_build_object(
+                                    'text', nc.content,
+                                    'order', nc.order_index,
+                                    'image', nc.image
+                                )
+                            ) 
+                            FROM news_content nc 
+                            WHERE nc.content_block_id = ncb.id
+                        ), '[]'::json)
+                    )
+                ), '[]'::json) AS content_blocks
+            FROM news n
+            LEFT JOIN news_content_blocks ncb ON n.id = ncb.news_id
+            WHERE n.id = $1
+            GROUP BY n.id;`,
             [postID]
         );
 
-        return res.status(200).json({ 
-            result: result.rows,
-            userRole: currentUserRole || null 
+        return res.status(200).json({
+            result: result.rows[0],
+            userRole: currentUserRole || null
         });
 
     } catch (error) {
         console.error('Error processing request:', error);
-        return res.status(500).json({ error: 'Server error',});
+        return res.status(500).json({ error: 'Server error', });
     } finally {
         conn.end();
     }

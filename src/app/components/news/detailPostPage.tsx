@@ -15,68 +15,51 @@ import { saveFile } from "@/pages/api/news/saveImagesAPI";
 import styles from "@/app/styles/home/variables.module.scss";
 import { useRouter } from "next/navigation";
 
+import { ContentBlock, FormValues, FileMetadata } from "@/lib/types/news";
+
 const MainFont = K2D({
     style: "normal",
     subsets: ["latin"],
     weight: "400",
 });
 
-type FormValues = {
-    title: string;
-    description: string;
-    add_at?: Date | null;
-    paragraphs: {
-        id: string;
-        heading: string;
-        cover?: File | Blob | string | null;
-        horizontalPosition: number;
-        verticalPosition: number;
-        contents: {
-            id: string;
-            text: string;
-            image?: File | string | null;
-        }[];
-    }[];
-};
-
-type FileMetadata = {
-    name: string;
-    extension: string;
-    size: number;
-};
-
 const validationSchema = Yup.object().shape({
     title: Yup.string().required("Title is required"),
     description: Yup.string().required("Description is required"),
     add_at: Yup.date().nullable(),
-    paragraphs: Yup.array().of(
+    content_blocks: Yup.array().of(
         Yup.object().shape({
             id: Yup.string().required(),
             heading: Yup.string().required("Heading is required"),
-            cover: Yup.mixed<File | Blob | string>() 
-                .nullable(),
-            horizontalPosition: Yup.number()
+            covers: Yup.mixed<File | Blob | string>()
+                .nullable()
+                .defined(),
+            horizontal_position: Yup.number()
                 .min(0)
                 .max(100)
                 .required(),
-            verticalPosition: Yup.number()
+            vertical_position: Yup.number()
                 .min(0)
                 .max(100)
                 .required(),
-            contents: Yup.array().of(
+            order_index: Yup.number().required(),
+            content: Yup.array().of(
                 Yup.object().shape({
                     id: Yup.string().required(),
                     text: Yup.string().required("Content is required"),
                     image: Yup.mixed<File | string>()
-                        .nullable()
+                        .nullable(),
+                    order_index: Yup.number().required()
                 })
+                .defined()
             ).required(),
         })
+            .defined()
     ).required(),
 });
 
-export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
-    const [postData, setPostData] = useState<{ result?: FormValues[] }>();
+export function PostDetailComponent({ postID }: { postID: { id: number } }) {
+    const [postData, setPostData] = useState<FormValues>();
     const userData = useUserStore((state) => state.userData);
     const [isLoading, setIsLoading] = useState(true);
     const [editModeActive, setEditModeActive] = useState(false);
@@ -87,36 +70,27 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
     const imgRef = useRef<HTMLElement[]>([]);
     const textAreaRef = useRef<HTMLElement[][]>([]);
 
-    const [verticalAlign, setVerticalAlign] = useState<number[]>([]);
-    const [horizontalAlign, setHorizontalAlign] = useState<number[]>([]);
-
     const debouncedUpdate = useRef(
-        _.debounce((paragraphIndex, h, v) => {
-            setVerticalAlign(prev => {
-                const newArr = [...prev];
-                newArr[paragraphIndex] = v;
-                return newArr;
+        _.debounce((block, contentBlockIndex, h, v) => {
+            update(contentBlockIndex, {
+                ...block[contentBlockIndex],
+                vertical_position: v,
+                horizontal_position: h
             });
-
-            setHorizontalAlign(prev => {
-                const newArr = [...prev];
-                newArr[paragraphIndex] = h;
-                return newArr;
-            });
-        })
+        }, 300)
     ).current;
 
     const {
         register, control, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
             resolver: yupResolver(validationSchema),
             defaultValues: {
-                paragraphs: [],
+                content_blocks: [],
             }
         });
 
-    const { fields: paragraphs, append, remove, update } = useFieldArray({
+    const { fields: content_blocks, append, update, replace } = useFieldArray({
         control,
-        name: "paragraphs",
+        name: "content_blocks",
         keyName: uuidv4(),
     });
 
@@ -129,35 +103,38 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
                         'Content-Type': 'application/json',
                     }
                 });
-    
+
                 const result = await response.json();
-    
-                const formedResult = result.result[0].content.map((content: string[]) => content.filter(item => item !== null))
-    
+
                 if (response.ok) {
-                    const formattedData = result.result[0].paragraph_heading.map((heading: string, index: number) => ({
+                    const formattedData = result.result?.content_blocks?.map((block: ContentBlock, index: number) => ({
                         id: uuidv4(),
-                        heading,
-                        cover: result.result[0].covers[index],
-                        horizontalPosition: Number(result.result[0].covers_horizontal_position[index]),
-                        verticalPosition: Number(result.result[0].covers_vertical_position[index]),
-                        contents: formedResult[index].map((text: string, contentIndex: number) => ({
+                        heading: block.heading,
+                        covers: block.covers,
+                        horizontal_position: Number(block.horizontal_position),
+                        vertical_position: Number(block.vertical_position),
+                        order_index: index,
+                        content: block.content?.map((content, contentIndex) => ({
                             id: uuidv4(),
-                            text,
-                            image: result.result[0].images[index]?.[contentIndex] || null
-                        }))
-                    }));
-    
+                            text: content.text || "",
+                            image: content.image,
+                            order_index: contentIndex
+                        })) || []
+                    })) || [];
+
                     reset({
-                        title: result.result[0].title,
-                        description: result.result[0].description,
-                        paragraphs: formattedData
+                        title: result.result.title || "",
+                        description: result.result.description || "",
+                        content_blocks: formattedData
                     });
-    
-                    setHorizontalAlign(result.result[0].covers_horizontal_position);
-                    setVerticalAlign(result.result[0].covers_vertical_position);
-                    setPostData(result);
-                    // setCurrentUserRole(result.userRole);
+
+                    setPostData({
+                        title: result.result.title || "",
+                        description: result.result.description || "",
+                        add_at: result.result.add_at,
+                        content_blocks: formattedData
+                    });
+
                     setTimeout(() => {
                         setIsLoading(false);
                     }, 300)
@@ -176,16 +153,24 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
             setDeletePost(false);
         } else {
             const value = editModeActive;
-
             setEditModeActive(!value);
         }
     }
+
+    useEffect(() => {
+        if (!editModeActive && postData) {
+            reset({
+                title: postData.title || "",
+                description: postData.description || "",
+                content_blocks: postData.content_blocks || []
+            });
+        }
+    }, [editModeActive, postData, reset]);
 
     const deletePostHandle = () => {
         if (editModeActive === true) {
             setDeletePost(false);
         } else {
-
             const value = deletePost;
 
             setDeletePost(!value);
@@ -193,57 +178,63 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
     }
 
     const addParagraph = () => {
+        const newOrder = content_blocks.length > 0 ? content_blocks[content_blocks.length - 1].order_index + 1 : 0;
+
         append({
             id: uuidv4(),
             heading: '',
-            horizontalPosition: 50,
-            verticalPosition: 50,
-            cover: null,
-            contents: [{ id: uuidv4(), text: '', image: null }]
-        });
-
-        setHorizontalAlign(prev => [...prev, 50]);
-        setVerticalAlign(prev => [...prev, 50]);
-    };
-
-    const addContentBlock = (paragraphIndex: number) => {
-        const paragraph = paragraphs[paragraphIndex];
-        update(paragraphIndex, {
-            ...paragraph,
-            contents: [...paragraph.contents, { id: uuidv4(), text: '', image: null }]
+            horizontal_position: 50,
+            vertical_position: 50,
+            covers: null,
+            order_index: newOrder,
+            content: [{ id: uuidv4(), text: '', image: null, order_index: 0 }]
         });
     };
 
-    const deleteContentBlock = (paragraphIndex: number, contentIndex: number) => {
-        const updatedContents = paragraphs[paragraphIndex].contents.filter(
+    const addContentBlock = (contentBlockIndex: number) => {
+        const contentBlock = content_blocks[contentBlockIndex];
+        const newContentOrder = contentBlock.content.length;
+        update(contentBlockIndex, {
+            ...contentBlock,
+            content: [...contentBlock.content, { id: uuidv4(), text: '', image: null, order_index: newContentOrder }]
+        });
+    };
+
+    const deleteContentBlock = (contentBlockIndex: number, contentIndex: number) => {
+        const updatedcontent = content_blocks[contentBlockIndex].content.filter(
             (_, idx) => idx !== contentIndex
-        );
-        update(paragraphIndex, {
-            ...paragraphs[paragraphIndex],
-            contents: updatedContents
+        ).map((content, index) => ({ ...content, order_index: index }));
+
+        update(contentBlockIndex, {
+            ...content_blocks[contentBlockIndex],
+            content: updatedcontent
         });
     };
 
     const deleteParagraph = (paragraphIndex: number) => {
-        remove(paragraphIndex);
+        const updatedContents = content_blocks
+            .filter((_, idx) => idx !== paragraphIndex)
+            .map((contentBlock, index) => ({ ...contentBlock, order_index: index }));
+
+        replace(updatedContents);
     };
 
-    const handleCoverChange = async (paragraphIndex: number, file: File) => {
+    const handleCoverChange = async (contentBlockIndex: number, file: File) => {
         const updatedParagraph = {
-            ...paragraphs[paragraphIndex],
-            cover: file
+            ...content_blocks[contentBlockIndex],
+            covers: file
         };
-        update(paragraphIndex, updatedParagraph);
+        update(contentBlockIndex, updatedParagraph);
     };
 
-    const handleImageChange = (paragraphIndex: number, contentIndex: number, file: File) => {
-        const updatedContents = paragraphs[paragraphIndex].contents.map((content, idx) =>
+    const handleImageChange = (contentBlockIndex: number, contentIndex: number, file: File) => {
+        const updatedcontent = content_blocks[contentBlockIndex].content.map((content, idx) =>
             idx === contentIndex ? { ...content, image: file } : content
         );
 
-        update(paragraphIndex, {
-            ...paragraphs[paragraphIndex],
-            contents: updatedContents
+        update(contentBlockIndex, {
+            ...content_blocks[contentBlockIndex],
+            content: updatedcontent
         });
     };
 
@@ -275,9 +266,9 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
 
     const onSubmit = async (data: FormValues) => {
         try {
-            const newCovers = data.paragraphs
-                .map(p => p.cover)
-                .filter(cover => cover instanceof File) as File[];
+            const newCovers = data.content_blocks
+                .map(p => p.covers)
+                .filter(covers => covers instanceof File) as File[];
 
             const processedCovers = await processFiles(newCovers) as string[];
             const coversMetadata = newCovers.map(file => getFileMetadata(file));
@@ -286,17 +277,17 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
             );
 
             let coverIndex = 0;
-            data.paragraphs.forEach(paragraph => {
-                if (paragraph.cover instanceof File) {
-                    paragraph.cover = coversURL[coverIndex];
+            data.content_blocks.forEach(contentBlock => {
+                if (contentBlock.covers instanceof File) {
+                    contentBlock.covers = coversURL[coverIndex];
                     coverIndex++;
                 }
             });
 
             await saveFile(processedCovers, coversURL);
 
-            const newContentImages = data.paragraphs
-                .flatMap(p => p.contents.map(c => c.image))
+            const newContentImages = data.content_blocks
+                .flatMap(p => p.content.map(c => c.image))
                 .filter(img => img instanceof File) as File[];
 
             const processedImages = await processFiles(newContentImages) as string[];
@@ -306,8 +297,8 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
             );
 
             let imageIndex = 0;
-            data.paragraphs.forEach(paragraph => {
-                paragraph.contents.forEach(content => {
+            data.content_blocks.forEach(contentBlock => {
+                contentBlock.content.forEach(content => {
                     if (content.image instanceof File) {
                         content.image = imagesURL[imageIndex];
                         imageIndex++;
@@ -366,20 +357,20 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
         }
     }
 
-    const handlePositionChange = (paragraphIndex: number, hValue: number, vValue: number) => {
+    const handlePositionChange = (contentBlockIndex: number, hValue: number, vValue: number) => {
         if (imgRef.current) {
-            imgRef.current[paragraphIndex].style.objectPosition = `${hValue}% ${vValue}%`;
+            imgRef.current[contentBlockIndex].style.objectPosition = `${hValue}% ${vValue}%`;
         }
     }
 
-    const handleSliderChange = (paragraphIndex: number, isHorizontal: boolean, e: ChangeEvent<HTMLInputElement>) => {
+    const handleSliderChange = (contentBlockIndex: number, isHorizontal: boolean, e: ChangeEvent<HTMLInputElement>) => {
         const value = Number(e.target.value);
 
-        const newH = isHorizontal ? value : horizontalAlign[paragraphIndex];
-        const newV = !isHorizontal ? value : verticalAlign[paragraphIndex];
+        const newH = isHorizontal ? value : content_blocks[contentBlockIndex].horizontal_position;
+        const newV = !isHorizontal ? value : content_blocks[contentBlockIndex].vertical_position;
 
-        handlePositionChange(paragraphIndex, newH, newV);
-        debouncedUpdate(paragraphIndex, newH, newV)
+        handlePositionChange(contentBlockIndex, newH, newV);
+        debouncedUpdate(content_blocks, contentBlockIndex, newH, newV);
     }
 
     const [windowSize, setWindowSize] = useState({
@@ -449,7 +440,7 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
                                     className=" min-h-[260px] max-w-[1110px] flex flex-col justify-evenly gap-3 text-center text-balance"
                                 >
                                     <h1 className={`text-xl md:text-2xl ${editModeActive ? 'hidden' : 'block'}`}>
-                                        {postData?.result?.[0].title}
+                                        {postData?.title}
                                     </h1>
 
                                     <motion.input
@@ -469,7 +460,7 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
                                     <p
                                         className={`text-base md:text-lg ${editModeActive ? 'hidden' : 'block'}`}
                                     >
-                                        {postData?.result?.[0].description}
+                                        {postData?.description}
                                     </p>
 
                                     <motion.textarea
@@ -500,8 +491,8 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
 
                                     <div className="w-full flex flex-row justify-between">
                                         <p className="text-left text-base">
-                                            {postData?.result?.[0]?.add_at ?
-                                                new Date(postData.result[0].add_at).toLocaleString("ru-RU", {
+                                            {postData?.add_at ?
+                                                new Date(postData.add_at).toLocaleString("ru-RU", {
                                                     dateStyle: 'short'
                                                 })
                                                 :
@@ -529,33 +520,39 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
                                     </motion.div>
                                 </motion.div>
 
-                                <AnimatePresence mode="popLayout">
-                                    {paragraphs.map((paragraph, paragraphIndex) => {
+                                <AnimatePresence mode="wait">
+                                    {content_blocks && content_blocks?.map((contentBlock, contentBlockIndex) => {
                                         return (
                                             <motion.div
                                                 layout={'position'}
-                                                key={paragraph.id}
+                                                key={contentBlock.id}
                                                 transition={{ duration: .3, type: 'spring', bounce: 0.25 }}
                                                 className=" max-w-[1110px] flex flex-col justify-center items-center gap-4"
                                             >
                                                 <h2
                                                     className={`text-center text-xl wrap text-balance ${editModeActive ? 'hidden' : 'block'}`}
                                                 >
-                                                    {paragraph.heading}
+                                                    {contentBlock.heading}
                                                 </h2>
 
                                                 <input
-                                                    {...register(`paragraphs.${paragraphIndex}.heading`)}
+                                                    {...register(`content_blocks.${contentBlockIndex}.heading`)}
                                                     className={` w-full bg-transparent outline-none border-b-2 border-white focus:border-orange-400 transition-colors duration-300 text-xl text-center focus:caret-white ${editModeActive ? 'block' : 'hidden'}`}
+                                                    onChange={(e) => {
+                                                        update(contentBlockIndex, {
+                                                            ...contentBlock,
+                                                            heading: e.target.value
+                                                        })
+                                                    }}
                                                 />
 
                                                 <motion.p
                                                     initial={{ opacity: 0, height: 0 }}
-                                                    animate={{ opacity: errors.paragraphs?.[paragraphIndex]?.heading?.message ? 1 : 0, height: errors.paragraphs?.[paragraphIndex]?.heading?.message ? 'auto' : '0px' }}
+                                                    animate={{ opacity: errors.content_blocks?.[contentBlockIndex]?.heading?.message ? 1 : 0, height: errors.content_blocks?.[contentBlockIndex]?.heading?.message ? 'auto' : '0px' }}
                                                     transition={{ duration: .3 }}
                                                     className={` text-orange-300 text-[13px] sm:text-[18px] ${editModeActive ? 'block' : 'hidden'}`}
                                                 >
-                                                    {errors.paragraphs?.[paragraphIndex]?.heading?.message}
+                                                    {errors.content_blocks?.[contentBlockIndex]?.heading?.message}
                                                 </motion.p>
 
                                                 <motion.p
@@ -567,7 +564,7 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
                                                     {errors.title?.message}
                                                 </motion.p>
 
-                                                {paragraph.cover && (
+                                                {contentBlock.covers && (
                                                     <motion.div
                                                         layout="position"
                                                         className="w-full h-64 relative mb-4"
@@ -575,56 +572,56 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
                                                         <Image
                                                             ref={e => {
                                                                 if (e) {
-                                                                    imgRef.current[paragraphIndex] = e
+                                                                    imgRef.current[contentBlockIndex] = e
                                                                 }
                                                             }}
-                                                            src={typeof paragraph.cover === 'string'
-                                                                ? `http://localhost:3000/${paragraph.cover}`
-                                                                : URL.createObjectURL(paragraph.cover)}
-                                                            alt="cover"
+                                                            src={typeof contentBlock.covers === 'string'
+                                                                ? `http://localhost:3000/${contentBlock.covers}`
+                                                                : URL.createObjectURL(contentBlock.covers)}
+                                                            alt="covers"
                                                             fill
                                                             className={`transform-gpu rounded object-cover`}
-                                                            style={{ objectPosition: `${paragraph.horizontalPosition}% ${paragraph.verticalPosition}%` }}
+                                                            style={{ objectPosition: `${contentBlock.horizontal_position}% ${contentBlock.vertical_position}%` }}
                                                             sizes="(max-width: 768px) 100vw, 50vw"
-                                                            quality={80}
+                                                            quality={100}
                                                         />
                                                     </motion.div>
                                                 )}
 
                                                 <motion.div
                                                     layout={'position'}
-                                                    className={`w-full flex flex-col items-center ${paragraphs[paragraphIndex].cover ? "gap-0" : ""}  `}
+                                                    className={`w-full flex flex-col items-center ${content_blocks[contentBlockIndex]?.covers ? "gap-0" : ""}  `}
                                                 >
                                                     <input
                                                         type="file"
                                                         onChange={(e) => {
                                                             const file = e.target.files?.[0];
                                                             if (file) {
-                                                                handleCoverChange(paragraphIndex, file);
+                                                                handleCoverChange(contentBlockIndex, file);
                                                             }
                                                         }}
                                                         className="hidden"
-                                                        id={`cover-${paragraphIndex}`}
+                                                        id={`covers-${contentBlockIndex}`}
                                                     />
 
                                                     <label
-                                                        htmlFor={`cover-${paragraphIndex}`}
+                                                        htmlFor={`covers-${contentBlockIndex}`}
                                                         className={` min-w-[185px] text-center py-2 mb-3 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3] transition-colors duration-75 hover:bg-[#c2724f91] ${editModeActive ? 'block' : 'hidden'}`}
                                                     >
-                                                        {paragraph.cover ? 'Change Cover' : 'Upload Cover'}
+                                                        {contentBlock.covers ? 'Change covers' : 'Upload covers'}
                                                     </label>
 
                                                     <div
                                                         className={`w-full flex flex-col items-center gap-6`}
                                                     >
-                                                        <input type="range" {...register(`paragraphs.${paragraphIndex}.horizontalPosition`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(paragraphIndex, true, e)} min="0" max="100" className={`${styles.custom_input_range} ${editModeActive ? 'block' : 'hidden'} ${paragraphs[paragraphIndex].cover ? 'block' : 'hidden'}`} />
-                                                        <input type="range" {...register(`paragraphs.${paragraphIndex}.verticalPosition`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(paragraphIndex, false, e)} min="0" max="100" className={`${styles.custom_input_range} ${editModeActive ? 'block' : 'hidden'} ${paragraphs[paragraphIndex].cover ? 'block' : 'hidden'}`} />
+                                                        <input type="range" {...register(`content_blocks.${contentBlockIndex}.horizontal_position`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(contentBlockIndex, true, e)} min="0" max="100" className={`${styles.custom_input_range} ${editModeActive ? 'block' : 'hidden'} ${contentBlock.covers ? 'block' : 'hidden'}`} />
+                                                        <input type="range" {...register(`content_blocks.${contentBlockIndex}.vertical_position`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(contentBlockIndex, false, e)} min="0" max="100" className={`${styles.custom_input_range} ${editModeActive ? 'block' : 'hidden'} ${contentBlock.covers ? 'block' : 'hidden'}`} />
                                                     </div>
                                                 </motion.div>
 
                                                 <div className="w-full relative flex-col flex gap-4">
                                                     <AnimatePresence mode="popLayout">
-                                                        {paragraph.contents.map((content, contentIndex) => {
+                                                        {contentBlock.content.map((content, contentIndex) => {
                                                             return (
                                                                 <motion.div
                                                                     key={content.id}
@@ -653,15 +650,15 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
                                                                         onChange={(e) => {
                                                                             const file = e.target.files?.[0];
                                                                             if (file) {
-                                                                                handleImageChange(paragraphIndex, contentIndex, file)
+                                                                                handleImageChange(contentBlockIndex, contentIndex, file)
                                                                             }
                                                                         }}
                                                                         className="hidden"
-                                                                        id={`image-${paragraphIndex}-${contentIndex}`}
+                                                                        id={`image-${contentBlockIndex}-${contentIndex}`}
                                                                     />
 
                                                                     <motion.label
-                                                                        htmlFor={`image-${paragraphIndex}-${contentIndex}`}
+                                                                        htmlFor={`image-${contentBlockIndex}-${contentIndex}`}
                                                                         className={` min-w-[185px] text-center py-2 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3] transition-colors duration-75 hover:bg-[#c2724f91] ${editModeActive ? 'block' : 'hidden'}`}
                                                                     >
                                                                         {content.image ? 'Change Image' : 'Upload Image'}
@@ -671,10 +668,10 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
                                                                         className="w-full"
                                                                         ref={(el) => {
                                                                             if (el) {
-                                                                                if (!textAreaRef.current[paragraphIndex]) {
-                                                                                    textAreaRef.current[paragraphIndex] = [];
+                                                                                if (!textAreaRef.current[contentBlockIndex]) {
+                                                                                    textAreaRef.current[contentBlockIndex] = [];
                                                                                 }
-                                                                                textAreaRef.current[paragraphIndex][contentIndex] = el;
+                                                                                textAreaRef.current[contentBlockIndex][contentIndex] = el;
 
                                                                             }
                                                                         }}
@@ -687,7 +684,7 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
                                                                     </div>
 
                                                                     <motion.textarea
-                                                                        {...register(`paragraphs.${paragraphIndex}.contents.${contentIndex}.text`)}
+                                                                        {...register(`content_blocks.${contentBlockIndex}.content.${contentIndex}.text`)}
                                                                         onInput={(e) => {
                                                                             const target = e.target as HTMLTextAreaElement;
 
@@ -705,16 +702,16 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
 
                                                                     <motion.p
                                                                         initial={{ opacity: 0, height: 0 }}
-                                                                        animate={{ opacity: errors.paragraphs?.[paragraphIndex]?.contents?.[contentIndex]?.text?.message ? 30 : 0, height: errors.paragraphs?.[paragraphIndex]?.contents?.[contentIndex]?.text?.message ? 'auto' : '0px' }}
+                                                                        animate={{ opacity: errors.content_blocks?.[contentBlockIndex]?.content?.[contentIndex]?.text?.message ? 30 : 0, height: errors.content_blocks?.[contentBlockIndex]?.content?.[contentIndex]?.text?.message ? 'auto' : '0px' }}
                                                                         transition={{ duration: .3 }}
                                                                         className=" text-orange-300 text-[13px] sm:text-[18px]"
                                                                     >
-                                                                        {errors.paragraphs?.[paragraphIndex]?.contents?.[contentIndex]?.text?.message}
+                                                                        {errors.content_blocks?.[contentBlockIndex]?.content?.[contentIndex]?.text?.message}
                                                                     </motion.p>
 
                                                                     <motion.button
                                                                         type="button"
-                                                                        onClick={() => deleteContentBlock(paragraphIndex, contentIndex)}
+                                                                        onClick={() => deleteContentBlock(contentBlockIndex, contentIndex)}
                                                                         className={` min-w-[185px] bg-red-500 px-4 py-2 rounded  transition-colors duration-75 hover:bg-[#c40000] ${editModeActive ? 'block' : 'hidden'}`}
                                                                     >
                                                                         Delete Content Block
@@ -727,7 +724,7 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
 
                                                 <button
                                                     type="button"
-                                                    onClick={() => addContentBlock(paragraphIndex)}
+                                                    onClick={() => addContentBlock(contentBlockIndex)}
                                                     className={`min-w-[185px] bg-blue-400 px-4 py-2 rounded  transition-colors duration-75 hover:bg-[#4576b3] ${editModeActive ? 'block' : 'hidden'}`}
                                                 >
                                                     Add Content Block
@@ -735,24 +732,24 @@ export function PostDetailComponent({ postID } : { postID:{ id: number }}) {
 
                                                 <button
                                                     type="button"
-                                                    onClick={() => deleteParagraph(paragraphIndex)}
+                                                    onClick={() => deleteParagraph(contentBlockIndex)}
                                                     className={`min-w-[185px] bg-rose-500 px-4 py-2 rounded  transition-colors duration-75 hover:bg-[#9f1239] ${editModeActive ? 'block' : 'hidden'}`}
                                                 >
-                                                    Delete Paragraph
+                                                    Delete contentBlock
                                                 </button>
                                             </motion.div>)
                                     }
 
                                     )}
                                 </AnimatePresence>
-                                
+
                                 <div className="w-full flex flex-col items-center">
                                     <button
                                         type="button"
                                         onClick={addParagraph}
                                         className={`w-[185px] bg-slate-500 px-4 py-2 rounded ${editModeActive ? 'block' : 'hidden'}`}
                                     >
-                                        Add New Paragraph
+                                        Add New contentBlock
                                     </button>
 
                                     <button type="submit" className={`w-[185px] ${editModeActive ? 'block' : 'hidden'} mt-4 px-6 py-2 bg-green-500 rounded`}>
