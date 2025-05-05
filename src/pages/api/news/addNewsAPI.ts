@@ -2,7 +2,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import Connect from "@/db/dbConfig";
 import jwt from "jsonwebtoken";
-import { ContentBlock, TextContent, ImageContent } from "@/lib/types/news";
+import { ContentBlock, TextContent } from "@/lib/types/news";
 
 interface JwtPayload {
     userRole: string;
@@ -31,7 +31,6 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
         }
 
         const userRole = decoded.userRole;
-        const userID = decoded.userId
 
         if (userRole === "admin") {
 
@@ -71,10 +70,9 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
                     const contentBlocksID = createContentBlock.rows;
 
                     const contentValues: TextContent[] = [];
-                    const imageValues = [];
 
                     data.content_blocks.map((p: ContentBlock, index: number) => {
-                        const contentItem = p.content.map((item, contentIndex: number) => [
+                        const contentItem = p.content.map((item) => [
                             item.text,
                             contentBlocksID[index].id,
                             item.order_index,

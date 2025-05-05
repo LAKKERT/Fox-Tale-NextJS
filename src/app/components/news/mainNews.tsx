@@ -18,11 +18,15 @@ const MainFont = K2D({
 });
 
 type NewsItem = {
-    id: number;
+    news_id: number;
     title: string;
     description: string;
     add_at: string;
-    content: string[];
+    content_blocks: Array<{
+        content: Array<{
+            text: string;
+        }>;
+    }>;
 };
 
 type AllNews = {
@@ -47,22 +51,22 @@ export function NewsPageComponent() {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${cookies.auth_token}`
                     }
-                })
+                });
 
                 const result = await response.json();
 
                 if (response.ok) {
-                    setAllNews(result);
+                    setAllNews(result as AllNews);
                     setCountOfNews(result.result.length);
                     setTimeout(() => {
                         setShowContent(true);
                     }, 300);
                 } else {
-                    console.error('Error fetching news');
+                    console.error('Error fetching news:', result);
                 }
 
             } catch (error) {
-                console.error(error);
+                console.error('Error fetching news:', error);
                 router.push('/');
             }
         }
@@ -86,9 +90,9 @@ export function NewsPageComponent() {
             {!showContent ? (
                 <motion.div
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: 1  }}
-                    transition={{ duration: .3 }}
-                    className=" bg-black fixed inset-0 flex justify-center items-center"
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="bg-black fixed inset-0 flex justify-center items-center"
                 >
                     <Loader />
                 </motion.div>
@@ -99,21 +103,21 @@ export function NewsPageComponent() {
                     <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: showContent ? 1 : 0 }}
-                    transition={{ duration: .3 }}
+                    transition={{ duration: 0.3 }}
                         className="h-full flex flex-col gap-5"
                     >
                         <div className="h-[120px] flex flex-col gap-4 text-center justify-center items-center">
                             <h2 className="uppercase text-base md:text-2xl">-NEWS-</h2>
                             <p className="text-base md:text-lg">Here you can learn something new about FOX TALE</p>
                             <Link href={'/news/create_new'} className={`flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out ${userData?.role === 'admin' ? '' : 'hidden'} `}>
-                                    add post
+                                add post
                             </Link>
                         </div>
 
                         <div className="flex flex-col justify-center items-center flex-wrap gap-5">
-                            {paginatedNews && paginatedNews?.length > 0 ? (
-                                paginatedNews?.map((newsItem: NewsItem) => (
-                                    <div key={newsItem.id} className="lg:max-h-[220px] flex flex-col lg:grid lg:grid-cols-[320px_minmax(656px,1fr)] xl:grid-cols-[350px_minmax(716px,1fr)] gap-3">
+                            {paginatedNews && paginatedNews.length > 0 ? (
+                                paginatedNews.map((newsItem) => (
+                                    <div key={newsItem.news_id} className="lg:max-h-[220px] flex flex-col lg:grid lg:grid-cols-[320px_minmax(656px,1fr)] xl:grid-cols-[350px_minmax(716px,1fr)] gap-3">
                                         <div className="h-full w-[290px] md:w-[320px] xl:w-[350px]">
                                             <div className="relative py-2 lg:px-4 md:p-4 w-[290px] md:w-[320px] h-[190px] xl:w-[350px] xl:h-[220px]">
                                                 <Image src="/home/outline_card.svg" alt="outline" fill className="hidden lg:block absolute inset-0 w-full h-full pointer-events-none z-[1] object-fill object-center" />
@@ -130,35 +134,30 @@ export function NewsPageComponent() {
 
                                                     <div className="mt-auto pl-2 pb-1">
                                                         <p className="text-sm">
-                                                            {new Date(newsItem?.add_at).toLocaleString("ru-RU", {
+                                                            {new Date(newsItem.add_at).toLocaleString("ru-RU", {
                                                                 dateStyle: 'short'
                                                             })}
                                                         </p>
                                                     </div>
-                                                    <Link href={`/news/${newsItem.id}`} className="py-1 px-3 uppercase flex flex-row gap-1 mt-auto self-end items-center rounded hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out">
-                                                        more •
-                                                        <Image src="/home/Arrow.svg" alt="arrow" width={25} height={25} className="mt-[2px]" />
-                                                    </Link>
                                                 </div>
                                             </div>
 
-                                            {/* <div className="w-full h-full lg:hidden flex flex-col lg:py-4 md:px-4 text-balance">
-                                                <p className="line-clamp-6">{newsItem.content[0][0]}</p>
-                                                <Link href={`/news/${newsItem.id}`} className="py-1 px-3 uppercase flex flex-row gap-1 mt-auto self-end items-center rounded hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out">
+                                            <div className="w-full h-full lg:hidden flex flex-col lg:py-4 md:px-4 text-balance">
+                                                <p className="line-clamp-6">{newsItem.content_blocks?.[0]?.content?.[0]?.text || ''}</p>
+                                                <Link href={`/news/${newsItem.news_id}`} className="py-1 px-3 uppercase flex flex-row gap-1 mt-auto self-end items-center rounded hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out">
                                                     more •
                                                     <Image src="/home/Arrow.svg" alt="arrow" width={25} height={25} className="mt-[2px]" />
                                                 </Link>
-                                            </div> */}
+                                            </div>
                                         </div>
-{/* 
+
                                         <div className="w-full h-full hidden lg:flex flex-col sm:py-4 text-balance">
-                                            <p className="line-clamp-6">{newsItem.content[0][0]}</p>
-                                            <Link href={`/news/${newsItem.id}`} className="py-1 px-3 uppercase flex flex-row gap-1 mt-auto self-end items-center rounded hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out">
+                                            <p className="line-clamp-6">{newsItem.content_blocks?.[0]?.content?.[0]?.text || ''}</p>
+                                            <Link href={`/news/${newsItem.news_id}`} className="py-1 px-3 uppercase flex flex-row gap-1 mt-auto self-end items-center rounded hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out">
                                                 more •
                                                 <Image src="/home/Arrow.svg" alt="arrow" width={25} height={25} className="mt-[2px]" />
                                             </Link>
-                                        </div> */}
-
+                                        </div>
                                     </div>
                                 ))
                             ) : (
@@ -184,10 +183,10 @@ export function NewsPageComponent() {
                                 >
                                     {page}
                                 </button>
-                            ))}
+                            )) || []}
                     </div>
                 </motion.div>
             )}
         </div>
-    )
+    );
 }

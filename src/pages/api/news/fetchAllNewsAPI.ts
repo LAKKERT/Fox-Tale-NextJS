@@ -27,7 +27,29 @@ export default async function GetAllNews(req: NextApiRequest, res: NextApiRespon
         const conn = await Connect();
 
         try {
-            const result = await conn.query(`SELECT id, title, description, add_at FROM news ORDER BY add_at DESC;`);
+            const result = await conn.query(`
+                SELECT 
+                    n.id AS news_id,
+                    n.title,
+                    n.description,
+                    n.add_at,
+                    COALESCE(json_agg(
+                        json_build_object(
+                            'content', (
+                                SELECT COALESCE(json_agg(
+                                    json_build_object(
+                                        'text', nc.content
+                                    ) ORDER BY nc.order_index
+                                ), '[]')
+                                FROM news_content nc 
+                                WHERE nc.content_block_id = ncb.id
+                            )
+                        ) ORDER BY ncb.content_block_order_index
+                    ), '[]') AS content_blocks
+                FROM news n
+                LEFT JOIN news_content_blocks ncb ON n.id = ncb.news_id
+                GROUP BY n.id
+                ORDER BY n.add_at DESC;`);
 
             return res.status(200).json({ result: result.rows, userRole: userRole });
         } catch (errors) {
