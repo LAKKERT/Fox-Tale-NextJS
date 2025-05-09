@@ -73,7 +73,7 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
 
                     data.content_blocks.map((p: ContentBlock, index: number) => {
                         const contentItem = p.content.map((item) => [
-                            item.text,
+                            item.content,
                             contentBlocksID[index].id,
                             item.order_index,
                             item.image
@@ -118,34 +118,34 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
                 }
             } else if (req.method === "PUT") {
                 const { data, postID } = req.body;
-            
+
                 for (let i = 0; i < data.content_blocks.length; i++) {
                     delete data.content_blocks[i].id;
                 }
-            
+
                 const conn = await Connect();
-            
+
                 try {
                     await conn.query('BEGIN');
-            
+
                     await conn.query(
                         `UPDATE news 
                          SET title = \$1, description = \$2
                          WHERE id = \$3`,
                         [data.title, data.description, postID]
                     );
-            
+
                     await conn.query(
                         `DELETE FROM news_content_blocks 
                         WHERE news_id = \$1`,
                         [postID]
                     );
-            
+
                     if (data.content_blocks?.length > 0) {
                         const contentBlocks = await conn.query(
                             `INSERT INTO news_content_blocks 
-                             (heading, covers, news_id, content_block_order_index, covers_vertical_position, covers_horizontal_position)
-                             VALUES ${data.content_blocks.map((_, i: number) =>
+                            (heading, covers, news_id, content_block_order_index, covers_vertical_position, covers_horizontal_position)
+                            VALUES ${data.content_blocks.map((_, i: number) =>
                                 `($${i * 6 + 1}, $${i * 6 + 2}, $${i * 6 + 3}, $${i * 6 + 4}, $${i * 6 + 5}, $${i * 6 + 6})`
                             ).join(', ')} RETURNING id`,
                             data.content_blocks.flatMap((p: ContentBlock) => [
@@ -157,22 +157,22 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
                                 p.horizontal_position
                             ])
                         );
-            
+
                         const contentValues = [];
-            
+
                         for (const [idx, p] of data.content_blocks.entries()) {
                             const blockId = contentBlocks.rows[idx].id;
-            
+
                             for (const content of p.content) {
                                 contentValues.push(content.text, blockId, content.order_index, content.image);
                             }
                         }
-            
+
                         if (contentValues.length > 0) {
                             const contentParamPlaceholders = Array.from({ length: contentValues.length / 4 }, (_, i) =>
                                 `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`
                             ).join(', ');
-            
+
                             await conn.query(
                                 `INSERT INTO news_content (content, content_block_id, order_index, image)
                                  VALUES ${contentParamPlaceholders}`,
@@ -180,10 +180,10 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
                             );
                         }
                     }
-            
+
                     await conn.query('COMMIT');
                     return res.status(200).json({ success: true, postId: postID });
-            
+
                 } catch (error) {
                     await conn.query('ROLLBACK');
                     console.error("Update error:", error);

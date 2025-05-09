@@ -13,6 +13,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import * as Yup from "yup";
 import _ from "lodash";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { supabase } from '@/lib/supabase/supabaseClient'
+import { useParams } from "next/navigation";
 
 const MainFont = K2D({
     style: "normal",
@@ -51,7 +53,8 @@ const validationSchema = Yup.object().shape({
         )
 });
 
-export function UniversePageDetailComponent({ params }: { params: { id: number } }) {
+export function UniversePageDetailComponent() {
+    const params = useParams()
     const [isLoading, setIsLoading] = useState(true);
     const [selectedFile, setSelectedFiles] = useState<File | null>();
     const [isEditMode, setIsEditMode] = useState(false);
@@ -102,10 +105,14 @@ export function UniversePageDetailComponent({ params }: { params: { id: number }
         return () => resizeObserver.disconnect();
     }, [windowSize, isEditMode]);
 
+
     useEffect(() => {
         const fetchDetailUniverse = async () => {
+            if (!params) return
+
             try {
-                const response = await fetch(`/api/universe/fetchDetailUniverseAPI?universeID=${params.id}`, {
+                const id = params.id;
+                const response = await fetch(`/api/universe/fetchDetailUniverseAPI?universeID=${id}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -136,7 +143,7 @@ export function UniversePageDetailComponent({ params }: { params: { id: number }
         }
 
         fetchDetailUniverse();
-    }, [router, cookies, params.id])
+    }, [router, cookies, params?.id])
 
     const editMode = () => {
         if (isDelete === true) {
@@ -204,7 +211,7 @@ export function UniversePageDetailComponent({ params }: { params: { id: number }
 
             const payload = {
                 ...data,
-                universeID: params.id
+                universeID: params?.id
             }
 
             const response = await fetch(`/api/universe/universeAPI`, {
@@ -229,7 +236,7 @@ export function UniversePageDetailComponent({ params }: { params: { id: number }
 
     const onDelete = async () => {
         try {
-            const response = await fetch(`/api/universe/universeAPI?universeID=${params.id}`, {
+            const response = await fetch(`/api/universe/universeAPI?universeID=${params?.id}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',

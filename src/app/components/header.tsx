@@ -34,11 +34,9 @@ export function Header() {
         setUserData, 
         setIsAuth 
     } = useUserStore();
-
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
     const [cookies] = useCookies(['auth_token']);
-
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -49,42 +47,50 @@ export function Header() {
     }
 
     const destroyCookie = () => {
-        Cookies.remove('auth_token');
+        if (process.env.NEXT_PUBLIC_ENV === 'production') {
+            Cookies.remove('__next_hmr_refresh_hash__');
+            setUserData(null);
+            setIsAuth(false);
+        }else {
+            Cookies.remove('auth_token');
+        }
         window.location.reload();
     }
 
     useEffect(() => {
-        if (cookies.auth_token) {
-            setIsAuth(true);
-            const fetchUserData = async () => {
-                if (cookies.auth_token && (!userData || !isAuth)) {
-                    try {
-                        const response = await fetch('/api/users/getAllUserDataAPI', {
-                            method: 'GET',
-                            headers: {
-                                'Authorization': `Bearer ${cookies.auth_token}`
-                            },
-                        });
-    
-                        const result = await response.json();
-                        
-                        if (response.ok) {
-                            setUserData(result.result);
-                        } else {
-                            console.error("Error fetching user data", result.message);
+        if (process.env.NEXT_PUBLIC_ENV !== 'production') {
+            if (cookies.auth_token) {
+                setIsAuth(true);
+                const fetchUserData = async () => {
+                    if (cookies.auth_token && (!userData || !isAuth)) {
+                        try {
+                            const response = await fetch('/api/users/getAllUserDataAPI', {
+                                method: 'GET',
+                                headers: {
+                                    'Authorization': `Bearer ${cookies.auth_token}`
+                                },
+                            });
+        
+                            const result = await response.json();
+                            
+                            if (response.ok) {
+                                setUserData(result.result);
+                            } else {
+                                console.error("Error fetching user data", result.message);
+                                setUserData(null);
+                            }
+        
+                        } catch (error) {
+                            console.error("Fetching data error", error);
                             setUserData(null);
                         }
-    
-                    } catch (error) {
-                        console.error("Fetching data error", error);
-                        setUserData(null);
                     }
-                }
-            };
-            fetchUserData();
-        } else {
-            setIsAuth(false);
-            setUserData(null);
+                };
+                fetchUserData();
+            } else {
+                setIsAuth(false);
+                setUserData(null);
+            }
         }
     }, [cookies, setUserData, setIsAuth]);
 
@@ -100,11 +106,6 @@ export function Header() {
                 </Link>
 
                 <div className="hidden lg:flex flex-row items-center gap-5">
-                    {/* <Link href="#">
-                        <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out ">
-                            about
-                        </div>
-                    </Link> */}
 
                     <Link href="/news">
                         <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.9)] transition duration-150 ease-in-out ">
@@ -190,12 +191,6 @@ export function Header() {
                             </div>
                         </Link>
                     )}
-
-                    {/* <Link href="#" className="w-full">
-                        <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,0.7)] transition duration-150 ease-in-out ">
-                            about
-                        </div>
-                    </Link> */}
 
                     <Link href="/news" className="w-full">
                         <div className="py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,.7)] transition duration-150 ease-in-out ">

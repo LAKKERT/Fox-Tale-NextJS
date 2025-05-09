@@ -14,8 +14,10 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { saveFile } from "@/pages/api/news/saveImagesAPI";
 import styles from "@/app/styles/home/variables.module.scss";
 import { useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 
-import { ContentBlock, FormValues, FileMetadata } from "@/lib/types/news";
+import { ContentBlock, NewsStructure, FileMetadata, FormValues } from "@/lib/types/news";
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 const MainFont = K2D({
     style: "normal",
@@ -26,7 +28,6 @@ const MainFont = K2D({
 const validationSchema = Yup.object().shape({
     title: Yup.string().required("Title is required"),
     description: Yup.string().required("Description is required"),
-    add_at: Yup.date().nullable(),
     content_blocks: Yup.array().of(
         Yup.object().shape({
             id: Yup.string().required(),
@@ -46,20 +47,21 @@ const validationSchema = Yup.object().shape({
             content: Yup.array().of(
                 Yup.object().shape({
                     id: Yup.string().required(),
-                    text: Yup.string().required("Content is required"),
+                    content: Yup.string().required("Content is required"),
                     image: Yup.mixed<File | string>()
                         .nullable(),
                     order_index: Yup.number().required()
                 })
-                .defined()
+                    .defined()
             ).required(),
         })
             .defined()
     ).required(),
 });
 
-export function PostDetailComponent({ postID }: { postID: { id: number } }) {
-    const [postData, setPostData] = useState<FormValues>();
+export function PostDetailComponent() {
+    const params = useParams();
+    const [postData, setPostData] = useState<NewsStructure>();
     const userData = useUserStore((state) => state.userData);
     const [isLoading, setIsLoading] = useState(true);
     const [editModeActive, setEditModeActive] = useState(false);
@@ -97,47 +99,83 @@ export function PostDetailComponent({ postID }: { postID: { id: number } }) {
     useEffect(() => {
         const fetchPostData = async () => {
             try {
-                const response = await fetch(`/api/news/fetchPostDataAPI?postID=${postID.id}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
+                if (!params) return;
+
+                if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                    const { data, error } = await supabase
+                        .from('news')
+                        .select(`title, description, add_at, author,
+                            content_blocks (
+                                id, heading, covers, news_id, order_index, vertical_position, horizontal_position,
+                                content (
+                                        id, content, content_block_id, order_index, image
+                                )
+                            )
+                            `)
+                        .eq('id', params.id)
+                        .single();
+
+                    if (error) console.error('error occured', error)
+
+                    if (data) {
+                        if (data.content_blocks) {
+                            data.content_blocks.sort((a, b) => a.order_index - b.order_index);
+                            data.content_blocks.forEach(content_block => {
+                                if (content_block.content) {
+                                    content_block.content.sort((a, b) => a.order_index - b.order_index);
+                                }
+                            });
+                        }
+
+                        setPostData(data);
+
+                        setTimeout(() => {
+                            setIsLoading(false);
+                        }, 300);
                     }
-                });
+                } else {
+                    const response = await fetch(`/api/news/fetchPostDataAPI?postID=${params?.id}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
 
-                const result = await response.json();
+                    const result = await response.json();
 
-                if (response.ok) {
-                    const formattedData = result.result?.content_blocks?.map((block: ContentBlock, index: number) => ({
-                        id: uuidv4(),
-                        heading: block.heading,
-                        covers: block.covers,
-                        horizontal_position: Number(block.horizontal_position),
-                        vertical_position: Number(block.vertical_position),
-                        order_index: index,
-                        content: block.content?.map((content, contentIndex) => ({
+                    if (response.ok) {
+                        const formattedData = result.result?.content_blocks?.map((block: ContentBlock, index: number) => ({
                             id: uuidv4(),
-                            text: content.text || "",
-                            image: content.image,
-                            order_index: contentIndex
-                        })) || []
-                    })) || [];
+                            heading: block.heading,
+                            covers: block.covers,
+                            horizontal_position: Number(block.horizontal_position),
+                            vertical_position: Number(block.vertical_position),
+                            order_index: index,
+                            content: block.content?.map((content, contentIndex) => ({
+                                id: uuidv4(),
+                                content: content.content || "",
+                                image: content.image,
+                                order_index: contentIndex
+                            })) || []
+                        })) || [];
 
-                    reset({
-                        title: result.result.title || "",
-                        description: result.result.description || "",
-                        content_blocks: formattedData
-                    });
+                        reset({
+                            title: result.result.title || "",
+                            description: result.result.description || "",
+                            content_blocks: formattedData
+                        });
 
-                    setPostData({
-                        title: result.result.title || "",
-                        description: result.result.description || "",
-                        add_at: result.result.add_at,
-                        content_blocks: formattedData
-                    });
+                        setPostData({
+                            title: result.result.title || "",
+                            description: result.result.description || "",
+                            add_at: result.result.add_at,
+                            content_blocks: formattedData
+                        });
 
-                    setTimeout(() => {
-                        setIsLoading(false);
-                    }, 300)
+                        setTimeout(() => {
+                            setIsLoading(false);
+                        }, 300)
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching post data:', error);
@@ -146,7 +184,7 @@ export function PostDetailComponent({ postID }: { postID: { id: number } }) {
         }
 
         fetchPostData()
-    }, [userData, cookies, router]);
+    }, [userData, cookies, router, params]);
 
     const editMode = () => {
         if (deletePost === true) {
@@ -187,7 +225,7 @@ export function PostDetailComponent({ postID }: { postID: { id: number } }) {
             vertical_position: 50,
             covers: null,
             order_index: newOrder,
-            content: [{ id: uuidv4(), text: '', image: null, order_index: 0 }]
+            content: [{ id: uuidv4(), content: '', image: null, order_index: 0 }]
         });
     };
 
@@ -196,7 +234,7 @@ export function PostDetailComponent({ postID }: { postID: { id: number } }) {
         const newContentOrder = contentBlock.content.length;
         update(contentBlockIndex, {
             ...contentBlock,
-            content: [...contentBlock.content, { id: uuidv4(), text: '', image: null, order_index: newContentOrder }]
+            content: [...contentBlock.content, { id: uuidv4(), content: '', image: null, order_index: newContentOrder }]
         });
     };
 
@@ -264,9 +302,9 @@ export function PostDetailComponent({ postID }: { postID: { id: number } }) {
         };
     }, []);
 
-    const onSubmit = async (data: FormValues) => {
+    const onSubmit = async (formData: FormValues) => {
         try {
-            const newCovers = data.content_blocks
+            const newCovers = formData.content_blocks
                 .map(p => p.covers)
                 .filter(covers => covers instanceof File) as File[];
 
@@ -277,7 +315,7 @@ export function PostDetailComponent({ postID }: { postID: { id: number } }) {
             );
 
             let coverIndex = 0;
-            data.content_blocks.forEach(contentBlock => {
+            formData.content_blocks.forEach(contentBlock => {
                 if (contentBlock.covers instanceof File) {
                     contentBlock.covers = coversURL[coverIndex];
                     coverIndex++;
@@ -286,7 +324,7 @@ export function PostDetailComponent({ postID }: { postID: { id: number } }) {
 
             await saveFile(processedCovers, coversURL);
 
-            const newContentImages = data.content_blocks
+            const newContentImages = formData.content_blocks
                 .flatMap(p => p.content.map(c => c.image))
                 .filter(img => img instanceof File) as File[];
 
@@ -297,7 +335,7 @@ export function PostDetailComponent({ postID }: { postID: { id: number } }) {
             );
 
             let imageIndex = 0;
-            data.content_blocks.forEach(contentBlock => {
+            formData.content_blocks.forEach(contentBlock => {
                 contentBlock.content.forEach(content => {
                     if (content.image instanceof File) {
                         content.image = imagesURL[imageIndex];
@@ -308,26 +346,75 @@ export function PostDetailComponent({ postID }: { postID: { id: number } }) {
 
             await saveFile(processedImages, imagesURL);
 
-            const payload = {
-                data,
-                postID: postID.id,
-            };
+            if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                const { error } = await supabase
+                    .from('news')
+                    .update({
+                        title: formData.title,
+                        description: formData.description
+                    })
+                    .eq('id', params?.id)
+                if (error) console.error(error)
 
-            const response = await fetch('/api/news/addNewsAPI', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${cookies.auth_token}`
-                },
-                body: JSON.stringify(payload)
-            });
+                const { error: removeContentBlockError } = await supabase
+                    .from('content_blocks')
+                    .delete()
+                    .eq('news_id', params?.id)
+                if (removeContentBlockError) console.error(removeContentBlockError)
 
-            if (response.ok) {
-                setEditModeActive(false);
-                window.location.reload();
+                formData.content_blocks.map(async (item, index) => {
+                    const { data: newsContentBlockData, error } = await supabase
+                        .from('content_blocks')
+                        .insert({
+                            heading: item.heading,
+                            covers: item.covers,
+                            news_id: params?.id,
+                            order_index: item.order_index,
+                            vertical_position: item.vertical_position,
+                            horizontal_position: item.horizontal_position
+                        })
+                        .select('id')
+                        .single();
+                    if (error) console.error('content block error', error)
+
+                    if (newsContentBlockData) {
+                        item.content.map(async (item) => {
+                            const { error } = await supabase
+                                .from('content')
+                                .insert({
+                                    content: item.content,
+                                    order_index: item.order_index,
+                                    image: item.image,
+                                    content_block_id: newsContentBlockData?.id
+                                })
+                            console.error(error);
+                        })
+                    }
+                })
+
             } else {
-                console.error('Error adding new post:');
+                const payload = {
+                    formData,
+                    postID: params?.id,
+                };
+
+                const response = await fetch('/api/news/addNewsAPI', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${cookies.auth_token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    setEditModeActive(false);
+                    window.location.reload();
+                } else {
+                    console.error('Error adding new post:');
+                }
             }
+
         } catch (error) {
             console.error('Error updating post:', error);
         }
@@ -341,7 +428,7 @@ export function PostDetailComponent({ postID }: { postID: { id: number } }) {
                     'content-type': 'application/json',
                     'Authorization': `Bearer ${cookies.auth_token}`
                 },
-                body: JSON.stringify({ postID: postID.id })
+                body: JSON.stringify({ postID: params?.id })
             });
 
             const result = await response.json();
@@ -679,12 +766,12 @@ export function PostDetailComponent({ postID }: { postID: { id: number } }) {
                                                                         <pre
                                                                             className={`text-left text-sm md:text-base text-balance ${editModeActive ? 'hidden' : 'block'}`}
                                                                         >
-                                                                            {content.text}
+                                                                            {content.content}
                                                                         </pre>
                                                                     </div>
 
                                                                     <motion.textarea
-                                                                        {...register(`content_blocks.${contentBlockIndex}.content.${contentIndex}.text`)}
+                                                                        {...register(`content_blocks.${contentBlockIndex}.content.${contentIndex}.content`)}
                                                                         onInput={(e) => {
                                                                             const target = e.target as HTMLTextAreaElement;
 
@@ -702,11 +789,11 @@ export function PostDetailComponent({ postID }: { postID: { id: number } }) {
 
                                                                     <motion.p
                                                                         initial={{ opacity: 0, height: 0 }}
-                                                                        animate={{ opacity: errors.content_blocks?.[contentBlockIndex]?.content?.[contentIndex]?.text?.message ? 30 : 0, height: errors.content_blocks?.[contentBlockIndex]?.content?.[contentIndex]?.text?.message ? 'auto' : '0px' }}
+                                                                        animate={{ opacity: errors.content_blocks?.[contentBlockIndex]?.content?.[contentIndex]?.content?.message ? 30 : 0, height: errors.content_blocks?.[contentBlockIndex]?.content?.[contentIndex]?.content?.message ? 'auto' : '0px' }}
                                                                         transition={{ duration: .3 }}
                                                                         className=" text-orange-300 text-[13px] sm:text-[18px]"
                                                                     >
-                                                                        {errors.content_blocks?.[contentBlockIndex]?.content?.[contentIndex]?.text?.message}
+                                                                        {errors.content_blocks?.[contentBlockIndex]?.content?.[contentIndex]?.content?.message}
                                                                     </motion.p>
 
                                                                     <motion.button

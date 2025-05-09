@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import * as Yup from "yup";
 import _ from "lodash";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { useParams } from "next/navigation";
 
 const MainFont = K2D({
     style: "normal",
@@ -62,7 +63,8 @@ const validationSchema = Yup.object().shape({
         .required("Territories are required")
 })
 
-export function CharacterPageDetailComponent({ params }: { params: { id: number}}) {
+export function CharacterPageDetailComponent() {
+    const params = useParams();
     const [isLoading, setIsLoading] = useState(true);
     const userData = useUserStore((state) => state.userData)
     const [selectedFile, setSelectedFiles] = useState<File | null>();
@@ -118,6 +120,7 @@ export function CharacterPageDetailComponent({ params }: { params: { id: number}
 
     useEffect(() => {
         const fetchDetailCharacter = async () => {
+            if (!params) return;
             try {
                 const response = await fetch(`/api/characters/fetchDetailCharacterAPI?characterID=${params.id}`, {
                     method: 'GET',
@@ -151,7 +154,7 @@ export function CharacterPageDetailComponent({ params }: { params: { id: number}
         }
 
         fetchDetailCharacter();
-    }, [router, cookies, params.id])
+    }, [router, cookies, params?.id])
 
     useEffect(() => {
         const fecthAllUniverses = async () => {
@@ -255,7 +258,7 @@ export function CharacterPageDetailComponent({ params }: { params: { id: number}
 
             const payload = {
                 ...data,
-                characterID: params.id
+                characterID: params?.id
             }
 
             const response = await fetch(`/api/characters/charactersAPI`, {
@@ -280,7 +283,7 @@ export function CharacterPageDetailComponent({ params }: { params: { id: number}
 
     const onDelete = async () => {
         try {
-            const response = await fetch(`/api/characters/charactersAPI?characterID=${params.id}`, {
+            const response = await fetch(`/api/characters/charactersAPI?characterID=${params?.id}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',

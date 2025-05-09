@@ -8,6 +8,7 @@ import { PT_Serif } from "next/font/google";
 import { K2D } from "next/font/google";
 import styles from "@/app/styles/home/variables.module.scss";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 const introductionFont = PT_Serif({
     style: "normal",
@@ -23,11 +24,10 @@ const MainFont = K2D({
 
 type NewsItems = {
     id: number;
-    title: string | null;
-    description: string | null;
+    title: string;
+    description: string;
     add_at: string;
 }
-
 
 export function Main() {
     const [isLoading, setIsLoading] = useState(true);
@@ -36,25 +36,39 @@ export function Main() {
     useEffect(() => {
         const fetchNews = async () => {
             try {
-                const response = await fetch(`/api/news/fetchLatestNews`, {
-                    method: "GET",
-                    headers: {
-                        'Content-type': 'application/json'
+                if (process.env.NEXT_PUBLIC_ENV === "production") {
+                    const {data, error} = await supabase
+                        .from('news')
+                        .select('id, title, description, add_at')
+                        .order('add_at', {ascending: false})
+                        .limit(3);
+                    if (error) console.error('error occured', error)
+                    if (data) {
+                        setNewsItems(data);
+                        setTimeout(() => {
+                            setIsLoading(false);
+                        }, 300)
                     }
-                })
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    setNewsItems(result.result);
-                    setTimeout(() => {
-                        setIsLoading(false);
-                    }, 300)
-
-                } else {
-                    console.error("Failed to fetch news");
+                }else {
+                    const response = await fetch(`/api/news/fetchLatestNews`, {
+                        method: "GET",
+                        headers: {
+                            'Content-type': 'application/json'
+                        }
+                    })
+    
+                    const result = await response.json();
+    
+                    if (response.ok) {
+                        setNewsItems(result.result);
+                        setTimeout(() => {
+                            setIsLoading(false);
+                        }, 300)
+    
+                    } else {
+                        console.error("Failed to fetch news");
+                    }
                 }
-
             } catch (error) {
                 console.error("Error fetching news:", error);
             }
@@ -64,7 +78,7 @@ export function Main() {
     }, [])
 
     return (
-        <div>
+        <div data-testid="custom-element">
             {isLoading ? (
                 <motion.div
                     initial={{ opacity: 1 }}

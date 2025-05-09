@@ -7,16 +7,16 @@ export type ContentBlock = {
     order_index: number;
     content: {
         id: string;
-        text: string;
+        content: string;
         image?: File | string | null;
         order_index: number;
     }[]
 }
 
-export type FormValues = {
+export type  NewsStructure = {
     title: string;
     description: string;
-    add_at?: Date | null;
+    add_at: Date;
     content_blocks: {
         id: string;
         heading: string;
@@ -26,12 +26,14 @@ export type FormValues = {
         order_index: number;
         content: {
             id: string;
-            text: string;
+            content: string;
             image?: File | string | null;
             order_index: number;
         }[];
     }[];
-};
+}
+
+export type FormValues = Omit<NewsStructure, 'add_at'>
 
 export type FileMetadata = {
     name: string;

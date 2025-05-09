@@ -5,6 +5,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as Yup from "yup";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 import Link from "next/link";
 import { K2D } from "next/font/google";
@@ -44,24 +45,47 @@ export function SignUpPage() {
         resolver: yupResolver(validationSchema),
     });
 
-    const onSubmit = async (data: userInterface) => {
+    const onSubmit = async (formData: userInterface) => {
         try {
-            const response = await fetch('/api/users/signupAPI', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                router.push(result.redirectUrl);
-            } else {
-                console.error("Failed to create user");
-                setServerError(result.errors);
-                setServerMessage(result.message);
+            if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                const { data, error } = await supabase.auth.signUp(
+                {
+                    email: formData.email,
+                    password: formData.password,
+                    options: {
+                        data: {
+                            username: formData.username,
+                        }
+                    }
+                });
+                if (error) console.error('error occured', error);
+                if (data) {
+                    console.log('succsess', data)
+                    const { error } = await supabase
+                        .from('user_metadata')
+                        .upsert({ userID: data.user?.id, username: data.user?.user_metadata.username, role: 'user' })
+                        .select()
+                }
+                if (error) console.error('error occured', error);
+                
+            }else {
+                const response = await fetch('/api/users/signupAPI', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+    
+                const result = await response.json();
+    
+                if (response.ok) {
+                    router.push(result.redirectUrl);
+                } else {
+                    console.error("Failed to create user");
+                    setServerError(result.errors);
+                    setServerMessage(result.message);
+                }
             }
         } catch (error) {
             console.error("Error:", error);

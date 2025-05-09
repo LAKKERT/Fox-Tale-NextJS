@@ -3,6 +3,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import Connect from '@/db/dbConfig';
 import jwt from 'jsonwebtoken';
 
+
 export default async function GetPostData(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -30,6 +31,7 @@ export default async function GetPostData(req: NextApiRequest, res: NextApiRespo
                 }
             }
         }
+
         const result = await conn.query(
             `SELECT 
                 n.id AS news_id,
@@ -47,7 +49,7 @@ export default async function GetPostData(req: NextApiRequest, res: NextApiRespo
                         'content', COALESCE((
                             SELECT json_agg(
                                 json_build_object(
-                                    'text', nc.content,
+                                    'content', nc.content,
                                     'order', nc.order_index,
                                     'image', nc.image
                                 )
@@ -66,7 +68,7 @@ export default async function GetPostData(req: NextApiRequest, res: NextApiRespo
 
         return res.status(200).json({
             result: result.rows[0],
-            userRole: currentUserRole || null
+            userRole: currentUserRole || null,
         });
 
     } catch (error) {

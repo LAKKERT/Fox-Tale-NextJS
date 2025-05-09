@@ -16,6 +16,7 @@ import styles from "@/app/styles/home/variables.module.scss";
 import Image from "next/image";
 
 import { FormValues, FileMetadata } from "@/lib/types/news";
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 const MainFont = K2D({
     style: "normal",
@@ -23,11 +24,9 @@ const MainFont = K2D({
     weight: "400",
 });
 
-
 const validationSchema = Yup.object().shape({
     title: Yup.string().required("Title is required"),
     description: Yup.string().required("Description is required"),
-    add_at: Yup.date().nullable(),
     content_blocks: Yup.array().of(
         Yup.object().shape({
             id: Yup.string().required(),
@@ -47,7 +46,7 @@ const validationSchema = Yup.object().shape({
             content: Yup.array().of(
                 Yup.object().shape({
                     id: Yup.string().required(),
-                    text: Yup.string().required("Content is required"),
+                    content: Yup.string().required("Content is required"),
                     image: Yup.mixed<File | string>()
                         .nullable(),
                     order_index: Yup.number().required()
@@ -64,9 +63,6 @@ export function CreatePostComponent() {
     const userData = useUserStore((state) => state.userData);
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
-
-    const [verticalAlign, setVerticalAlign] = useState<number[]>([]);
-    const [horizontalAlign, setHorizontalAlign] = useState<number[]>([]);
 
     const imgRef = useRef<HTMLElement[]>([]);
 
@@ -101,56 +97,53 @@ export function CreatePostComponent() {
             horizontal_position: 50,
             vertical_position: 50,
             order_index: newOrder,
-            content: [{ id: uuidv4(), text: '', image: null, order_index: 0 }]
-        });
-
-        setVerticalAlign(prev => [...prev, 50]);
-        setHorizontalAlign(prev => [...prev, 50]);
-    };
-
-    const addContentBlock = (paragraphIndex: number) => {
-        const newContentOrder = content_blocks[paragraphIndex].content.length;
-
-        update(paragraphIndex, {
-            ...content_blocks[paragraphIndex],
-            content: [...content_blocks[paragraphIndex].content, { id: uuidv4(), text: '', image: null, order_index: newContentOrder }]
+            content: [{ id: uuidv4(), content: '', image: null, order_index: 0 }]
         });
     };
 
-    const deleteContentBlock = (paragraphIndex: number, contentIndex: number) => {
-        const updatedContents = content_blocks[paragraphIndex].content
+    const addContentBlock = (contentBlockIndex: number) => {
+        const newContentOrder = content_blocks[contentBlockIndex].content.length;
+
+        update(contentBlockIndex, {
+            ...content_blocks[contentBlockIndex],
+            content: [...content_blocks[contentBlockIndex].content, { id: uuidv4(), content: '', image: null, order_index: newContentOrder }]
+        });
+    };
+
+    const deleteContentBlock = (contentBlockIndex: number, contentIndex: number) => {
+        const updatedContents = content_blocks[contentBlockIndex].content
             .filter((_, idx) => idx !== contentIndex)
             .map((content, index) => ({ ...content, order_index: index }))
 
-        update(paragraphIndex, {
-            ...content_blocks[paragraphIndex],
+        update(contentBlockIndex, {
+            ...content_blocks[contentBlockIndex],
             content: updatedContents
         });
     };
 
-    const deleteParagraph = (paragraphIndex: number) => {
+    const deleteParagraph = (contentBlockIndex: number) => {
         const updatedParagraphs = content_blocks
-            .filter((_, idx) => idx !== paragraphIndex)
+            .filter((_, idx) => idx !== contentBlockIndex)
             .map((content, index) => ({ ...content, order_index: index }));
 
         replace(updatedParagraphs);
     };
 
-    const handleCoverChange = (paragraphIndex: number, file: File) => {
+    const handleCoverChange = (contentBlockIndex: number, file: File) => {
         const updatedParagraph = {
-            ...content_blocks[paragraphIndex],
+            ...content_blocks[contentBlockIndex],
             covers: file
         };
-        update(paragraphIndex, updatedParagraph);
+        update(contentBlockIndex, updatedParagraph);
     };
 
-    const handleImageChange = (paragraphIndex: number, contentIndex: number, file: File) => {
-        const updatedContents = content_blocks[paragraphIndex].content.map((content, idx) =>
+    const handleImageChange = (contentBlockIndex: number, contentIndex: number, file: File) => {
+        const updatedContents = content_blocks[contentBlockIndex].content.map((content, idx) =>
             idx === contentIndex ? { ...content, image: file } : content
         )
 
-        update(paragraphIndex, {
-            ...content_blocks[paragraphIndex],
+        update(contentBlockIndex, {
+            ...content_blocks[contentBlockIndex],
             content: updatedContents
         });
     };
@@ -181,16 +174,16 @@ export function CreatePostComponent() {
         });
     }, []);
 
-    const onSubmit = async (data: FormValues) => {
+    const onSubmit = async (formData: FormValues) => {
         if (userData) {
             try {
                 const covers = await processFiles(
-                    data.content_blocks
+                    formData.content_blocks
                         .map(p => p.covers)
                         .filter((item): item is File => item instanceof File)
                 ) as string[];
                 const coversMetadata = getFileMetadata(
-                    data.content_blocks
+                    formData.content_blocks
                         .map(p => p.covers)
                         .filter((item): item is File => item instanceof File)
                 );
@@ -199,15 +192,13 @@ export function CreatePostComponent() {
                 );
                 await saveFile(covers, coversURL.filter((url): url is string => url !== '' && url !== null));
 
-                data.content_blocks.forEach((content, index) => {
+                formData.content_blocks.forEach((content, index) => {
                     if (content.covers) {
                         content.covers = coversURL[index];
-                        content.horizontal_position = horizontalAlign[index];
-                        content.vertical_position = verticalAlign[index];
                     }
                 });
 
-                const allContentImages = data.content_blocks
+                const allContentImages = formData.content_blocks
                     .flatMap(p => p.content.map(c => c.image))
                     .filter(img => img instanceof File) as File[];
                 const images = await processFiles(allContentImages) as string[];
@@ -219,7 +210,7 @@ export function CreatePostComponent() {
                 await saveFile(images.flat(), imagesURL.flat().filter((url): url is string => url !== null));
 
                 let imageIndex = 0;
-                data.content_blocks.forEach(content => {
+                formData.content_blocks.forEach(content => {
                     content.content.forEach(content => {
                         if (content.image) {
                             content.image = imagesURL[imageIndex];
@@ -228,24 +219,81 @@ export function CreatePostComponent() {
                     });
                 });
 
-                const payload = {
-                    data,
-                    userID: userData.id,
-                };
+                if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                    const { data, error } = await supabase
+                        .from('news')
+                        .insert({
+                            title: formData.title,
+                            description: formData.description,
+                            author: userData.id,
+                            add_at: new Date().toISOString()
+                        })
+                        .select('id')
+                        .single();
 
-                const response = await fetch('/api/news/addNewsAPI', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${cookies.auth_token}`,
-                    },
-                    body: JSON.stringify(payload),
-                });
+                    if (error) {
+                        console.error('Insert error:', error);
+                        return;
+                    }
 
-                if (response.ok) {
-                    router.push('/');
+                    if (data) {
+                        const modifiedFormData = formData.content_blocks.map((item) => {
+                            return {
+                                ...item,
+                                news_id: data.id
+                            }
+                        })
+
+                        modifiedFormData.map(async (item, index) => {
+                            const { data: newsContentBlockData, error } = await supabase
+                                .from('content_blocks')
+                                .insert({
+                                    heading: item.heading,
+                                    covers: item.covers,
+                                    news_id: data.id,
+                                    order_index: item.order_index,
+                                    vertical_position: item.vertical_position,
+                                    horizontal_position: item.horizontal_position
+                                })
+                                .select('id')
+                                .single();
+                            if (error) console.error(error)
+
+                            if (data) {
+                                item.content.map(async (item) => {
+                                    const { error } = await supabase
+                                        .from('content')
+                                        .insert({
+                                            content: item.content,
+                                            order_index: item.order_index,
+                                            image: item.image,
+                                            content_block_id: newsContentBlockData?.id
+                                        })
+                                    if (error) console.error(error);
+                                })
+                            }
+                        })
+                    }
                 } else {
-                    console.error('Error saving post');
+                    const payload = {
+                        formData,
+                        userID: userData.id,
+                    };
+
+                    const response = await fetch('/api/news/addNewsAPI', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${cookies.auth_token}`,
+                        },
+                        body: JSON.stringify(payload),
+                    });
+
+                    if (response.ok) {
+                        router.push('/');
+                    } else {
+                        console.error('Error saving post');
+                    }
                 }
             } catch (error) {
                 console.error('Submission error:', error);
@@ -254,35 +302,29 @@ export function CreatePostComponent() {
     };
 
     const debouncedUpdate = useRef(
-        _.debounce((paragraphIndex, h, v) => {
-            setVerticalAlign(prev => {
-                const newArr = [...prev];
-                newArr[paragraphIndex] = v;
-                return newArr;
-            });
-
-            setHorizontalAlign(prev => {
-                const newArr = [...prev];
-                newArr[paragraphIndex] = h;
-                return newArr;
+        _.debounce((block, contentBlockIndex, h, v) => {
+            update(contentBlockIndex, {
+                ...block[contentBlockIndex],
+                vertical_position: v,
+                horizontal_position: h,
             })
         }, 300)
     ).current;
 
-    const handlePositionChange = (paragraphIndex: number, hValue: number, vValue: number) => {
+    const handlePositionChange = (contentBlockIndex: number, hValue: number, vValue: number) => {
         if (imgRef.current) {
-            imgRef.current[paragraphIndex].style.objectPosition = `${hValue}% ${vValue}%`;
+            imgRef.current[contentBlockIndex].style.objectPosition = `${hValue}% ${vValue}%`;
         }
     }
 
-    const handleSliderChange = (paragraphIndex: number, isHorizontal: boolean, e: ChangeEvent<HTMLInputElement>) => {
+    const handleSliderChange = (contentBlockIndex: number, isHorizontal: boolean, e: ChangeEvent<HTMLInputElement>) => {
         const value = Number(e.target.value);
 
-        const newH = isHorizontal ? value : horizontalAlign[paragraphIndex];
-        const newV = !isHorizontal ? value : verticalAlign[paragraphIndex];
+        const newH = isHorizontal ? value : content_blocks[contentBlockIndex].horizontal_position;
+        const newV = !isHorizontal ? value : content_blocks[contentBlockIndex].vertical_position;
 
-        handlePositionChange(paragraphIndex, newH, newV);
-        debouncedUpdate(paragraphIndex, newH, newV);
+        handlePositionChange(contentBlockIndex, newH, newV);
+        debouncedUpdate(content_blocks, contentBlockIndex, newH, newV);
     };
 
     return (
@@ -354,11 +396,11 @@ export function CreatePostComponent() {
 
 
                             <AnimatePresence mode="popLayout">
-                                {content_blocks.map((content, paragraphIndex) => {
+                                {content_blocks.map((contentBlock, contentBlockIndex) => {
                                     return (
                                         <motion.div
                                             layout
-                                            key={content.id}
+                                            key={contentBlock.id}
                                             initial={{ opacity: 0, scale: 0.8 }}
                                             animate={{ opacity: 1, scale: 1 }}
                                             exit={{ opacity: 0, scale: 0.8 }}
@@ -367,12 +409,12 @@ export function CreatePostComponent() {
                                         >
                                             <motion.input
                                                 layout={'position'}
-                                                placeholder={`Heading ${paragraphIndex + 1}`}
-                                                {...register(`content_blocks.${paragraphIndex}.heading`)}
+                                                placeholder={`Heading ${contentBlockIndex + 1}`}
+                                                {...register(`content_blocks.${contentBlockIndex}.heading`)}
                                                 className={`w-full h-[34px] bg-transparent outline-none border-b-2 border-white focus:border-orange-400 text-xl md:text-2xl text-center focus:caret-white`}
                                                 onChange={(e) => {
-                                                    update(paragraphIndex, {
-                                                        ...content_blocks[paragraphIndex],
+                                                    update(contentBlockIndex, {
+                                                        ...content_blocks[contentBlockIndex],
                                                         heading: e.target.value
                                                     })
                                                 }}
@@ -382,10 +424,10 @@ export function CreatePostComponent() {
                                                 layout={'position'}
                                                 className="text-orange-300 text-[13px] sm:text-[18px]"
                                             >
-                                                {errors.content_blocks?.[paragraphIndex]?.heading?.message}
+                                                {errors.content_blocks?.[contentBlockIndex]?.heading?.message}
                                             </motion.p>
 
-                                            {content.covers && (
+                                            {contentBlock.covers && (
                                                 <motion.div
                                                     layout={'position'}
                                                     className="w-full h-64 relative mb-4"
@@ -393,17 +435,16 @@ export function CreatePostComponent() {
                                                     <Image
                                                         ref={e => {
                                                             if (e) {
-                                                                imgRef.current[paragraphIndex] = e
+                                                                imgRef.current[contentBlockIndex] = e
                                                             }
                                                         }}
-                                                        src={typeof content.covers === 'string'
-                                                            ? `http://localhost:3000/${content.covers}`
-                                                            : URL.createObjectURL(content.covers)}
+                                                        src={typeof contentBlock.covers === 'string'
+                                                            ? `http://localhost:3000/${contentBlock.covers}`
+                                                            : URL.createObjectURL(contentBlock.covers)}
                                                         alt="covers"
                                                         fill
                                                         className={`transform-gpu rounded object-cover`}
-                                                        // style={{ objectPosition: `${content.horizontalPosition}% ${content.verticalPosition}%` }}
-                                                        style={{ objectPosition: `${horizontalAlign[paragraphIndex]}% ${verticalAlign[paragraphIndex]}%` }}
+                                                        style={{ objectPosition: `${contentBlock.horizontal_position}}% ${contentBlock.vertical_position}%` }}
                                                         sizes="(max-width: 768px) 100vw, 50vw"
                                                         quality={80}
                                                     />
@@ -412,33 +453,33 @@ export function CreatePostComponent() {
 
                                             <motion.div
                                                 layout={'position'}
-                                                className={`w-full flex flex-col items-center ${content_blocks[paragraphIndex]?.covers ? "gap-6" : ""}  `}
+                                                className={`w-full flex flex-col items-center ${content_blocks[contentBlockIndex]?.covers ? "gap-6" : ""}  `}
                                             >
 
                                                 <input
                                                     type="file"
                                                     onChange={(e) => {
                                                         if (e.target.files) {
-                                                            handleCoverChange(paragraphIndex, e.target.files[0])
+                                                            handleCoverChange(contentBlockIndex, e.target.files[0])
                                                         }
                                                     }}
                                                     className="hidden"
-                                                    id={`covers-${paragraphIndex}`}
+                                                    id={`covers-${contentBlockIndex}`}
                                                 />
 
                                                 <motion.label
                                                     layout={'position'}
-                                                    htmlFor={`covers-${paragraphIndex}`}
+                                                    htmlFor={`covers-${contentBlockIndex}`}
                                                     className={`min-w-[185px] text-center py-2  bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3] transition-colors duration-75 hover:bg-[#c2724f91]`}
                                                 >
-                                                    {content.covers ? 'Change Cover' : 'Upload Cover'}
+                                                    {contentBlock.covers ? 'Change Cover' : 'Upload Cover'}
                                                 </motion.label>
 
                                                 <div
-                                                    className={`w-full flex flex-col items-center gap-6 ${content_blocks[paragraphIndex].covers !== null ? 'block' : 'hidden'}`}
+                                                    className={`w-full flex flex-col items-center gap-6 ${content_blocks[contentBlockIndex].covers !== null ? 'block' : 'hidden'}`}
                                                 >
-                                                    <input type="range" {...register(`content_blocks.${paragraphIndex}.horizontal_position`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(paragraphIndex, true, e)} min="0" max="100" className={`${styles.custom_input_range} `} />
-                                                    <input type="range" {...register(`content_blocks.${paragraphIndex}.vertical_position`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(paragraphIndex, false, e)} min="0" max="100" className={`${styles.custom_input_range} `} />
+                                                    <input type="range" {...register(`content_blocks.${contentBlockIndex}.horizontal_position`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(contentBlockIndex, true, e)} min="0" max="100" className={`${styles.custom_input_range} `} />
+                                                    <input type="range" {...register(`content_blocks.${contentBlockIndex}.vertical_position`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(contentBlockIndex, false, e)} min="0" max="100" className={`${styles.custom_input_range} `} />
                                                 </div>
                                             </motion.div>
 
@@ -446,7 +487,7 @@ export function CreatePostComponent() {
                                             <div className="w-full relative flex-col flex gap-4">
 
                                                 <AnimatePresence mode="popLayout">
-                                                    {content.content.map((content, contentIndex) => {
+                                                    {contentBlock.content.map((content, contentIndex) => {
                                                         return (
                                                             <motion.div
                                                                 key={content.id}
@@ -473,14 +514,14 @@ export function CreatePostComponent() {
                                                                     type="file"
                                                                     onChange={(e) => {
                                                                         if (e.target.files) {
-                                                                            handleImageChange(paragraphIndex, contentIndex, e.target.files?.[0])
+                                                                            handleImageChange(contentBlockIndex, contentIndex, e.target.files?.[0])
                                                                         }
                                                                     }}
                                                                     className="hidden"
-                                                                    id={`image-${paragraphIndex}-${contentIndex}`}
+                                                                    id={`image-${contentBlockIndex}-${contentIndex}`}
                                                                 />
                                                                 <motion.label
-                                                                    htmlFor={`image-${paragraphIndex}-${contentIndex}`}
+                                                                    htmlFor={`image-${contentBlockIndex}-${contentIndex}`}
                                                                     className={`min-w-[185px] text-center py-2  bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3] transition-colors  hover:bg-[#c2724f91]  `}
                                                                 >
                                                                     {content.image ? 'Change Image' : 'Upload Image'}
@@ -488,7 +529,7 @@ export function CreatePostComponent() {
 
                                                                 <motion.textarea
                                                                     placeholder={`Content ${contentIndex + 1}`}
-                                                                    {...register(`content_blocks.${paragraphIndex}.content.${contentIndex}.text`)}
+                                                                    {...register(`content_blocks.${contentBlockIndex}.content.${contentIndex}.content`)}
 
                                                                     className={`text-left text-sm md:text-base text-balance text-white w-full h-[150px] border-2 bg-transparent outline-none resize-none rounded border-white focus:caret-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll}`}
                                                                 />
@@ -496,12 +537,12 @@ export function CreatePostComponent() {
                                                                 <motion.p
                                                                     className="text-orange-300 text-[13px] sm:text-[18px]"
                                                                 >
-                                                                    {errors.content_blocks?.[paragraphIndex]?.content?.[contentIndex]?.text?.message}
+                                                                    {errors.content_blocks?.[contentBlockIndex]?.content?.[contentIndex]?.content?.message}
                                                                 </motion.p>
 
                                                                 <motion.button
                                                                     type="button"
-                                                                    onClick={() => deleteContentBlock(paragraphIndex, contentIndex)}
+                                                                    onClick={() => deleteContentBlock(contentBlockIndex, contentIndex)}
                                                                     className={`min-w-[185px] bg-red-500  py-2 rounded  transition-colors duration-75 hover:bg-[#c40000]  `}
                                                                 >
                                                                     Delete Content Block
@@ -515,7 +556,7 @@ export function CreatePostComponent() {
 
                                             <button
                                                 type="button"
-                                                onClick={() => addContentBlock(paragraphIndex)}
+                                                onClick={() => addContentBlock(contentBlockIndex)}
                                                 className={`min-w-[185px] bg-blue-400 py-2 rounded   hover:bg-[#4576b3]`}
                                             >
                                                 Add Content Block
@@ -523,7 +564,7 @@ export function CreatePostComponent() {
 
                                             <button
                                                 type="button"
-                                                onClick={() => deleteParagraph(paragraphIndex)}
+                                                onClick={() => deleteParagraph(contentBlockIndex)}
                                                 className={`min-w-[185px] bg-rose-500 py-2 rounded  hover:bg-[#9f1239]`}
                                             >
                                                 Delete Paragraph
