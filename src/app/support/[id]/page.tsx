@@ -9,7 +9,7 @@ import { useUserStore } from '@/stores/userStore';
 import { useCookies } from 'react-cookie';
 import { useRouter } from 'next/navigation';
 import { io } from "socket.io-client";
-// import { socket } from '@/app/socket';
+import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { UsersData, Message, ChatData } from "@/lib/types/supportChat";
 
@@ -21,7 +21,8 @@ const MainFont = K2D({
     weight: ["300", "600", "800"],
 });
 
-export default function SupportChatRoom(params: { params: { id: number; }; }) {
+export default function SupportChatRoom() {
+    const params = useParams();
     const [chatData, setChatData] = useState<ChatData>({
         id: '',
         title: '',
@@ -38,9 +39,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
 
     const router = useRouter();
 
-    // const [socket, setSocket] = useState<Socket | null>(null);
     const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
-
 
     useEffect(() => {
         if (!socket) {
@@ -63,6 +62,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
                 socketInstance.disconnect();
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
@@ -77,7 +77,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
             try {
 
                 const payload = {
-                    roomID: params.params.id,
+                    roomID: params?.id,
                 }
 
                 const response = await fetch(`/api/support/getChatRoomAPI`, {
@@ -125,9 +125,7 @@ export default function SupportChatRoom(params: { params: { id: number; }; }) {
             isMounted = false;
         }
 
-    }, [cookies, params.params.id, router, socket]);
-
-    console.log('socket', socket)
+    }, [cookies, params?.id, router, socket]);
 
     return (
         <div className={`w-full ${MainFont.className} text-white caret-transparent`}>

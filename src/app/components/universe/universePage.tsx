@@ -13,7 +13,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import * as Yup from "yup";
 import _ from "lodash";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { supabase } from '@/lib/supabase/supabaseClient'
 import { useParams } from "next/navigation";
 
 const MainFont = K2D({
@@ -143,7 +142,7 @@ export function UniversePageDetailComponent() {
         }
 
         fetchDetailUniverse();
-    }, [router, cookies, params?.id])
+    }, [router, cookies, params, reset])
 
     const editMode = () => {
         if (isDelete === true) {

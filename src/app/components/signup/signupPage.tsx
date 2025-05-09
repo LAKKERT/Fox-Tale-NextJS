@@ -60,13 +60,12 @@ export function SignUpPage() {
                 });
                 if (error) console.error('error occured', error);
                 if (data) {
-                    console.log('succsess', data)
                     const { error } = await supabase
                         .from('user_metadata')
                         .upsert({ userID: data.user?.id, username: data.user?.user_metadata.username, role: 'user' })
                         .select()
+                    if (error) console.error('error occured', error);
                 }
-                if (error) console.error('error occured', error);
                 
             }else {
                 const response = await fetch('/api/users/signupAPI', {

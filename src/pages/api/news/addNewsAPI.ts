@@ -145,7 +145,7 @@ export default async function createNewAPI(req: NextApiRequest, res: NextApiResp
                         const contentBlocks = await conn.query(
                             `INSERT INTO news_content_blocks 
                             (heading, covers, news_id, content_block_order_index, covers_vertical_position, covers_horizontal_position)
-                            VALUES ${data.content_blocks.map((_, i: number) =>
+                            VALUES ${data.content_blocks.map((_: unknown, i: number) =>
                                 `($${i * 6 + 1}, $${i * 6 + 2}, $${i * 6 + 3}, $${i * 6 + 4}, $${i * 6 + 5}, $${i * 6 + 6})`
                             ).join(', ')} RETURNING id`,
                             data.content_blocks.flatMap((p: ContentBlock) => [

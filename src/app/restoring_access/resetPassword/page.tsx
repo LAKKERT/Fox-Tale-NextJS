@@ -21,7 +21,7 @@ export default function ResetPassword() {
         if (cookies.auth_token) {
             router.push('/');
         }
-    },[cookies]);
+    },[cookies, router]);
 
     return (
         <div className={`h-[100vh] w-full bg-[url('/signup/bg-signup.png')] flex justify-center items-center object-cover bg-cover bg-center bg-no-repeat overflow-hidden text-white ${MainFont.className} caret-transparent`}>

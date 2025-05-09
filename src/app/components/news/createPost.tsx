@@ -244,7 +244,7 @@ export function CreatePostComponent() {
                             }
                         })
 
-                        modifiedFormData.map(async (item, index) => {
+                        modifiedFormData.map(async (item) => {
                             const { data: newsContentBlockData, error } = await supabase
                                 .from('content_blocks')
                                 .insert({

@@ -66,7 +66,7 @@ export function RequestsHistoryComponent() {
         };
 
         fetchAllRequests();
-    }, [cookies]);
+    }, [cookies, router]);
 
     useEffect(() => {
         if (Array.isArray(requests)) {

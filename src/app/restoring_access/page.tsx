@@ -48,7 +48,7 @@ export default function SendRequest() {
         if (cookies.auth_token) {
             router.push('/');
         }
-    }, [cookies]);
+    }, [cookies, router]);
 
     const { register, handleSubmit, reset, formState: { errors } } = useForm({
         resolver: yupResolver(validationSchema)

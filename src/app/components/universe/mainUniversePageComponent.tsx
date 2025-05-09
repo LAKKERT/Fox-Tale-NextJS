@@ -57,7 +57,7 @@ export function UniversePageComponent() {
         }
 
         fetchUniverseData();
-    }, [router])
+    }, [router, cookies.auth_token])
 
     return (
         <div className={`min-h-[calc(100vh-100px)] flex flex-col items-center gap-4 mx-auto ${MainFont.className} text-[#F5DEB3] caret-transparent`}>

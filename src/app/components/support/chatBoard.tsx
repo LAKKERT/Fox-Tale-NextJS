@@ -246,6 +246,7 @@ export function ChatBoard({ userData, usersData, chatData, messages, isLoading }
         if (state.isAtBottom) {
             scrollToBottom();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [messages, state.isAtBottom]);
 
     return (

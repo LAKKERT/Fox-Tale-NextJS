@@ -20,20 +20,6 @@ const MainFont = K2D({
     weight: "400",
 });
 
-const validationSchema = Yup.object().shape({
-    title: Yup.string()
-        .trim()
-        .min(4, 'Title must be at least 4 characters')
-        .max(100, 'Title cannot exceed 100 characters')
-        .required('Please enter a title'),
-    description: Yup.string()
-        .trim()
-        .min(10, 'The description must be at least 10 characters long')
-        .max(400, 'The description should not be longer than 400 characters')
-        .matches(/\S/, 'Description cannot be empty or whitespace')
-        .required('Please explain your problem'),
-    file: Yup.mixed(),
-});
 
 interface errorsState {
     max_files: string;
@@ -54,10 +40,25 @@ interface filesProperties {
 interface dataState {
     title: string;
     description: string;
-    file?: File | null;
+    file: File | string | null;
 }
 
 const MAX_FILES_ALLOWED = 3;
+
+const validationSchema = Yup.object().shape({
+    title: Yup.string()
+        .trim()
+        .min(4, 'Title must be at least 4 characters')
+        .max(100, 'Title cannot exceed 100 characters')
+        .required('Please enter a title'),
+    description: Yup.string()
+        .trim()
+        .min(10, 'The description must be at least 10 characters long')
+        .max(400, 'The description should not be longer than 400 characters')
+        .matches(/\S/, 'Description cannot be empty or whitespace')
+        .required('Please explain your problem'),
+    file: Yup.mixed<File | string>().nullable().defined(),
+});
 
 export default function CreateSupportChat() {
     const [isLoading, setIsLoading] = useState(true);

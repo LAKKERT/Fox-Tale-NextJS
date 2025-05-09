@@ -13,7 +13,7 @@ export default function Login() {
         if (cookies.auth_token) {
             router.push('/');
         }
-    }, [cookies]);
+    }, [cookies, router]);
 
     useEffect(() => {
         document.body.style.overflow = "hidden";

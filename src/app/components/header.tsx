@@ -92,7 +92,7 @@ export function Header() {
                 setUserData(null);
             }
         }
-    }, [cookies, setUserData, setIsAuth]);
+    }, [cookies, setUserData, setIsAuth, isAuth, userData]);
 
     return (
         <div 

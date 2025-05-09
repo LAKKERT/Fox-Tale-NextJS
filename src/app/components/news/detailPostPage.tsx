@@ -184,7 +184,7 @@ export function PostDetailComponent() {
         }
 
         fetchPostData()
-    }, [userData, cookies, router, params]);
+    }, [userData, cookies, router, params, reset]);
 
     const editMode = () => {
         if (deletePost === true) {
@@ -362,7 +362,7 @@ export function PostDetailComponent() {
                     .eq('news_id', params?.id)
                 if (removeContentBlockError) console.error(removeContentBlockError)
 
-                formData.content_blocks.map(async (item, index) => {
+                formData.content_blocks.map(async (item) => {
                     const { data: newsContentBlockData, error } = await supabase
                         .from('content_blocks')
                         .insert({

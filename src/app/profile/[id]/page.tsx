@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCookies } from "react-cookie";
 import { useUserStore } from "@/stores/userStore";
+import { useParams } from "next/navigation";
 
 import { Header } from "@/app/components/header";
 import { ChangePassword } from "@/app/components/profiles/passwordChange";
@@ -25,7 +26,8 @@ interface userDataState {
     username: string;
 }
 
-export default function UserProfile({ params }: { params: { id: string } }) {
+export default function UserProfile() {
+    const params = useParams()
     const router = useRouter();
     const userData = useUserStore((state) => state.userData)
     const [isLoading, setIsLoading] = useState(true);
@@ -51,7 +53,7 @@ export default function UserProfile({ params }: { params: { id: string } }) {
                     return;
                 }
     
-                if (userData.id === params.id) {
+                if (userData.id === params?.id) {
                     if (isMounted) {
                         setCurrentUserProfile(userData);
                         setIsLoading(false);
@@ -59,8 +61,8 @@ export default function UserProfile({ params }: { params: { id: string } }) {
                     return;
                 }
     
-                if (userData.role === 'admin' && userData.id !== params.id) {
-                    const response = await fetch(`/api/users/getUserProfileAPI?userID=${params.id}`, {
+                if (userData.role === 'admin' && userData.id !== params?.id) {
+                    const response = await fetch(`/api/users/getUserProfileAPI?userID=${params?.id}`, {
                         headers: { 'Authorization': `Bearer ${cookies.auth_token}` }
                     });
                     

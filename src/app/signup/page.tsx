@@ -26,7 +26,7 @@ export default function SignUp() {
         if (cookies.auth_token) {
             router.push("/");
         }
-    }, [cookies]);
+    }, [cookies, router]);
 
     return (
         <div className=" caret-transparent">

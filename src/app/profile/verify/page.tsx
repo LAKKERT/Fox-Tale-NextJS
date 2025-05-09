@@ -90,7 +90,7 @@ export default function VerifyPage() {
 
         fetchUserEmail();
 
-    }, [router, userData, cookies])
+    }, [router, userData, cookies, profileAccess, setProfileAccess])
 
     const onSubmit = async (data: {code: number}) => {
         try {

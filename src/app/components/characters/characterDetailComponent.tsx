@@ -154,7 +154,7 @@ export function CharacterPageDetailComponent() {
         }
 
         fetchDetailCharacter();
-    }, [router, cookies, params?.id])
+    }, [router, cookies, params, reset])
 
     useEffect(() => {
         const fecthAllUniverses = async () => {
@@ -188,7 +188,7 @@ export function CharacterPageDetailComponent() {
             fecthAllUniverses()
         }
 
-    }, [isEditMode])
+    }, [isEditMode, selectedTerritories])
 
     const editMode = () => {
         if (isDelete === true) {
