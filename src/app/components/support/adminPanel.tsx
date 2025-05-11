@@ -4,6 +4,7 @@ import { useState } from "react";
 import styles from "@/app/styles/home/variables.module.scss";
 import { motion } from 'framer-motion';
 import { ChatData, UsersData } from "@/lib/types/supportChat";
+import { supabase } from "@/lib/supabase/supabaseClient";
 interface Props {
     usersData: UsersData[];
     chatData: ChatData;
@@ -19,21 +20,37 @@ export function AdminPanel({ usersData, chatData, cookies, socket }: Props) {
 
     const closeChatRoom = async () => {
         try {
-            await fetch(`/api/support/closeChatAPI`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    roomID: chatData.id,
-                    cookies: cookies.auth_token,
-                }),
-            });
-    
-            if (socket) {
-                socket.emit('closeChat', chatData);
+            if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                const { error } = await supabase
+                    .from('chat_room')
+                    .update({
+                        status: true
+                    })
+                    .eq('id', chatData.id);
+                if (error) {
+                    console.error(error);
+                } else {
+                    if (socket) {
+                        socket.emit('closeChat', chatData);
+                    }
+                }
+            } else {
+                await fetch(`/api/support/closeChatAPI`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        roomID: chatData.id,
+                        cookies: cookies.auth_token,
+                    }),
+                });
+
+                if (socket) {
+                    socket.emit('closeChat', chatData);
+                }
             }
-        }catch (error) {
+        } catch (error) {
             console.error('Error close chat:', error);
         }
     };
@@ -42,8 +59,8 @@ export function AdminPanel({ usersData, chatData, cookies, socket }: Props) {
         <div className='flex flex-col justify-between bg-[rgba(6,6,6,.65)] rounded-xl px-3 py-3 h-1/2 w-[250px]'>
             <div className={`h-full pb-4 overflow-auto overflow-x-hidden ${styles.custom_chat_scroll}`}>
                 <p className='uppercase text-center'>participants</p>
-                {usersData.map((user) => (
-                    <div key={user.username} className='text-center'>
+                {usersData.map((user, index) => (
+                    <div key={index} className='text-center'>
                         {user.username}
                     </div>
                 ))}

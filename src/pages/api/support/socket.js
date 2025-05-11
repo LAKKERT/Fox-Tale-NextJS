@@ -26,13 +26,14 @@ export default function WebSocketAPI(req, res) {
             if (messageData.status === false) {
                 try {
                     console.info("Message is added", messageData);
-
-                    await saveMessageToDB(
-                        messageData.content || null,
-                        messageData.roomID,
-                        messageData.user_id,
-                        messageData.fileUrl || null
-                    );
+                    if (process.env.NEXT_PUBLIC_ENV !== 'production') {
+                        await saveMessageToDB(
+                            messageData.content || null,
+                            messageData.roomID,
+                            messageData.user_id,
+                            messageData.fileUrl || null
+                        );
+                    }
 
                     io.emit("message", {
                         ...messageData,

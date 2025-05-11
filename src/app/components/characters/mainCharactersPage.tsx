@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useUserStore } from "@/stores/userStore";
 import { motion } from "framer-motion";
 import { K2D } from "next/font/google";
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 const MainFont = K2D({
     style: "normal",
@@ -31,20 +32,34 @@ export function CharacretsPageComponent() {
     useEffect(() => {
         const fetchCharactersData = async () => {
             try {
-                const response = await fetch('/api/characters/fetchAllCharacters', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
+                if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                    const { data, error } = await supabase
+                        .from('characters')
+                        .select('*')
+                    if(error) {
+                        console.error(error);
+                    }else {
+                        setcharactersData(data)
+                        setTimeout(() => {
+                            setIsLoading(false)
+                        }, 300)
                     }
-                })
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    setcharactersData(result.data);
-                    setIsLoading(false);
-                } else {
-                    console.error(`Error fetching data`);
+                }else {
+                    const response = await fetch('/api/characters/fetchAllCharacters', {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+    
+                    const result = await response.json();
+    
+                    if (response.ok) {
+                        setcharactersData(result.data);
+                        setIsLoading(false);
+                    } else {
+                        console.error(`Error fetching data`);
+                    }
                 }
             } catch (error) {
                 console.error(`Error fetching data: ${error}`);

@@ -4,12 +4,13 @@ import Image from "next/image";
 import { useEffect, useState, useRef, useCallback, useReducer } from 'react';
 import styles from "@/app/styles/home/variables.module.scss";
 import { ChatData, UserData, UsersData, Message } from "@/lib/types/supportChat";
+import { supabase } from '@/lib/supabase/supabaseClient';
 
 interface Props {
     userData: UserData;
     usersData: UsersData[];
     chatData: ChatData;
-    messages:  Message[];
+    messages: Message[];
     isLoading: boolean;
 }
 
@@ -68,18 +69,29 @@ export function ChatBoard({ userData, usersData, chatData, messages, isLoading }
                 };
 
                 try {
-                    const response = await fetch('/api/support/lastMessageAPI', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(payload),
-                    });
-
-                    if (response.ok) {
-                        console.log('Last message sent');
+                    if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                        const { error } = await supabase
+                            .from('last_message')
+                            .insert({
+                                last_message_id: state.lastSeenMessage,
+                                user_id: userData?.id,
+                                room_id: chatData.id,
+                            })
+                        if (error) console.error(error);
                     } else {
-                        console.error('Error sending last message');
+                        const response = await fetch('/api/support/lastMessageAPI', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(payload),
+                        });
+
+                        if (response.ok) {
+                            console.log('Last message sent');
+                        } else {
+                            console.error('Error sending last message');
+                        }
                     }
                 } catch (errors) {
                     console.error('Error sending last message:', errors);
@@ -106,24 +118,38 @@ export function ChatBoard({ userData, usersData, chatData, messages, isLoading }
             }
 
             try {
-                const lastSeenMessage = await fetch(`/api/support/lastMessageAPI?userID=${userData?.id}&roomID=${chatData.id}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
+                if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                    const { data, error } = await supabase
+                        .from('last_message')
+                        .select('last_message_id')
+                        .eq('user_id', userData.id)
+                        .eq('room_id', chatData.id)
+                        .single();
+                    if (error) {
+                        console.error('last message',error);
+                    } else {
+                        messageRefs.current[data.last_message_id]?.scrollIntoView({ behavior: "smooth" });
                     }
-                });
-
-                if (lastSeenMessage.status === 204 || lastSeenMessage.headers.get('Content-Length') === '0') {
-                    console.warn('No last seen message found for this user and room');
-                    return;
-                }
-
-                const lastSeenMessageData = await lastSeenMessage.json();
-
-                if (lastSeenMessage.ok && lastSeenMessageData.last_message_id !== undefined) {
-                    messageRefs.current[lastSeenMessageData.last_message_id]?.scrollIntoView({ behavior: "smooth" });
                 } else {
-                    console.warn('Error fetching last seen message:');
+                    const lastSeenMessage = await fetch(`/api/support/lastMessageAPI?userID=${userData?.id}&roomID=${chatData.id}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    if (lastSeenMessage.status === 204 || lastSeenMessage.headers.get('Content-Length') === '0') {
+                        console.warn('No last seen message found for this user and room');
+                        return;
+                    }
+
+                    const lastSeenMessageData = await lastSeenMessage.json();
+
+                    if (lastSeenMessage.ok && lastSeenMessageData.last_message_id !== undefined) {
+                        messageRefs.current[lastSeenMessageData.last_message_id]?.scrollIntoView({ behavior: "smooth" });
+                    } else {
+                        console.warn('Error fetching last seen message:');
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching last seen message:', error);

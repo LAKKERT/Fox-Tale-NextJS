@@ -14,6 +14,7 @@ import * as Yup from "yup";
 import _ from "lodash";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useParams } from "next/navigation";
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 const MainFont = K2D({
     style: "normal",
@@ -122,32 +123,73 @@ export function CharacterPageDetailComponent() {
         const fetchDetailCharacter = async () => {
             if (!params) return;
             try {
-                const response = await fetch(`/api/characters/fetchDetailCharacterAPI?characterID=${params.id}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${cookies.auth_token}`
+                if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                    const { data: characterData, error } = await supabase
+                        .from('characters')
+                        .select(`
+                            id,
+                            name,
+                            description,
+                            cover,
+                            territories:character_territories!inner(
+                            universe:territory_id(
+                                id,
+                                name,
+                                description,
+                                cover
+                            )
+                            )
+                        `)
+                        .eq('id', params?.id)
+                        .single();
+
+                    if (error) {
+                        console.error('Ошибка загрузки персонажа:', error);
+                        return;
+                    } else {
+                        const formattedData = {
+                            ...characterData,
+                            territories: characterData.territories.map(t => t.universe).flat()
+                        };
+                        reset({
+                            name: formattedData.name,
+                            description: formattedData.description,
+                            cover: formattedData.cover
+                        })
+                        setCharacterData(formattedData);
+                        setTerritories(formattedData.territories);
+                        setSelectedTerritories(formattedData.territories.map((item: { id: number }) => item.id));
+
+                        setIsLoading(false);
                     }
-                })
 
-                const result = await response.json();
-
-                if (response.ok) {
-                    setCharacterData(result.data[0]);
-                    setTerritories(result.data[0].territories);
-                    setSelectedTerritories(result.data[0].territories.map((item: {id: number}) => item.id));
-                    setIsLoading(false);
-
-                    reset({
-                        name: result.data[0].name,
-                        description: result.data[0].description,
-                        cover: result.data[0].cover,
-                    })
                 } else {
-                    router.push('/characters');
-                    console.log('error occurred');
-                }
+                    const response = await fetch(`/api/characters/fetchDetailCharacterAPI?characterID=${params.id}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${cookies.auth_token}`
+                        }
+                    })
 
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        setCharacterData(result.data[0]);
+                        setTerritories(result.data[0].territories);
+                        setSelectedTerritories(result.data[0].territories.map((item: { id: number }) => item.id));
+                        setIsLoading(false);
+
+                        reset({
+                            name: result.data[0].name,
+                            description: result.data[0].description,
+                            cover: result.data[0].cover,
+                        })
+                    } else {
+                        router.push('/characters');
+                        console.error('error occurred');
+                    }
+                }
             } catch (error) {
                 console.error(error);
             }
@@ -159,26 +201,38 @@ export function CharacterPageDetailComponent() {
     useEffect(() => {
         const fecthAllUniverses = async () => {
             try {
-                const response = await fetch(`/api/universe/fetchUniverseData`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
+                if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                    const { data, error } = await supabase
+                        .from('universe')
+                        .select('*')
+                    if (error) {
+                        console.error(error);
+                    } else {
+                        const cleanedTer = data.filter((item) => !selectedTerritories.includes(item.id))
+                        setAllTerritories(cleanedTer)
+                        setAllUniverses(data)
                     }
-                })
-
-                const result = await response.json();
-
-                const cleanedData = result.data.filter((item: {id: number}) =>
-                    !selectedTerritories.includes(item.id)
-                );
-
-                if (response.ok) {
-                    setAllUniverses(result.data)
-                    setAllTerritories(cleanedData);
                 } else {
-                    console.log('error occurred');
-                }
+                    const response = await fetch(`/api/universe/fetchUniverseData`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    })
 
+                    const result = await response.json();
+
+                    const cleanedData = result.data.filter((item: { id: number }) =>
+                        !selectedTerritories.includes(item.id)
+                    );
+
+                    if (response.ok) {
+                        setAllUniverses(result.data)
+                        setAllTerritories(cleanedData);
+                    } else {
+                        console.error('error occurred');
+                    }
+                }
             } catch (error) {
                 console.error(error);
             }
@@ -256,26 +310,63 @@ export function CharacterPageDetailComponent() {
 
             data.territories = selectedTerritories
 
-            const payload = {
-                ...data,
-                characterID: params?.id
-            }
+            if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                const { error } = await supabase
+                    .from('characters')
+                    .update({
+                        name: data.name,
+                        description: data.description,
+                        cover: data.cover
+                    })
+                    .eq('id', params?.id)
 
-            const response = await fetch(`/api/characters/charactersAPI`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${cookies.auth_token}`
-                },
-                body: JSON.stringify(payload)
-            })
+                if (error) {
+                    console.error(error)
+                } else {
+                    const { error: deleteTerritories } = await supabase
+                        .from('character_territories')
+                        .delete()
+                        .eq('character_id', params?.id);
 
-            if (response.ok) {
-                location.reload()
+                    if (deleteTerritories) {
+                        console.error(error);
+                    } else {
+                        for (const item of data.territories) {
+                            const { error } = await supabase
+                                .from('character_territories')
+                                .insert({
+                                    character_id: params?.id,
+                                    territory_id: item
+                                });
+                            if (error) {
+                                console.error(error);
+                            } else {
+                                window.location.reload();
+                            }
+                        }
+                    }
+                }
             } else {
-                console.log('error occurred');
-            }
+                const payload = {
+                    ...data,
+                    characterID: params?.id
+                }
 
+                const response = await fetch(`/api/characters/charactersAPI`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${cookies.auth_token}`
+                    },
+                    body: JSON.stringify(payload)
+                })
+
+                if (response.ok) {
+                    location.reload()
+                } else {
+                    console.error('error occurred');
+                }
+            }
         } catch (error) {
             console.error(error);
         }
@@ -283,18 +374,26 @@ export function CharacterPageDetailComponent() {
 
     const onDelete = async () => {
         try {
-            const response = await fetch(`/api/characters/charactersAPI?characterID=${params?.id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${cookies.auth_token}`
-                }
-            })
-
-            if (response.ok) {
-                router.push('/characters');
+            if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                const { error } = await supabase
+                    .from('characters')
+                    .delete()
+                    .eq('id', params?.id)
+                if (error) console.error(error)
             } else {
-                console.log('error occurred');
+                const response = await fetch(`/api/characters/charactersAPI?characterID=${params?.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${cookies.auth_token}`
+                    }
+                })
+
+                if (response.ok) {
+                    router.push('/characters');
+                } else {
+                    console.error('error occurred');
+                }
             }
         } catch (error) {
             console.error(error);
@@ -521,7 +620,7 @@ export function CharacterPageDetailComponent() {
                                         }}
                                     />
                                 </motion.div>
-                                
+
                                 <div>
                                     <motion.p
                                         initial={{ opacity: 0, height: 0 }}
@@ -562,11 +661,13 @@ export function CharacterPageDetailComponent() {
                                                                     whileTap={{ scale: 0.95 }}
 
                                                                     onClick={() => {
-                                                                        const newValue = field.value.includes(item.id)
-                                                                            ? field.value.filter(value => value !== item.id)
-                                                                            : [...field.value, item.id]
-                                                                        selectCardsHandler(item.id)
-                                                                        field.onChange(newValue)
+                                                                        if (isEditMode) {
+                                                                            const newValue = field.value.includes(item.id)
+                                                                                ? field.value.filter(value => value !== item.id)
+                                                                                : [...field.value, item.id]
+                                                                            selectCardsHandler(item.id)
+                                                                            field.onChange(newValue)
+                                                                        }
                                                                     }}
                                                                     className={`border-4 rounded-lg flex justify-center gap-3 ${isEditMode ? 'z-10' : 'z-0'}`}
                                                                 >
@@ -660,11 +761,13 @@ export function CharacterPageDetailComponent() {
                                                                             }}
                                                                             whileTap={{ scale: 0.95 }}
                                                                             onClick={() => {
-                                                                                const newValue = field.value.includes(item.id)
-                                                                                    ? field.value.filter(value => value !== item.id)
-                                                                                    : [...field.value, item.id]
-                                                                                selectCardsHandler(item.id)
-                                                                                field.onChange(newValue);
+                                                                                if (isEditMode) {
+                                                                                    const newValue = field.value.includes(item.id)
+                                                                                        ? field.value.filter(value => value !== item.id)
+                                                                                        : [...field.value, item.id]
+                                                                                    selectCardsHandler(item.id)
+                                                                                    field.onChange(newValue);
+                                                                                }
                                                                             }}
                                                                             className={`border-4 rounded-lg flex justify-center gap-3 ${isEditMode ? 'z-10' : 'z-0'}`}
                                                                         >

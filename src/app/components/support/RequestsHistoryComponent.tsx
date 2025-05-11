@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { K2D } from "next/font/google";
+import { useUserStore } from "@/stores/userStore";
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 const ITEMS_PER_PAGE = 6;
 
@@ -28,45 +30,56 @@ export function RequestsHistoryComponent() {
     const [currentPage, setCurrentPage] = useState(1);
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
+    const userData = useUserStore((state) => state.userData);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredRequests, setFilteredRequests] = useState<requestsType[]>([]);
 
     useEffect(() => {
         const fetchAllRequests = async () => {
-            if (!cookies.auth_token) {
-                router.push("/");
-                return;
-            }
-
             try {
-                const response = await fetch('/api/support/getRequestsHistoryAPI', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${cookies.auth_token}`
+                if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                    const { data, error } = await supabase
+                        .from('chat_room')
+                        .select('*')
+                        .eq('author', userData?.id)
+                    if (error) {
+                        console.error(error)
+                    } else {
+                        setRequests(data);
+                        setTimeout(() => {
+                            setIsLoading(false);
+                        }, 300);
                     }
-                })
 
-                const result = await response.json();
-
-                if (response.ok) {
-                    setRequests(result.result || []);
-                    setTimeout(() => {
-                        setIsLoading(false);
-                    }, 300)
                 } else {
-                    console.error('Error fetching data');
-                    router.push(result.redirectUrl);
-                }
+                    const response = await fetch('/api/support/getRequestsHistoryAPI', {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${cookies.auth_token}`
+                        }
+                    })
 
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        setRequests(result.result || []);
+                        setTimeout(() => {
+                            setIsLoading(false);
+                        }, 300);
+                    } else {
+                        console.error('Error fetching data');
+                        router.push(result.redirectUrl);
+                    }
+                }
             } catch (error) {
                 console.error("Error fetching requests:", error);
             }
         };
 
         fetchAllRequests();
-    }, [cookies, router]);
+    }, [cookies, router, userData]);
 
     useEffect(() => {
         if (Array.isArray(requests)) {

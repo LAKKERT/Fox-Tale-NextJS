@@ -33,26 +33,26 @@ export default function UserProfile() {
     const [isLoading, setIsLoading] = useState(true);
     const [cookies] = useCookies(['auth_token']);
     const [currentUserProfile, setCurrentUserProfile] = useState<userDataState | null>(null);
-    
+
     const {
         profileAccess,
     } = useUserStore();
 
     useEffect(() => {
         let isMounted = true;
-    
+
         const loadProfile = async () => {
             try {
                 if (!userData) {
                     // router.push('/');
                     return;
                 };
-    
+
                 if (!profileAccess && userData.role !== 'admin') {
                     router.push('/profile/verify');
                     return;
                 }
-    
+
                 if (userData.id === params?.id) {
                     if (isMounted) {
                         setCurrentUserProfile(userData);
@@ -60,14 +60,14 @@ export default function UserProfile() {
                     }
                     return;
                 }
-    
+
                 if (userData.role === 'admin' && userData.id !== params?.id) {
                     const response = await fetch(`/api/users/getUserProfileAPI?userID=${params?.id}`, {
                         headers: { 'Authorization': `Bearer ${cookies.auth_token}` }
                     });
-                    
+
                     if (!response.ok) throw new Error('Profile not found');
-                    
+
                     const { profile } = await response.json();
                     if (isMounted) {
                         setCurrentUserProfile(profile);
@@ -75,9 +75,9 @@ export default function UserProfile() {
                     }
                     return;
                 }
-    
+
                 router.push('/');
-    
+
             } catch (error) {
                 console.error(error);
                 if (isMounted) router.push('/');
@@ -87,7 +87,7 @@ export default function UserProfile() {
         setTimeout(() => {
             loadProfile();
         }, 1000)
-    
+
         return () => {
             isMounted = false;
         };

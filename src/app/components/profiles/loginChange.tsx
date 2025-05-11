@@ -4,6 +4,7 @@ import { useState } from "react";
 import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { motion } from "framer-motion";
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 interface userData {
     login: string;
@@ -13,8 +14,8 @@ const validationSchema = Yup.object().shape({
     login: Yup.string().min(4, "Login must be at least 4 characters").required("Enter your new login")
 })
 
-export function ChangeLogin({ userData }: {userData: {id: string}}) {
-    const [serverError, setServerError] = useState<{login: string}>({
+export function ChangeLogin({ userData }: { userData: { id: string } }) {
+    const [serverError, setServerError] = useState<{ login: string }>({
         login: "",
     });
     const [serverMessage, setServerMessage] = useState("")
@@ -25,29 +26,38 @@ export function ChangeLogin({ userData }: {userData: {id: string}}) {
 
     const onSubmit = async (data: userData) => {
         try {
-            const payload = {
-                ...data,
-                id: userData.id,
-            }
+            if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                const { error } = await supabase.auth.updateUser({
+                    data: { username: `${data.login}` }
+                })
 
-            const response = await fetch('/api/profile/changeLogin', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
+                if (error) console.error(error)
 
-            const result = await response.json();
-
-            if (response.ok) {
-                setServerMessage(result.message)
-                reset()
             } else {
-                console.error('Error:', result.message);
-                setServerError(result.errors)
-                setServerMessage(result.message)
-                reset()
+                const payload = {
+                    ...data,
+                    id: userData.id,
+                }
+
+                const response = await fetch('/api/profile/changeLogin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    setServerMessage(result.message)
+                    reset()
+                } else {
+                    console.error('Error:', result.message);
+                    setServerError(result.errors)
+                    setServerMessage(result.message)
+                    reset()
+                }
             }
         } catch (errors) {
             console.error('Error:', errors);

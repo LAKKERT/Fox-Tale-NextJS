@@ -6,6 +6,7 @@ import Image from "next/image";
 import styles from "@/app/styles/home/variables.module.scss";
 import { motion } from "framer-motion";
 import { ChatData } from "@/lib/types/supportChat";
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 const MAX_FILES_ALLOWED = 3;
 
@@ -107,6 +108,18 @@ export function ChatInputField({chatData, socket, userID}: Props) {
             socket.emit("message", messageData);
             setSelectedFiles([]);
             setMessage("");
+            if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                const { error } = await supabase
+                    .from('messages')
+                    .insert({
+                        room_id: chatData?.id,
+                        user_id: userID,
+                        message: messageData.content,
+                        sent_at: new Date().toISOString(),
+                        file_url: fileUrl,
+                    });
+                if (error) console.error(error);
+            }
         }
     }
 

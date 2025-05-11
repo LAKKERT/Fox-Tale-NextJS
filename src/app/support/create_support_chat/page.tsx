@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useCookies } from "react-cookie";
 import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from 'uuid';
 import * as Yup from "yup";
 import { saveFile } from '@/pages/api/support/sendMessageAPI';
 import styles from "@/app/styles/home/variables.module.scss";
@@ -13,6 +14,8 @@ import { motion } from "framer-motion";
 import { ChangeEvent } from 'react';
 
 import { K2D } from "next/font/google";
+import { supabase } from "@/lib/supabase/supabaseClient";
+import { useUserStore } from "@/stores/userStore";
 
 const MainFont = K2D({
     style: "normal",
@@ -65,15 +68,16 @@ export default function CreateSupportChat() {
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [clientErrors, setClientErrors] = useState<errorsState | null>(null);
     const [serverErrors, setServerErrors] = useState<serverErrors | null>(null);
+    const userData = useUserStore((state) => state.userData);
 
     const [cookies] = useCookies();
     const router = useRouter();
 
     useEffect(() => {
-        if (!cookies.auth_token) {
-            router.push('/login')
-        }
-        
+        // if (!cookies.auth_token) {
+        //     router.push('/login')
+        // }
+
         const timeout = setTimeout(() => {
             setIsLoading(false);
         }, 300)
@@ -88,45 +92,67 @@ export default function CreateSupportChat() {
 
         const fileURL = [];
 
-        if (selectedFiles) {
-            const filesData = await processFiles(selectedFiles);
-            const fullFileName = fetchFileData(selectedFiles);
-
-            for (let i = 0; i < selectedFiles.length; i++) {
-                const fileName = `${Date.now()}_${fullFileName[i].name}.${fullFileName[i].extension}`;
-                fileURL.push(`/uploads/${fileName}`);
-            }
-
-            try {
-                await saveFile(filesData, fileURL);
-            } catch (error) {
-                console.error(error);
-            }
-        }
         try {
-            const payload = {
-                ...data,
-                cookies: cookies,
-                files: fileURL,
+            let filesData
+            let fullFileName
+            if (selectedFiles) {
+                filesData = await processFiles(selectedFiles);
+                fullFileName = fetchFileData(selectedFiles);
+
+                for (let i = 0; i < selectedFiles.length; i++) {
+                    const fileName = `${Date.now()}_${fullFileName[i].name}.${fullFileName[i].extension}`;
+                    fileURL.push(`/uploads/${fileName}`);
+                }
+
+                try {
+                    await saveFile(filesData, fileURL);
+                } catch (error) {
+                    console.error(error);
+                }
             }
 
-            const response = await fetch('/api/support/createSupportChatAPI', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload)
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                router.push(result.redirectUrl);
+            if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                const { data: chatData, error } = await supabase
+                    .from('chat_room')
+                    .insert({
+                        id: uuidv4(),
+                        title: data.title,
+                        description: data.description,
+                        files: fileURL,
+                        created_at: new Date().toISOString(),
+                        author: userData?.id
+                    })
+                    .select('id')
+                    .single();
+                if (error) {
+                    console.error(error);
+                } else {
+                    router.push(`/support/${chatData.id}`)
+                }
             } else {
-                console.log('error creating chat')
-                setServerErrors(result.errors)
-            }
+                const payload = {
+                    ...data,
+                    cookies: cookies,
+                    files: fileURL,
+                }
 
+                const response = await fetch('/api/support/createSupportChatAPI', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    router.push(result.redirectUrl);
+                } else {
+                    console.log('error creating chat')
+                    setServerErrors(result.errors)
+                }
+            }
         } catch (errors) {
             console.error("Error:", errors);
         }
@@ -241,13 +267,13 @@ export default function CreateSupportChat() {
                                     >
                                         {errors.description?.message || serverErrors?.description}
                                     </motion.p>
-                                    <textarea rows={4} maxLength={1000} placeholder="DESCRIBE PROBLEM..."   
+                                    <textarea rows={4} maxLength={1000} placeholder="DESCRIBE PROBLEM..."
                                         {...register("description", {
-                                        onChange: (e) => {
-                                            handleInputChange(e);
-                                        }
-                                    })} 
-                                    className={`focus:caret-white w-full bg-transparent outline-none font-extralight tracking-[1px] py-2 px-3 text-balance resize-none border-2 rounded text-base md:text-lg ${styles.custom_scroll} border-[#F5DEB3]`} />
+                                            onChange: (e) => {
+                                                handleInputChange(e);
+                                            }
+                                        })}
+                                        className={`focus:caret-white w-full bg-transparent outline-none font-extralight tracking-[1px] py-2 px-3 text-balance resize-none border-2 rounded text-base md:text-lg ${styles.custom_scroll} border-[#F5DEB3]`} />
                                 </div>
 
                                 <div className={`w-full flex flex-col items-start ${selectedFiles?.length === 0 || selectedFiles === null ? null : 'gap-2'}`}>

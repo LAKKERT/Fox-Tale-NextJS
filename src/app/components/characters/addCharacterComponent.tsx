@@ -12,6 +12,7 @@ import Image from "next/image";
 import { K2D } from "next/font/google";
 import { PT_Serif } from "next/font/google";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 const MainFont = K2D({
     style: "normal",
@@ -72,7 +73,7 @@ export function AddCharacter() {
     useEffect(() => {
         let isMounted = true;
         const checkAccess = () => {
-            if (!cookies.auth_token || (userData && userData.role !== 'admin')) {
+            if (userData && userData.role !== 'admin') {
                 router.push('/');
                 if (isMounted) setIsLoading(true);
                 return;
@@ -96,21 +97,34 @@ export function AddCharacter() {
     useEffect(() => {
         const getTerritories = async () => {
             try {
-                const response = await fetch('/api/universe/fetchUniverseData', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
+                if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                    const { data, error } = await supabase
+                        .from('universe')
+                        .select('id, name, cover')
+                    if (error) {
+                        console.error(error);
+                    } else {
+                        setAllTerritories(data);
+                        setAllUniverses(data)
+                        setIsLoading(false);
                     }
-                })
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    setAllTerritories(result.data);
-                    setAllUniverses(result.data);
-                    setIsLoading(false);
                 } else {
-                    console.error('Error fetching territories');
+                    const response = await fetch('/api/universe/fetchUniverseData', {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        setAllTerritories(result.data);
+                        setAllUniverses(result.data);
+                        setIsLoading(false);
+                    } else {
+                        console.error('Error fetching territories');
+                    }
                 }
 
             } catch (error) {
@@ -127,30 +141,60 @@ export function AddCharacter() {
             if (selectedFile !== null) {
                 fileProperty = filesProperties(selectedFile);
                 fileData = await processFile(selectedFile);
-    
+
                 saveFile(fileData, fileProperty);
             }
 
             data.territories = selectedTerritories;
 
-            const payload = {
-                ...data,
-                coverName: fileProperty
-            };
+            if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                const { data: characterData, error } = await supabase
+                    .from('characters')
+                    .insert({
+                        name: data.name,
+                        description: data.description,
+                        cover: fileProperty
+                    })
+                    .select('id')
+                    .single();
+                if (error) {
+                    console.error(error)
+                } else {
+                    for (const territory of data.territories) {
+                        const { error } = await supabase
+                            .from('character_territories')
+                            .insert({
+                                territory_id: territory,
+                                character_id: characterData.id
+                            });
 
-            const response = await fetch(`/api/characters/charactersAPI`, {
-                method: 'POST',
-                headers: {
-                    'Content-type': 'application/json',
-                    'Authorization': `Bearer ${cookies.auth_token}`
-                },
-                body: JSON.stringify(payload),
-            });
-
-            if (response.ok) {
-                router.push(`/characters`);
+                        if (error) {
+                            console.error(error);
+                        }else {
+                            router.push('/characters')
+                        }
+                    }
+                }
             } else {
-                console.error('error occurred')
+                const payload = {
+                    ...data,
+                    coverName: fileProperty
+                };
+
+                const response = await fetch(`/api/characters/charactersAPI`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-type': 'application/json',
+                        'Authorization': `Bearer ${cookies.auth_token}`
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                if (response.ok) {
+                    router.push(`/characters`);
+                } else {
+                    console.error('error occurred')
+                }
             }
         } catch (error) {
             console.error(error)
@@ -214,6 +258,7 @@ export function AddCharacter() {
         });
     };
 
+    console.log(allTerritories)
     return (
         <div className={`min-h-[calc(100vh-100px)] flex flex-col items-center mx-auto ${MainFont.className} text-[#F5DEB3] caret-transparent`}>
             {isLoading ? (

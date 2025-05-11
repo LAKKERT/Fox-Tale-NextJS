@@ -12,6 +12,7 @@ import Image from "next/image";
 import { K2D } from "next/font/google";
 import { PT_Serif } from "next/font/google";
 import { motion } from "framer-motion";
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 const MainFont = K2D({
     style: "normal",
@@ -55,7 +56,7 @@ export function AddUniverse() {
     })
 
     useEffect(() => {
-        if (!cookies.auth_token || (userData && userData.role !== 'admin')) {
+        if (userData && userData.role !== 'admin') {
             router.push('/');
             return;
         }
@@ -86,24 +87,39 @@ export function AddUniverse() {
                 saveFile(fileData, fileProperty);
             }
 
-            const payload = {
-                ...data,
-                coverName: fileProperty
-            }
-
-            const response = await fetch(`/api/universe/universeAPI`, {
-                method: 'POST',
-                headers: {
-                    'Content-type': 'application/json',
-                    'Authorization': `Bearer ${cookies.auth_token}`
-                },
-                body: JSON.stringify(payload),
-            })
-
-            if (response.ok) {
-                router.push(`/universe`);
+            if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                const {error} = await supabase
+                    .from('universe')
+                    .insert({
+                        name: data.name,
+                        description: data.description,
+                        cover: fileProperty
+                    });
+                if (error) {
+                    console.error(error);
+                } else {
+                    router.push('/universe');
+                }
             } else {
-                console.error('error occurred')
+                const payload = {
+                    ...data,
+                    coverName: fileProperty
+                }
+    
+                const response = await fetch(`/api/universe/universeAPI`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-type': 'application/json',
+                        'Authorization': `Bearer ${cookies.auth_token}`
+                    },
+                    body: JSON.stringify(payload),
+                })
+    
+                if (response.ok) {
+                    router.push(`/universe`);
+                } else {
+                    console.error('error occurred')
+                }
             }
         } catch (error) {
             console.error(error)

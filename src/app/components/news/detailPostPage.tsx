@@ -422,23 +422,37 @@ export function PostDetailComponent() {
 
     const handleDeletePost = async () => {
         try {
-            const response = await fetch(`/api/news/addNewsAPI`, {
-                method: 'DELETE',
-                headers: {
-                    'content-type': 'application/json',
-                    'Authorization': `Bearer ${cookies.auth_token}`
-                },
-                body: JSON.stringify({ postID: params?.id })
-            });
+            if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                const { error } = await supabase
+                    .from('news')
+                    .delete()
+                    .eq('id', params?.id)
+                if (error) console.error(error);
+                const { error: contentBlocksError } = await supabase
+                    .from('content_blocks')
+                    .delete()
+                    .eq('news_id', params?.id)
+                if (contentBlocksError) console.error(contentBlocksError);
 
-            const result = await response.json();
-
-            if (response.ok) {
-                router.push(result.redirectUrl);
+                router.push('/news')
             } else {
-                console.error('Error deleting post:');
+                const response = await fetch(`/api/news/addNewsAPI`, {
+                    method: 'DELETE',
+                    headers: {
+                        'content-type': 'application/json',
+                        'Authorization': `Bearer ${cookies.auth_token}`
+                    },
+                    body: JSON.stringify({ postID: params?.id })
+                });
+    
+                const result = await response.json();
+    
+                if (response.ok) {
+                    router.push(result.redirectUrl);
+                } else {
+                    console.error('Error deleting post:');
+                }
             }
-
         } catch (error) {
             console.error('Error deleting post:', error);
         }

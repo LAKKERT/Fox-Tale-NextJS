@@ -8,6 +8,7 @@ import { useCookies } from "react-cookie";
 import { motion } from "framer-motion";
 import { K2D } from "next/font/google";
 import { useUserStore } from "@/stores/userStore";
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 
 const MainFont = K2D({
@@ -35,21 +36,35 @@ export function UniversePageComponent() {
     useEffect(() => {
         const fetchUniverseData = async () => {
             try {
-                const response = await fetch('/api/universe/fetchUniverseData', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${cookies.auth_token}`
-                    }
-                })
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    setUniverseData(result.data);
-                    setIsLoading(false);
+                if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                    const { data, error } = await supabase
+                        .from('universe')
+                        .select('id, name, description, cover')
+                    if (error) console.error(error)
+                    if(data) {
+                        setUniverseData(data);
+                        setTimeout(() => {
+                            setIsLoading(false);
+                        }, 300)
+                    };
+                    
                 } else {
-                    console.error(`Error fetching data`);
+                    const response = await fetch('/api/universe/fetchUniverseData', {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${cookies.auth_token}`
+                        }
+                    })
+    
+                    const result = await response.json();
+    
+                    if (response.ok) {
+                        setUniverseData(result.data);
+                        setIsLoading(false);
+                    } else {
+                        console.error(`Error fetching data`);
+                    }
                 }
             } catch (error) {
                 console.error(`Error fetching data: ${error}`);

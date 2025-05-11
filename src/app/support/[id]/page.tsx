@@ -4,7 +4,7 @@ import { Header } from '@/app/components/header';
 import { ChatBoard } from '@/app/components/support/chatBoard';
 import { ChatInputField } from '@/app/components/support/chatInputField';
 import { AdminPanel } from '@/app/components/support/adminPanel';
-import { useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import { useUserStore } from '@/stores/userStore';
 import { useCookies } from 'react-cookie';
 import { useRouter } from 'next/navigation';
@@ -14,6 +14,7 @@ import { motion } from 'framer-motion';
 import { UsersData, Message, ChatData } from "@/lib/types/supportChat";
 
 import { K2D } from "next/font/google";
+import { supabase } from '@/lib/supabase/supabaseClient';
 
 const MainFont = K2D({
     style: "normal",
@@ -55,7 +56,7 @@ export default function SupportChatRoom() {
             });
 
             socketInstance.on('closeChat', (chatData) => {
-                setChatData({...chatData})
+                setChatData({ ...chatData })
             });
 
             return () => {
@@ -69,50 +70,149 @@ export default function SupportChatRoom() {
         let isMounted = true;
 
         const fetchData = async () => {
-            if (!cookies.auth_token) {
-                return router.push('/');
+            // if (!cookies.auth_token) {
+            //     return router.push('/');
 
-            }
+            // }
 
             try {
-
-                const payload = {
-                    roomID: params?.id,
-                }
-
-                const response = await fetch(`/api/support/getChatRoomAPI`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${cookies.auth_token}`
-                    },
-                    body: JSON.stringify(payload)
-                })
-
-                const result = await response.json();
-
-                if (!isMounted) return;
-
-                if (response.ok) {
-                    setIsLoading(false);
-                    setChatData(result.chatData)
-                    setUsersData(result.usersData);
-                    setMessages(result.messages);
-
-                    if (socket) {
-                        const participantsList = {
-                            participants: result.usersData
-                        }
-    
-                        socket.emit('participants', participantsList)
+                if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                    const { data, error } = await supabase
+                        .from('chat_room')
+                        .select(`
+                            id,
+                            title,
+                            created_at,
+                            description,
+                            status,
+                            files,
+                            messages ( 
+                                room_id,
+                                user_id,
+                                message:message,
+                                sent_at,
+                                file_url
+                            )
+                        `)
+                        .eq('id', params?.id)
+                        .single();
+                    if (error) {
+                        console.error(error);
+                        return;
                     }
 
+                    const { data: allParticipantData } = await supabase
+                        .from('participants')
+                        .select('*')
+                        .eq('user_id', userData?.id)
+                        .eq('room_id', params?.id)
+                        .single();
+
+                        
+                    if (data && allParticipantData) {
+                        if (allParticipantData === null) {
+                            const { error } = await supabase
+                                .from('participants')
+                                .insert({
+                                    user_id: userData?.id,
+                                    room_id: params?.id
+                                });
+    
+                            if (error) console.error(error);
+                        }
+                        const { data: participantsData, error: participantsError } = await supabase
+                            .from('participants')
+                            .select('user_id')
+                            .eq('room_id', params?.id);
+
+                        if (participantsError) {
+                            console.error(participantsError);
+                            return;
+                        }
+
+                        const userIds = participantsData.map((participant: { user_id: string }) => participant.user_id);
+
+                        const { data: usersData, error: usersError } = await supabase
+                            .from('user_metadata')
+                            .select('id: userID, username, role')
+                            .in('userID', userIds);
+
+                        if (usersError) {
+                            console.error(usersError);
+                            return;
+                        }
+
+                        const participants = usersData;
+                        setUsersData(participants)
+
+                        const formattedData = {
+                            ...data,
+                            messages: data.messages.map(msg => ({
+                                ...msg,
+                                content: "",
+                                unreaded: false,
+                            }))
+                        };
+                        setChatData({
+                            id: formattedData.id,
+                            title: formattedData.title,
+                            created_at: formattedData.created_at,
+                            description: formattedData.description,
+                            status: formattedData.status,
+                            files: formattedData.files,
+                        });
+                        setMessages(formattedData.messages)
+                        setIsLoading(false);
+
+                        if (error) {
+                            console.error(error);
+                        } else {
+                            if (socket) {
+                                const participantsList = {
+                                    participants: participants
+                                }
+
+                                socket.emit('participants', participantsList)
+                            }
+                        }
+                    }
                 } else {
-                    console.error('Error fetching chat room data');
-                    return router.push('/');
+                    const payload = {
+                        roomID: params?.id,
+                    }
+
+                    const response = await fetch(`/api/support/getChatRoomAPI`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${cookies.auth_token}`
+                        },
+                        body: JSON.stringify(payload)
+                    })
+
+                    const result = await response.json();
+
+                    if (!isMounted) return;
+
+                    if (response.ok) {
+                        setIsLoading(false);
+                        setChatData(result.chatData)
+                        setUsersData(result.usersData);
+                        setMessages(result.messages);
+
+                        if (socket) {
+                            const participantsList = {
+                                participants: result.usersData
+                            }
+
+                            socket.emit('participants', participantsList)
+                        }
+
+                    } else {
+                        console.error('Error fetching chat room data');
+                        return router.push('/');
+                    }
                 }
-
-
             } catch (error) {
                 console.error('Error fetching data:', error);
                 return router.push('/');
@@ -125,7 +225,7 @@ export default function SupportChatRoom() {
             isMounted = false;
         }
 
-    }, [cookies, params?.id, router, socket]);
+    }, [cookies, params?.id, router, socket, userData?.id]);
 
     return (
         <div className={`w-full ${MainFont.className} text-white caret-transparent`}>
@@ -155,7 +255,7 @@ export default function SupportChatRoom() {
                         <div className='flex flex-col gap-3'>
                             <ChatBoard userData={userData} usersData={usersData} chatData={chatData} messages={messages} isLoading={isLoading} />
 
-                            <ChatInputField chatData={chatData} socket={socket} userID={userData?.id}  />
+                            <ChatInputField chatData={chatData} socket={socket} userID={userData?.id} />
                         </div>
                     </div>
                 </motion.div>

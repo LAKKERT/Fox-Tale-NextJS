@@ -39,6 +39,7 @@
     "react-cookie": "^7.2.1",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.53.0",
+    "resend": "^4.5.1",
     "sass": "^1.79.3",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",

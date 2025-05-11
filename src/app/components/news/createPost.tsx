@@ -270,6 +270,9 @@ export function CreatePostComponent() {
                                             content_block_id: newsContentBlockData?.id
                                         })
                                     if (error) console.error(error);
+                                    if (!error) {
+                                        router.push('/news');
+                                    }
                                 })
                             }
                         })

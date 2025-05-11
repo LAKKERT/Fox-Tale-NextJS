@@ -14,6 +14,7 @@ import * as Yup from "yup";
 import _ from "lodash";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useParams } from "next/navigation";
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 const MainFont = K2D({
     style: "normal",
@@ -111,29 +112,51 @@ export function UniversePageDetailComponent() {
 
             try {
                 const id = params.id;
-                const response = await fetch(`/api/universe/fetchDetailUniverseAPI?universeID=${id}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${cookies.auth_token}`
+                if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                    const { data, error } = await supabase
+                        .from('universe')
+                        .select('*')
+                        .eq('id', params.id)
+                        .single();
+
+                    if (error) console.error(error);
+                    if (data) {
+                        setUniverseData(data);
+                        reset({
+                            name: data.name,
+                            description: data.description,
+                            cover: data.cover
+                        })
+                        setTimeout(() => {
+                            setIsLoading(false)
+                        }, 300);
                     }
-                })
 
-                const result = await response.json();
-
-                if (response.ok) {
-                    setUniverseData(result.data[0])
-                    setCharacters(result.data[0].characters)
-                    setIsLoading(false);
-
-                    reset({
-                        name: result.data[0].name,
-                        description: result.data[0].description,
-                        cover: result.data[0].cover,
-                    })
                 } else {
-                    router.push('/universe');
-                    console.log('error occurred');
+                    const response = await fetch(`/api/universe/fetchDetailUniverseAPI?universeID=${id}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${cookies.auth_token}`
+                        }
+                    })
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        setUniverseData(result.data[0])
+                        setCharacters(result.data[0].characters)
+                        setIsLoading(false);
+
+                        reset({
+                            name: result.data[0].name,
+                            description: result.data[0].description,
+                            cover: result.data[0].cover,
+                        })
+                    } else {
+                        router.push('/universe');
+                        console.log('error occurred');
+                    }
                 }
 
             } catch (error) {
@@ -208,24 +231,36 @@ export function UniversePageDetailComponent() {
 
             }
 
-            const payload = {
-                ...data,
-                universeID: params?.id
-            }
-
-            const response = await fetch(`/api/universe/universeAPI`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${cookies.auth_token}`
-                },
-                body: JSON.stringify(payload)
-            })
-
-            if (response.ok) {
-                location.reload()
+            if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                const {error} = await supabase
+                    .from('universe')
+                    .update({
+                        name: data.name,
+                        description: data.description,
+                        cover: data.cover
+                    })
+                    .eq('id', params?.id)
+                    if(error) console.error(error)
             } else {
-                console.log('error occurred');
+                const payload = {
+                    ...data,
+                    universeID: params?.id
+                }
+
+                const response = await fetch(`/api/universe/universeAPI`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${cookies.auth_token}`
+                    },
+                    body: JSON.stringify(payload)
+                })
+
+                if (response.ok) {
+                    location.reload()
+                } else {
+                    console.log('error occurred');
+                }
             }
 
         } catch (error) {
@@ -235,18 +270,26 @@ export function UniversePageDetailComponent() {
 
     const onDelete = async () => {
         try {
-            const response = await fetch(`/api/universe/universeAPI?universeID=${params?.id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${cookies.auth_token}`
-                }
-            })
-
-            if (response.ok) {
-                router.push('/universe');
+            if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                const { error } = await supabase
+                    .from('universe')
+                    .delete()
+                    .eq('id', params?.id);
+                if(error) console.error(error);
             } else {
-                console.log('error occurred');
+                const response = await fetch(`/api/universe/universeAPI?universeID=${params?.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${cookies.auth_token}`
+                    }
+                })
+    
+                if (response.ok) {
+                    router.push('/universe');
+                } else {
+                    console.log('error occurred');
+                }
             }
         } catch (error) {
             console.error(error);

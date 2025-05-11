@@ -21,8 +21,8 @@ export type ChatData = {
 };
 
 export type Message = {
-    message: string;
     content: string;
+    message: string;
     user_id: string;
     file_url: string[];
     sent_at: string;

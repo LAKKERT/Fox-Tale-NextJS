@@ -10,16 +10,21 @@ import { useUserStore } from "@/stores/userStore";
 import { useForm } from "react-hook-form";
 import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 
 const validationSchema = Yup.object().shape({
     code: Yup.number().min(1000, 'Number must be a 4-digit number').max(9999, 'Number must be a 4-digit number').typeError('Please enter a 4-digit number').required(),
 })
 
+function generateCode() {
+    return Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
+}
+
 export default function VerifyPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [serverMessage, setServerMessage] = useState("");
-    const [serverError, setServerError] = useState<{code: number | null}>();
+    const [serverError, setServerError] = useState<{ code: number | null }>();
     const [cookies] = useCookies(['auth_token']);
     const router = useRouter();
 
@@ -32,56 +37,90 @@ export default function VerifyPage() {
         setProfileAccess,
     } = useUserStore();
 
-    const { register, handleSubmit, formState: { errors } } = useForm<{code: number}>({
+    const { register, handleSubmit, formState: { errors } } = useForm<{ code: number }>({
         resolver: yupResolver(validationSchema)
     })
 
-    useEffect(() => {
-        if (!cookies.auth_token) {
-            router.push('/')
-        } 
+    // useEffect(() => {
+    //     if (!cookies.auth_token) {
+    //         router.push('/')
+    //     } 
 
-    }, [cookies, router])
+    // }, [cookies, router])
 
     useEffect(() => {
         const fetchUserEmail = async () => {
             if (profileAccess) {
                 router.push(`/profile/${userData?.id}`)
-            }else {
+            } else {
                 if (userData) {
                     setIsLoading(false);
                     try {
-                        if (userData.role === 'admin') {
-                            router.push(`/profile/${userData.id}`);
-                        }
-        
-                        const payload = {
-                            cookiesName: 'auth_token',
-                            userEmail: userData.email,
-                        }
-                        
-                        const createCodeResponse = await fetch(`/api/profile/createVerificationCodeAPI`, {
-                            method: 'POST',
-                            headers: {
-                                'content-type': 'application/json',
-                                'Authorization': `Bearer ${cookies['auth_token']}`,
-                            },
-                            body: JSON.stringify(payload),
-                        })
-        
-                        const codeResponse = await createCodeResponse.json();
-        
-                        if (createCodeResponse.ok) {
-                            setProfileAccess(true);
-                            if (codeResponse.redirectUrl) {
-                                router.push(codeResponse.redirectUrl)
+                        // if (userData.role === 'admin') {
+                        //     router.push(`/profile/${userData.id}`);
+                        // }
+
+                        if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                            const code = generateCode();
+
+                            const { error } = await supabase
+                                .from('user_metadata')
+                                .update({
+                                    verificationcode: code
+                                })
+                                .eq('userID', userData.id)
+                                .select()
+
+                            if (error) {
+                                console.error(error);
+                            } else {
+                                const payload = {
+                                    code: code,
+                                    to: userData.email,
+                                }
+                                const createCodeResponse = await fetch(`/api/resend/resendConfig`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'content-type': 'application/json',
+                                        'Authorization': `Bearer ${cookies['auth_token']}`,
+                                    },
+                                    body: JSON.stringify(payload),
+                                })
+
+                                if (!createCodeResponse.ok) {
+                                    console.error('Server error occurred');
+                                }
+
                             }
-                        }else {
-                            console.error('Server error occurred');
+                        } else {
+
+                            const payload = {
+                                cookiesName: 'auth_token',
+                                userEmail: userData.email,
+                            }
+
+                            const createCodeResponse = await fetch(`/api/profile/createVerificationCodeAPI`, {
+                                method: 'POST',
+                                headers: {
+                                    'content-type': 'application/json',
+                                    'Authorization': `Bearer ${cookies['auth_token']}`,
+                                },
+                                body: JSON.stringify(payload),
+                            })
+
+                            const codeResponse = await createCodeResponse.json();
+
+                            if (createCodeResponse.ok) {
+                                setProfileAccess(true);
+                                if (codeResponse.redirectUrl) {
+                                    router.push(codeResponse.redirectUrl)
+                                }
+                            } else {
+                                console.error('Server error occurred');
+                            }
                         }
-        
-                    }catch (error) {
-                        console.log(error);
+                    } catch (error) {
+                        console.error(error);
                         setServerMessage("An unexpected error occurred.");
                     }
                 }
@@ -92,44 +131,59 @@ export default function VerifyPage() {
 
     }, [router, userData, cookies, profileAccess, setProfileAccess])
 
-    const onSubmit = async (data: {code: number}) => {
+    const onSubmit = async (data: { code: number }) => {
         try {
-            const payLoad = {
-                ...data,
-            }
-
-            const response = await fetch('/api/profile/verifyUserAPI', {
-                method: 'POST',
-                headers: {
-                    'content-Type': 'application/json',
-                    'Authorization': `Bearer ${cookies['auth_token']}`,
-                },
-                body: JSON.stringify(payLoad),
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                router.push(result.redirectUrl);
+            if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                const { data: verificationData, error } = await supabase
+                    .from('user_metadata')
+                    .select('verificationcode')
+                    .eq('userID', userData?.id)
+                    .single();
+                if (error) {
+                    console.error(error);
+                } else {
+                    if (verificationData.verificationcode === data.code) {
+                        setProfileAccess(true);
+                        router.push(`/profile/${userData?.id}`);
+                    }
+                }
             } else {
-                setServerError(result.errors);
-                setServerMessage(result.message);
-                console.error("Failed to verify user");
-            }
+                const payLoad = {
+                    ...data,
+                }
 
+                const response = await fetch('/api/profile/verifyUserAPI', {
+                    method: 'POST',
+                    headers: {
+                        'content-Type': 'application/json',
+                        'Authorization': `Bearer ${cookies['auth_token']}`,
+                    },
+                    body: JSON.stringify(payLoad),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    router.push(result.redirectUrl);
+                } else {
+                    setServerError(result.errors);
+                    setServerMessage(result.message);
+                    console.error("Failed to verify user");
+                }
+            }
         } catch (error) {
-            console.log(error);
+            console.error(error);
             setServerMessage("An unexpected error occurred.");
         }
     }
 
     function maskEmail(email: string) {
         const index = email?.indexOf("@");
-    
+
         const visiblePart = email?.slice(0, index - 4);
         const hiddenPart = "*".repeat(4);
         const domain = email?.slice(index);
-    
+
         return `${visiblePart}${hiddenPart}${domain}`;
     }
 
