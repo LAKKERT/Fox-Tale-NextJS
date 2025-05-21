@@ -684,22 +684,43 @@ export default function PostDetail() {
                                                             layout="position"
                                                             className="w-full h-64 relative mb-4"
                                                         >
-                                                            <Image
-                                                                ref={e => {
-                                                                    if (e) {
-                                                                        imgRef.current[contentBlockIndex] = e
+                                                            {process.env.NEXT_PUBLIC_ENV === 'production' ? (
+                                                                <Image
+                                                                    ref={e => {
+                                                                        if (e) {
+                                                                            imgRef.current[contentBlockIndex] = e
+                                                                        }
+                                                                    }}
+                                                                    src={
+                                                                        typeof contentBlock.covers === 'string'
+                                                                            ? `${contentBlock.covers}`
+                                                                            : URL.createObjectURL(contentBlock.covers)
                                                                     }
-                                                                }}
-                                                                src={typeof contentBlock.covers === 'string'
-                                                                    ? `http://localhost:3000/${contentBlock.covers}`
-                                                                    : URL.createObjectURL(contentBlock.covers)}
-                                                                alt="covers"
-                                                                fill
-                                                                className={`transform-gpu rounded object-cover`}
-                                                                style={{ objectPosition: `${contentBlock.horizontal_position}% ${contentBlock.vertical_position}%` }}
-                                                                sizes="(max-width: 768px) 100vw, 50vw"
-                                                                quality={100}
-                                                            />
+                                                                    alt="covers"
+                                                                    fill
+                                                                    className={`transform-gpu rounded object-cover`}
+                                                                    style={{ objectPosition: `${contentBlock.horizontal_position}% ${contentBlock.vertical_position}%` }}
+                                                                    sizes="(max-width: 768px) 100vw, 50vw"
+                                                                    quality={100}
+                                                                />
+                                                            ) : (
+                                                                <Image
+                                                                    ref={e => {
+                                                                        if (e) {
+                                                                            imgRef.current[contentBlockIndex] = e
+                                                                        }
+                                                                    }}
+                                                                    src={typeof contentBlock.covers === 'string'
+                                                                        ? `http://localhost:3000/${contentBlock.covers}`
+                                                                        : URL.createObjectURL(contentBlock.covers)}
+                                                                    alt="covers"
+                                                                    fill
+                                                                    className={`transform-gpu rounded object-cover`}
+                                                                    style={{ objectPosition: `${contentBlock.horizontal_position}% ${contentBlock.vertical_position}%` }}
+                                                                    sizes="(max-width: 768px) 100vw, 50vw"
+                                                                    quality={100}
+                                                                />
+                                                            )}
                                                         </motion.div>
                                                     )}
 
@@ -746,17 +767,30 @@ export default function PostDetail() {
                                                                     >
                                                                         {content.image && (
                                                                             <div className="w-full h-96 relative mb-4">
-                                                                                <Image
-                                                                                    src={typeof content.image === 'string'
-                                                                                        ? `http://localhost:3000/${content.image}`
-                                                                                        : URL.createObjectURL(content.image)}
-                                                                                    alt="Content"
-                                                                                    fill
-                                                                                    className="rounded object-contain"
-                                                                                    sizes="(max-width: 768px) 100vw, 50vw"
-                                                                                    quality={80}
+                                                                                {process.env.NEXT_PUBLIC_ENV === 'production' ? (
+                                                                                    <Image
+                                                                                        src={typeof content.image === 'string'
+                                                                                            ? `${content.image}`
+                                                                                            : URL.createObjectURL(content.image)}
+                                                                                        alt="Content"
+                                                                                        fill
+                                                                                        className="rounded object-contain"
+                                                                                        sizes="(max-width: 768px) 100vw, 50vw"
+                                                                                        quality={80}
+                                                                                    />
+                                                                                ) : (
 
-                                                                                />
+                                                                                    <Image
+                                                                                        src={typeof content.image === 'string'
+                                                                                            ? `http://localhost:3000/${content.image}`
+                                                                                            : URL.createObjectURL(content.image)}
+                                                                                        alt="Content"
+                                                                                        fill
+                                                                                        className="rounded object-contain"
+                                                                                        sizes="(max-width: 768px) 100vw, 50vw"
+                                                                                        quality={80}
+                                                                                    />
+                                                                                )}
                                                                             </div>
                                                                         )}
 
