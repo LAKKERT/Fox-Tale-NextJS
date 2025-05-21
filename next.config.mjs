@@ -2,9 +2,9 @@
 
 const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline';
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live;
     style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data: https://*.supabase.co;
+    img-src 'self' blob: data: https://*.supabase.co http://localhost:3000;
     font-src 'self';
     connect-src 'self' https://dhgchffvriqxzhmldzaz.supabase.co wss://dhgchffvriqxzhmldzaz.supabase.co;
     object-src 'none';
