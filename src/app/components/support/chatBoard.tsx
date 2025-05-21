@@ -126,7 +126,7 @@ export function ChatBoard({ userData, usersData, chatData, messages, isLoading }
                         .eq('room_id', chatData.id)
                         .single();
                     if (error) {
-                        console.error('last message',error);
+                        console.error('last message', error);
                     } else {
                         messageRefs.current[data.last_message_id]?.scrollIntoView({ behavior: "smooth" });
                     }
@@ -300,17 +300,34 @@ export function ChatBoard({ userData, usersData, chatData, messages, isLoading }
                     <div className='flex flex-row justify-center gap-2'>
                         {Array.isArray(chatData.files) &&
                             chatData?.files.map((file, i) => (
-                                <div key={i}
-                                    onClick={() => handleImageClick(`http://localhost:3000/${file}`)}
-                                >
-                                    <Image
-                                        src={`http://localhost:3000/${file}`}
-                                        alt={`Image ${i + 1}`}
-                                        width={80}
-                                        height={80}
-                                        className={`rounded cursor-pointer`}
-                                        loading='lazy'
-                                    />
+                                <div key={i}>
+                                    {process.env.NEXT_PUBLIC_ENV === 'production' ? (
+                                        <div
+                                            onClick={() => handleImageClick(`${file}`)}
+                                        >
+                                            <Image
+                                                src={`${file}`}
+                                                alt={`Image ${i + 1}`}
+                                                width={80}
+                                                height={80}
+                                                className={`rounded cursor-pointer`}
+                                                loading='lazy'
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div
+                                            onClick={() => handleImageClick(`http://localhost:3000/${file}`)}
+                                        >
+                                            <Image
+                                                src={`http://localhost:3000/${file}`}
+                                                alt={`Image ${i + 1}`}
+                                                width={80}
+                                                height={80}
+                                                className={`rounded cursor-pointer`}
+                                                loading='lazy'
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                     </div>
@@ -345,21 +362,43 @@ export function ChatBoard({ userData, usersData, chatData, messages, isLoading }
 
                                     {Array.isArray(msg.file_url) &&
                                         msg.file_url.map((url, i) => (
-                                            <motion.div key={`${index}-${i}`}
-                                                onClick={() => handleImageClick(`http://localhost:3000/${url}`)}
-                                                initial={{ width: '50%', height: 'auto' }}
-                                                transition={{ duration: .3 }}
-                                                className={`${i !== 0 || (msg.content || msg.message) ? 'mt-3' : ''} `}
+                                            <div key={`${index}-${i}`}
                                             >
-                                                <Image
-                                                    src={`http://localhost:3000/${url}`}
-                                                    alt={`Image ${i + 1}`}
-                                                    width={1080}
-                                                    height={1080}
-                                                    className={`rounded cursor-pointer`}
-                                                    loading='lazy'
-                                                />
-                                            </motion.div>
+                                                {process.env.NEXT_PUBLIC_ENV === 'production' ? (
+                                                    <motion.div
+                                                        onClick={() => handleImageClick(`${url}`)}
+                                                        initial={{ width: '50%', height: 'auto' }}
+                                                        transition={{ duration: .3 }}
+                                                        className={`${i !== 0 || (msg.content || msg.message) ? 'mt-3' : ''} `}
+                                                    >
+                                                        <Image
+                                                            src={`${url}`}
+                                                            alt={`Image ${i + 1}`}
+                                                            width={1080}
+                                                            height={1080}
+                                                            className={`rounded cursor-pointer`}
+                                                            loading='lazy'
+                                                        />
+                                                    </motion.div>
+                                                ) : (
+
+                                                    <motion.div
+                                                        onClick={() => handleImageClick(`http://localhost:3000/${url}`)}
+                                                        initial={{ width: '50%', height: 'auto' }}
+                                                        transition={{ duration: .3 }}
+                                                        className={`${i !== 0 || (msg.content || msg.message) ? 'mt-3' : ''} `}
+                                                    >
+                                                        <Image
+                                                            src={`http://localhost:3000/${url}`}
+                                                            alt={`Image ${i + 1}`}
+                                                            width={1080}
+                                                            height={1080}
+                                                            className={`rounded cursor-pointer`}
+                                                            loading='lazy'
+                                                        />
+                                                    </motion.div>
+                                                )}
+                                            </div>
                                         ))}
 
                                     <div

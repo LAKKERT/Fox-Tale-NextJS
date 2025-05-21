@@ -75,7 +75,7 @@ export default function UniversePage() {
 
     return (
         <div className="w-full min-h-[calc(100vh-100px)] mt-[100px] bg-black object-cover bg-cover bg-center bg-no-repeat overflow-hidden caret-transparent">
-            <Header role={handleRole}/>
+            <Header role={handleRole} />
             <div className={`min-h-[calc(100vh-100px)] flex flex-col items-center gap-4 mx-auto ${MainFont.className} text-[#F5DEB3] caret-transparent`}>
                 {isLoading ? (
                     <motion.div
@@ -115,14 +115,26 @@ export default function UniversePage() {
                                                     className="relative w-[250px] h-[345px] bg-white rounded shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
                                                     whileHover="hover"
                                                 >
-                                                    <Image
-                                                        src={`http://localhost:3000/${item.cover}`}
-                                                        alt="Place Cover"
-                                                        fill
-                                                        sizes="(max-width: 768px) 100vw, 50vw"
-                                                        className="object-cover object-center"
-                                                        quality={100}
-                                                    />
+                                                    {process.env.NEXT_PUBLIC_ENV === 'production' ? (
+                                                        <Image
+                                                            src={`${item.cover}`}
+                                                            alt="Place Cover"
+                                                            fill
+                                                            sizes="(max-width: 768px) 100vw, 50vw"
+                                                            className="object-cover object-center"
+                                                            quality={100}
+                                                        />
+                                                    ) : (
+
+                                                        <Image
+                                                            src={`http://localhost:3000/${item.cover}`}
+                                                            alt="Place Cover"
+                                                            fill
+                                                            sizes="(max-width: 768px) 100vw, 50vw"
+                                                            className="object-cover object-center"
+                                                            quality={100}
+                                                        />
+                                                    )}
 
                                                     <div className="absolute inset-0 flex items-center justify-center">
                                                         <p className="uppercase text-2xl text-white z-10 drop-shadow-lg">

@@ -465,17 +465,30 @@ export default function UniversePage() {
                                         {...register('name')}
                                         className={`absolute uppercase w-full bg-transparent outline-none top-0 bottom-0 my-auto text-white placeholder:text-white text-xl md:text-7xl tracking-[5px] text-center focus:caret-white ${isEditMode ? 'block' : 'hidden'}`}
                                     />
+                                    {process.env.NEXT_PUBLIC_ENV === 'production' ? (
+                                        <Image
+                                            src={!selectedFile
+                                                ? `${characterData?.cover}`
+                                                : URL.createObjectURL(selectedFile)
+                                            }
+                                            alt="Selected cover"
+                                            width={500}
+                                            height={300}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
 
-                                    <Image
-                                        src={!selectedFile
-                                            ? `http://localhost:3000/${characterData?.cover}`
-                                            : URL.createObjectURL(selectedFile)
-                                        }
-                                        alt="Selected cover"
-                                        width={500}
-                                        height={300}
-                                        className="w-full h-full object-cover"
-                                    />
+                                        <Image
+                                            src={!selectedFile
+                                                ? `http://localhost:3000/${characterData?.cover}`
+                                                : URL.createObjectURL(selectedFile)
+                                            }
+                                            alt="Selected cover"
+                                            width={500}
+                                            height={300}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    )}
 
                                     <input
                                         type="file"

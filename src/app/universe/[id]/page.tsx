@@ -328,17 +328,29 @@ export default function UniversePage() {
                                         {...register('name')}
                                         className={`absolute uppercase w-full bg-transparent outline-none top-0 bottom-0 my-auto text-white placeholder:text-white text-xl md:text-7xl tracking-[5px] text-center focus:caret-white ${isEditMode ? 'block' : 'hidden'}`}
                                     />
-
-                                    <Image
-                                        src={!selectedFile
-                                            ? `http://localhost:3000/${universeData?.cover}`
-                                            : URL.createObjectURL(selectedFile)
-                                        }
-                                        alt="Selected cover"
-                                        width={500}
-                                        height={300}
-                                        className="w-full h-full object-cover"
-                                    />
+                                    {process.env.NEXT_PUBLIC_ENV === 'production' ? (
+                                        <Image
+                                            src={!selectedFile
+                                                ? `${universeData?.cover}`
+                                                : URL.createObjectURL(selectedFile)
+                                            }
+                                            alt="Selected cover"
+                                            width={500}
+                                            height={300}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <Image
+                                            src={!selectedFile
+                                                ? `http://localhost:3000/${universeData?.cover}`
+                                                : URL.createObjectURL(selectedFile)
+                                            }
+                                            alt="Selected cover"
+                                            width={500}
+                                            height={300}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    )}
 
                                     <input
                                         type="file"
@@ -483,14 +495,25 @@ export default function UniversePage() {
                                                                 whileHover="hover"
                                                                 whileTap={{ scale: 0.95 }}
                                                             >
-                                                                <Image
-                                                                    src={`http://localhost:3000/${item.cover}`}
-                                                                    alt="Place Cover"
-                                                                    fill
-                                                                    sizes="(max-width: 768px) 100vw, 50vw"
-                                                                    className="object-cover object-center"
-                                                                    quality={100}
-                                                                />
+                                                                {process.env.NEXT_PUBLIC_ENV === 'production' ? (
+                                                                    <Image
+                                                                        src={`${item.cover}`}
+                                                                        alt="Place Cover"
+                                                                        fill
+                                                                        sizes="(max-width: 768px) 100vw, 50vw"
+                                                                        className="object-cover object-center"
+                                                                        quality={100}
+                                                                    />                                                                    
+                                                                ) : (
+                                                                    <Image
+                                                                        src={`http://localhost:3000/${item.cover}`}
+                                                                        alt="Place Cover"
+                                                                        fill
+                                                                        sizes="(max-width: 768px) 100vw, 50vw"
+                                                                        className="object-cover object-center"
+                                                                        quality={100}
+                                                                    />
+                                                                )}
 
                                                                 <div className="absolute inset-0 flex items-center justify-center">
                                                                     <p className="uppercase text-2xl text-center text-balance text-white z-10 drop-shadow-lg">
