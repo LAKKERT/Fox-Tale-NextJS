@@ -5,6 +5,7 @@ import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase/supabaseClient";
+import { useUserStore } from "@/stores/userStore";
 
 interface userData {
     login: string;
@@ -14,7 +15,10 @@ const validationSchema = Yup.object().shape({
     login: Yup.string().min(4, "Login must be at least 4 characters").required("Enter your new login")
 })
 
-export function ChangeLogin({ userData }: { userData: { id: string } }) {
+export function ChangeLogin({ userData }: { userData: { id: string, email: string } }) {
+    const {
+        setUserData
+    } = useUserStore()
     const [serverError, setServerError] = useState<{ login: string }>({
         login: "",
     });
@@ -31,7 +35,17 @@ export function ChangeLogin({ userData }: { userData: { id: string } }) {
                     data: { username: `${data.login}` }
                 })
 
-                if (error) console.error(error)
+                if (error) {
+                    setServerError({ login: 'Username change: error occured' });
+                    console.error(error);
+                } else {
+                    setUserData({
+                        id: userData.id || '',
+                        username: data.login,
+                        email: userData.email,
+                    });
+                    setServerMessage('Username was updated');
+                }
 
             } else {
                 const payload = {

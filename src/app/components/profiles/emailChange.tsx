@@ -49,7 +49,11 @@ export function EmailChange({ userData }: { userData: { id: string, email: strin
                     {email: `${data.newEmail}`}
                 );
 
-                if (error) console.error(error);
+                if (error) {
+                    console.error(error);
+                } else {
+                    setSuccessMessage('Email was updated');
+                }
             } else {
                 const payload = {
                     ...data,

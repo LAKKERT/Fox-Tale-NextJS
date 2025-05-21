@@ -5,7 +5,6 @@ import { persist } from 'zustand/middleware'
 type UserData = {
     id: string;
     username: string;
-    role: string;
     email: string;
 } | null;
 

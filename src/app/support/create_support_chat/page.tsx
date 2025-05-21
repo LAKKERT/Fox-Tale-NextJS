@@ -12,39 +12,16 @@ import { saveFile } from '@/pages/api/support/sendMessageAPI';
 import styles from "@/app/styles/home/variables.module.scss";
 import { motion } from "framer-motion";
 import { ChangeEvent } from 'react';
-
 import { K2D } from "next/font/google";
 import { supabase } from "@/lib/supabase/supabaseClient";
 import { useUserStore } from "@/stores/userStore";
+import { CreateSupportForm, ErrorsState, FilesProperties, ServerErrors } from "@/lib/interfaces/supportChat";
 
 const MainFont = K2D({
     style: "normal",
     subsets: ["latin"],
     weight: "400",
 });
-
-
-interface errorsState {
-    max_files: string;
-}
-
-interface serverErrors {
-    title: string;
-    description: string;
-    file: string;
-}
-
-interface filesProperties {
-    name: string;
-    extension: string;
-    size: number;
-}
-
-interface dataState {
-    title: string;
-    description: string;
-    file: File | string | null;
-}
 
 const MAX_FILES_ALLOWED = 3;
 
@@ -66,17 +43,17 @@ const validationSchema = Yup.object().shape({
 export default function CreateSupportChat() {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-    const [clientErrors, setClientErrors] = useState<errorsState | null>(null);
-    const [serverErrors, setServerErrors] = useState<serverErrors | null>(null);
+    const [clientErrors, setClientErrors] = useState<ErrorsState | null>(null);
+    const [serverErrors, setServerErrors] = useState<ServerErrors | null>(null);
     const userData = useUserStore((state) => state.userData);
 
-    const [cookies] = useCookies();
+    const [cookies] = useCookies(['roleToken']);
     const router = useRouter();
 
     useEffect(() => {
-        // if (!cookies.auth_token) {
-        //     router.push('/login')
-        // }
+        if (!cookies.roleToken) {
+            router.push('/login')
+        }
 
         const timeout = setTimeout(() => {
             setIsLoading(false);
@@ -84,11 +61,11 @@ export default function CreateSupportChat() {
         return () => clearTimeout(timeout);
     }, [cookies, router]);
 
-    const { register, handleSubmit, formState: { errors } } = useForm<dataState>({
+    const { register, handleSubmit, formState: { errors } } = useForm<CreateSupportForm>({
         resolver: yupResolver(validationSchema),
     });
 
-    const onSubmit = async (data: dataState) => {
+    const onSubmit = async (data: CreateSupportForm) => {
 
         const fileURL = [];
 
@@ -187,7 +164,7 @@ export default function CreateSupportChat() {
         })
     }
 
-    const fetchFileData = (files: File[]): filesProperties[] => {
+    const fetchFileData = (files: File[]): FilesProperties[] => {
         const fileProperty = [];
         for (let i = 0; i < files.length; i++) {
             const fileName = files[i].name;

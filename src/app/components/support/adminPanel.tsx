@@ -9,7 +9,7 @@ interface Props {
     usersData: UsersData[];
     chatData: ChatData;
     cookies: {
-        auth_token?: string
+        roleToken?: string
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     socket: any
@@ -42,7 +42,7 @@ export function AdminPanel({ usersData, chatData, cookies, socket }: Props) {
                     },
                     body: JSON.stringify({
                         roomID: chatData.id,
-                        cookies: cookies.auth_token,
+                        cookies: cookies.roleToken,
                     }),
                 });
 

@@ -9,6 +9,7 @@ import { K2D } from "next/font/google";
 import styles from "@/app/styles/home/variables.module.scss";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/supabaseClient";
+import { NewsItems } from "@/lib/interfaces/news";
 
 const introductionFont = PT_Serif({
     style: "normal",
@@ -21,13 +22,6 @@ const MainFont = K2D({
     subsets: ["latin"],
     weight: "400",
 });
-
-type NewsItems = {
-    id: number;
-    title: string;
-    description: string;
-    add_at: string;
-}
 
 export function Main() {
     const [isLoading, setIsLoading] = useState(true);
@@ -99,8 +93,8 @@ export function Main() {
                         <source src="/home/introduction_logo.mp4" type="video/mp4" />
                     </video>
 
-                    <div className="w-full min-h-[364px] bg-[#f5885a]">
-                        <div className="uppercase text-3xl py-2 text-white text-center">- MAIN NEWS -</div>
+                    <div className="w-full bg-[#f5885a]">
+                        <div className="uppercase text-xl lg:text-3xl py-2 text-white text-center">- MAIN NEWS -</div>
 
                         <div className={`flex flex-col items-center md:flex-row gap-8 sm:mx-auto md:w-[732px] xl:w-auto xl:justify-center overflow-x-auto ${styles.custom_scroll}`}>
 
@@ -136,8 +130,9 @@ export function Main() {
                                 </div>
                             ))}
                         </div>
+
                         <div className="flex flex-row items-center justify-end">
-                            <Link href="/news" className="flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 mr-4 mt-4 mb-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out">
+                            <Link href="/news" className="flex flex-row items-center justify-end gap-2 uppercase text-md lg:text-xl py-2 lg:px-4 mr-4 mt-4 mb-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out">
                                 All news •
                                 <Image src="/home/Arrow.svg" alt="arrow" width={25} height={25} className="mt-1" />
                             </Link>
@@ -152,7 +147,7 @@ export function Main() {
 
                         <div className={`${styles.gradient} absolute inset-0 z-10`} />
 
-                        <div className={`relative md:absolute h-full top-0 gap-5 py-6 px-10 flex flex-col items-center justify-center text-[#F5DEB3] z-20 ${introductionFont.className}`}>
+                        <div className={`relative md:absolute h-full top-0 gap-5 pt-4 px-10 flex flex-col items-center justify-center text-[#F5DEB3] z-20 ${introductionFont.className}`}>
                             <h2 className="text-2xl sm:text-5xl tracking-widest">THE FOX TEMPLE</h2>
                             <div className={`flex flex-col justify-center items-center md:my-auto xl:justify-between xl:items-center xl:flex-row text-base md:text-3xl text-balance`}>
                                 <div className="text-center xl:text-left xl:w-1/4">
@@ -170,18 +165,18 @@ export function Main() {
                     </div>
 
                     <div className="relative flex flex-col-reverse items-center md:flex-row justify-between p-10 gap-5 bg-black">
-                        <div className="relative top-[-100px] sm:top-[0] w-full uppercase text-center flex flex-col gap-4 text-[#F5DEB3]">
-                            <h2 className="text-4xl">UNIVERSE</h2>
-                            <p className="text-lg">FOX TALE immerses you in a world brimming with enigmatic locations and intriguing characters, each hiding secrets waiting to be uncovered. From shadow-drenched forests whispering ancient tales to elusive figures cloaked in mystery, every corner of this universe pulses with untold stories. Crave to unravel the cryptic past of these haunting landscapes and their inhabitants? Follow the link below to delve deeper into their secrets.</p>
+                        <div className="relative top-[-200px] sm:top-[0] w-full uppercase text-center flex flex-col gap-4 text-[#F5DEB3]">
+                            <h2 className="text-2xl lg:text-4xl">UNIVERSE</h2>
+                            <p className="text-sm text-balance lg:text-lg">FOX TALE immerses you in a world brimming with enigmatic locations and intriguing characters, each hiding secrets waiting to be uncovered. From shadow-drenched forests whispering ancient tales to elusive figures cloaked in mystery, every corner of this universe pulses with untold stories. Crave to unravel the cryptic past of these haunting landscapes and their inhabitants? Follow the link below to delve deeper into their secrets.</p>
                             <div className="flex justify-end">
-                                <Link href="/universe" className="w-auto flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 mr-4 mt-4 mb-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out">
+                                <Link href="/universe" className="w-auto flex flex-row items-center justify-end gap-2 uppercase text-xl lg:text-xl py-2 px-4 lg:mr-4 lg:my-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out">
                                     UNIVERSE •
                                     <Image src="/home/Arrow.svg" alt="arrow" width={25} height={25} className="mt-1" />
                                 </Link>
                             </div>
                         </div>
 
-                        <div className="relative top-[-80px] sm:top-0 md:transform scale-50 smx:scale-[65%] sm:scale-100">
+                        <div className="relative top-[-100px] sm:top-0 md:transform scale-50 smx:scale-[65%] sm:scale-100">
                             <svg width="538" height="583">
                                 <defs>
                                     <pattern id="ImgAnimation" width='1' height='1'>

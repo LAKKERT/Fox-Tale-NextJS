@@ -9,12 +9,11 @@ export default function WebSocketAPI(req, res) {
         return;
     }
 
-
     const io = new Server(res.socket.server, {
         path: "/api/support/socket",
         cors: {
             origin: process.env.NODE_ENV === "production" 
-                ? "https://your-production-domain.com" 
+                ? "https://dhgchffvriqxzhmldzaz.supabase.co" 
                 : "http://localhost:3000",
             methods: ["GET", "POST"],
             credentials: true

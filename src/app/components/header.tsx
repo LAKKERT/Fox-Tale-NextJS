@@ -6,13 +6,17 @@ import Link from "next/link";
 import { useCookies } from "react-cookie";
 import Cookies from 'js-cookie';
 import { useUserStore } from '@/stores/userStore';
-
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 const MainFont = K2D({
     style: "normal",
     subsets: ["latin"],
     weight: "400",
 });
+
+interface UserRoleInt {
+    role?: (role: string) => void;
+}
 
 const MobileMode: React.FC<{ isMenuOpen: boolean; toggleMenu: () => void }> = ({ isMenuOpen, toggleMenu }) => (
     <div className="lg:hidden absolute right-0 mr-5 cursor-pointer">
@@ -27,16 +31,16 @@ const MobileMode: React.FC<{ isMenuOpen: boolean; toggleMenu: () => void }> = ({
     </div>
 );
 
-export function Header() {
+export function Header({ role }: UserRoleInt) {
     const {
-        isAuth, 
+        isAuth,
         userData,
-        setUserData, 
-        setIsAuth 
+        setUserData,
+        setIsAuth
     } = useUserStore();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
-    const [cookies] = useCookies(['auth_token']);
+    const [cookies] = useCookies(['roleToken']);
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -48,38 +52,39 @@ export function Header() {
 
     const destroyCookie = () => {
         if (process.env.NEXT_PUBLIC_ENV === 'production') {
-            Cookies.remove('__next_hmr_refresh_hash__');
+            supabase.auth.signOut();
+            Cookies.remove('roleToken');
             setUserData(null);
             setIsAuth(false);
-        }else {
-            Cookies.remove('auth_token');
+        } else {
+            Cookies.remove('roleToken');
         }
         window.location.reload();
     }
 
     useEffect(() => {
         if (process.env.NEXT_PUBLIC_ENV !== 'production') {
-            if (cookies.auth_token) {
+            if (cookies.roleToken) {
                 setIsAuth(true);
                 const fetchUserData = async () => {
-                    if (cookies.auth_token && (!userData || !isAuth)) {
+                    if (cookies.roleToken && (!userData || !isAuth)) {
                         try {
                             const response = await fetch('/api/users/getAllUserDataAPI', {
                                 method: 'GET',
                                 headers: {
-                                    'Authorization': `Bearer ${cookies.auth_token}`
+                                    'Authorization': `Bearer ${cookies.roleToken}`
                                 },
                             });
-        
+
                             const result = await response.json();
-                            
+
                             if (response.ok) {
                                 setUserData(result.result);
                             } else {
                                 console.error("Error fetching user data", result.message);
                                 setUserData(null);
                             }
-        
+
                         } catch (error) {
                             console.error("Fetching data error", error);
                             setUserData(null);
@@ -91,11 +96,35 @@ export function Header() {
                 setIsAuth(false);
                 setUserData(null);
             }
+        } else {
+            const checkUser = async () => {
+                if (cookies.roleToken) {
+                    try {
+                        const response = await fetch(`/api/users/checkUserRoleAPI`, {
+                            method: "GET",
+                            headers: {
+                                'Authorization': `Bearer ${cookies.roleToken}`
+                            }
+                        });
+    
+                        const result = await response.json();
+    
+                        if (response.ok) {
+                            if (typeof role === 'function') {
+                                role(result.userRole);
+                            }
+                        }
+                    } catch (error) {
+                        console.error(error);
+                    }
+                }
+            }
+            checkUser()
         }
-    }, [cookies, setUserData, setIsAuth, isAuth, userData]);
+    }, [cookies, setUserData, setIsAuth, isAuth, role, userData]);
 
     return (
-        <div 
+        <div
             className={`fixed w-full z-50 select-none`}>
             <div className={`fixed top-0 z-50 h-[100px] w-full px-3 flex lg:justify-between items-center bg-black ${MainFont.className} ${isOptionsMenuOpen ? "outline outline-[rgba(245,136,90,.9)]" : "outline-none"}`}>
 
@@ -141,7 +170,7 @@ export function Header() {
                         <div className={`absolute flex flex-col justify-center items-center h-auto w-[250px] px-7 py-2 top-[70px] left-[-134px] gap-2 rounded-b-lg bg-[#000000] text-white text-2xl border-4 border-t-0 border-[rgba(245,136,90,.9)] ${isOptionsMenuOpen ? "flex flex-col" : "hidden"}`}>
                             <p className="w-full text-center border-b-2 border-[rgba(245,136,90,.9)]">{userData.username}</p>
                             {userData && (
-                                <Link href={`/profile/verify`} key={userData.id} className="uppercase text-left hover:bg-[rgba(245,136,90,.9)] py-1 px-3 rounded transition duration-150 ease-in-out ">
+                                <Link href={`/profile/${userData.id}`} key={userData.id} className="uppercase text-left hover:bg-[rgba(245,136,90,.9)] py-1 px-3 rounded transition duration-150 ease-in-out ">
                                     <div>
                                         PROFILE
                                     </div>
@@ -185,7 +214,7 @@ export function Header() {
                     }
 
                     {userData && (
-                        <Link href={`/profile/verify`} key={userData.id} className={`w-full py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,0.7)] transition duration-150 ease-in-out ${isAuth ? "block" : "hidden"}`}>
+                        <Link href={`/profile/${userData?.id}`} key={userData.id} className={`w-full py-1 px-3 rounded uppercase text-white text-2xl hover:bg-[rgba(245,136,90,0.7)] transition duration-150 ease-in-out ${isAuth ? "block" : "hidden"}`}>
                             <div>
                                 PROFILE
                             </div>

@@ -23,7 +23,6 @@ interface userInterface {
     password2: string;
 }
 
-
 const validationSchema = Yup.object().shape({
     email: Yup.string().email('EMAIL is not correct').required('Enter your EMAIL'),
     username: Yup.string().min(4, 'Username must be at least 4 characters').required('Enter your username'),
@@ -61,10 +60,13 @@ export function SignUpPage() {
                 if (error) console.error('error occured', error);
                 if (data) {
                     const { error } = await supabase
-                        .from('user_metadata')
-                        .upsert({ userID: data.user?.id, username: data.user?.user_metadata.username, role: 'user' })
-                        .select()
-                    if (error) console.error('error occured', error);
+                        .from('user_roles')
+                        .upsert({ user_id: data.user?.id, role: 'user' });
+                    if (error) {
+                        console.error('error occured', error)
+                    } else {
+                        router.push('/login');
+                    }
                 }
                 
             }else {

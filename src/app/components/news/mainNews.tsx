@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { K2D } from "next/font/google";
 import { motion } from "framer-motion";
-import { useUserStore } from "@/stores/userStore";
 import { supabase } from "@/lib/supabase/supabaseClient";
 
 const ITEMS_PER_PAGE = 8;
@@ -30,13 +29,15 @@ type NewsItem = {
     }>;
 };
 
+interface userRoleInt {
+    role?: string
+}
 
-export function NewsPageComponent() {
+export function NewsPageComponent({role}: userRoleInt) {
     const [allNews, setAllNews] = useState<NewsItem[]>([]);
     const [countOfNews, setCountOfNews] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
-    const [cookies] = useCookies(['auth_token']);
-    const userData = useUserStore((state) => state.userData);
+    const [cookies] = useCookies(['roleToken']);
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
 
@@ -61,12 +62,11 @@ export function NewsPageComponent() {
                         )
                     `)
                     .order('add_at', { ascending: false })
-
                 if (error) console.error(error)
                 if (data) {
                     data.map((item) => {
                         item.content_blocks.sort((a, b) => a.order_index - b.order_index);
-    
+
                         item.content_blocks.forEach(block => {
                             block.content.sort((a, b) => a.order_index - b.order_index);
                         });
@@ -84,7 +84,7 @@ export function NewsPageComponent() {
                         method: 'GET',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${cookies.auth_token}`
+                            'Authorization': `Bearer ${cookies.roleToken}`
                         }
                     });
 
@@ -106,7 +106,6 @@ export function NewsPageComponent() {
                 }
             }
         }
-
         fetchAllNews();
     }, [cookies, router]);
 
@@ -145,7 +144,7 @@ export function NewsPageComponent() {
                         <div className="h-[120px] flex flex-col gap-4 text-center justify-center items-center">
                             <h2 className="uppercase text-base md:text-2xl">-NEWS-</h2>
                             <p className="text-base md:text-lg">Here you can learn something new about FOX TALE</p>
-                            <Link href={'/news/create_new'} className={`flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out ${userData?.role === 'admin' ? '' : 'hidden'} `}>
+                            <Link href={'/news/create_new'} className={`flex flex-row items-center justify-end gap-2 uppercase text-xl py-2 px-4 text-white text-center rounded hover:bg-[#C2724F] transition duration-150 ease-in-out ${role === 'admin' ? '' : 'hidden'} `}>
                                 add post
                             </Link>
                         </div>

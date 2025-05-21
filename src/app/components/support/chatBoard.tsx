@@ -329,7 +329,7 @@ export function ChatBoard({ userData, usersData, chatData, messages, isLoading }
                                 >
                                     {isFirstMessageInSequence && (
                                         <p className='text-white tracking-widest'>
-                                            {usersData.find(user => user.id === msg.user_id || user.id === msg.user_id)?.username || 'UNKNOWN'}
+                                            {usersData.find(user => user.user_id === msg.user_id || user.user_id === msg.user_id)?.username || 'UNKNOWN'}
                                         </p>
                                     )}
 

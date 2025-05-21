@@ -13,6 +13,7 @@ import { ChangeLogin } from "@/app/components/profiles/loginChange";
 import { motion } from "framer-motion";
 
 import { K2D } from "next/font/google";
+import { UserData } from "@/lib/interfaces/profile";
 
 const MainFont = K2D({
     style: "normal",
@@ -20,40 +21,34 @@ const MainFont = K2D({
     weight: "400",
 });
 
-interface userDataState {
-    id: string;
-    email: string;
-    username: string;
-}
-
 export default function UserProfile() {
     const params = useParams()
     const router = useRouter();
     const userData = useUserStore((state) => state.userData)
     const [isLoading, setIsLoading] = useState(true);
-    const [cookies] = useCookies(['auth_token']);
-    const [currentUserProfile, setCurrentUserProfile] = useState<userDataState | null>(null);
+    const [cookies] = useCookies(['roleToken']);
+    const [currentUserProfile, setCurrentUserProfile] = useState<UserData | null>(null);
 
     const {
         profileAccess,
     } = useUserStore();
 
+    const [userRole, setUserRole] = useState<string>();
+
+    const handleRole = (role: string) => {
+        setUserRole(role)
+    }
+
     useEffect(() => {
         let isMounted = true;
 
+        if (!cookies.roleToken) {
+            router.push('/');
+        }
+
         const loadProfile = async () => {
             try {
-                if (!userData) {
-                    // router.push('/');
-                    return;
-                };
-
-                if (!profileAccess && userData.role !== 'admin') {
-                    router.push('/profile/verify');
-                    return;
-                }
-
-                if (userData.id === params?.id) {
+                if (userData?.id === params?.id) {
                     if (isMounted) {
                         setCurrentUserProfile(userData);
                         setIsLoading(false);
@@ -61,9 +56,9 @@ export default function UserProfile() {
                     return;
                 }
 
-                if (userData.role === 'admin' && userData.id !== params?.id) {
+                if (userRole === 'admin' && userData?.id !== params?.id) {
                     const response = await fetch(`/api/users/getUserProfileAPI?userID=${params?.id}`, {
-                        headers: { 'Authorization': `Bearer ${cookies.auth_token}` }
+                        headers: { 'Authorization': `Bearer ${cookies.roleToken}` }
                     });
 
                     if (!response.ok) throw new Error('Profile not found');
@@ -76,7 +71,6 @@ export default function UserProfile() {
                     return;
                 }
 
-                router.push('/');
 
             } catch (error) {
                 console.error(error);
@@ -91,11 +85,11 @@ export default function UserProfile() {
         return () => {
             isMounted = false;
         };
-    }, [cookies, router, params, userData, profileAccess]);
+    }, [cookies, router, params, userData, profileAccess, userRole]);
 
     return (
         <div className={`w-full min-h-[calc(100vh-100px)] bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat ${MainFont.className} caret-transparent`}>
-            <Header />
+            <Header role={handleRole} />
             <div className="h-full mt-[100px] flex flex-col items-center">
                 {isLoading ? (
                     <motion.div

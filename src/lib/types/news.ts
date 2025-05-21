@@ -13,7 +13,7 @@ export type ContentBlock = {
     }[]
 }
 
-export type  NewsStructure = {
+export type NewsStructure = {
     title: string;
     description: string;
     add_at: Date;

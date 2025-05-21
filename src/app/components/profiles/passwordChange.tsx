@@ -5,18 +5,7 @@ import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { motion } from 'framer-motion';
 import { supabase } from "@/lib/supabase/supabaseClient";
-
-type FormData = {
-    password1?: string | null;
-    password2: string;
-    repeatPassword2: string;
-};
-
-type ServerErrors = {
-    password1?: string;
-    password2?: string;
-    repeatPassword2?: string;
-};
+import { ServerErrors, FormData } from "@/lib/types/passwordChange";
 
 const validationSchema = Yup.object().shape({
     password1: Yup.string().min(6, 'Old password must be at least 6 characters').notRequired(),
@@ -40,9 +29,13 @@ export function ChangePassword({ userData }: { userData: { id: string } }) {
 
                 const { error } = await supabase.auth.updateUser({
                     password: data.password2
-                })
+                });
 
-                if (error) console.error(error)
+                if (error) {
+                    console.error(error);
+                } else {
+                    setSuccessMessage('Password was updated');
+                }
 
             } else {
                 const payload = {

@@ -33,14 +33,19 @@ export default function SupportChatRoom() {
         files: [],
     });
     const [messages, setMessages] = useState<Message[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [usersData, setUsersData] = useState<UsersData[]>([]);
     const userData = useUserStore((state) => state.userData);
-    const [cookies] = useCookies(['auth_token']);
+    const [cookies] = useCookies(['roleToken']);
+    const [userRole, setUserRole] = useState<string>();
 
     const router = useRouter();
 
     const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
+
+    const handleRole = (role: string) => {
+        setUserRole(role)
+    }
 
     useEffect(() => {
         if (!socket) {
@@ -68,154 +73,156 @@ export default function SupportChatRoom() {
 
     useEffect(() => {
         let isMounted = true;
-
         const fetchData = async () => {
-            // if (!cookies.auth_token) {
-            //     return router.push('/');
+            if (!cookies.roleToken) {
+                return router.push('/');
+            }
+            if (userData) {
 
-            // }
+                try {
+                    if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                        const { data, error } = await supabase
+                            .from('chat_room')
+                            .select(`
+                                id,
+                                title,
+                                created_at,
+                                description,
+                                status,
+                                files,
+                                messages ( 
+                                    room_id,
+                                    user_id,
+                                    message:message,
+                                    sent_at,
+                                    file_url
+                                )
+                            `)
+                            .eq('id', params?.id)
+                            .single();
+                        if (error) {
+                            console.error(error);
+                            return;
+                        }
 
-            try {
-                if (process.env.NEXT_PUBLIC_ENV === 'production') {
-                    const { data, error } = await supabase
-                        .from('chat_room')
-                        .select(`
-                            id,
-                            title,
-                            created_at,
-                            description,
-                            status,
-                            files,
-                            messages ( 
-                                room_id,
-                                user_id,
-                                message:message,
-                                sent_at,
-                                file_url
-                            )
-                        `)
-                        .eq('id', params?.id)
-                        .single();
-                    if (error) {
-                        console.error(error);
-                        return;
-                    }
+                        const { data: participantData } = await supabase
+                            .from('participants')
+                            .select('*')
+                            .eq('user_id', userData?.id)
+                            .eq('room_id', params?.id)
+                            .single();
 
-                    const { data: allParticipantData } = await supabase
-                        .from('participants')
-                        .select('*')
-                        .eq('user_id', userData?.id)
-                        .eq('room_id', params?.id)
-                        .single();
-
-                        
-                    if (data && allParticipantData) {
-                        if (allParticipantData === null) {
+                        if (participantData === null) {
                             const { error } = await supabase
                                 .from('participants')
                                 .insert({
                                     user_id: userData?.id,
-                                    room_id: params?.id
+                                    room_id: params?.id,
+                                    username: userData.username
                                 });
-    
+
                             if (error) console.error(error);
                         }
-                        const { data: participantsData, error: participantsError } = await supabase
-                            .from('participants')
-                            .select('user_id')
-                            .eq('room_id', params?.id);
 
-                        if (participantsError) {
-                            console.error(participantsError);
-                            return;
+                        if (data) {
+
+                            const { data: participantsData, error: participantsError } = await supabase
+                                .from('participants')
+                                .select('user_id, username')
+                                .eq('room_id', params?.id);
+
+                            if (participantsError) {
+                                console.error(participantsError);
+                                return;
+                            }
+
+                            // const userIds = participantsData.map((participant: { user_id: string, username: string }) => participant.user_id);
+
+                            // const { data: usersData, error: usersError } = await supabase
+                            //     .from('user_metadata')
+                            //     .select('id: userID, username, role')
+                            //     .in('userID', userIds);
+
+                            // if (usersError) {
+                            //     console.error(usersError);
+                            //     return;
+                            // }
+
+                            // const participants = usersData;
+                            setUsersData(participantsData);
+
+                            const formattedData = {
+                                ...data,
+                                messages: data.messages.map(msg => ({
+                                    ...msg,
+                                    content: "",
+                                    unreaded: false,
+                                }))
+                            };
+                            setChatData({
+                                id: formattedData.id,
+                                title: formattedData.title,
+                                created_at: formattedData.created_at,
+                                description: formattedData.description,
+                                status: formattedData.status,
+                                files: formattedData.files,
+                            });
+                            setMessages(formattedData.messages)
+                            setIsLoading(false);
+
+                            if (error) {
+                                console.error(error);
+                            } else {
+                                if (socket) {
+                                    const participantsList = {
+                                        participants: participantsData
+                                    }
+
+                                    socket.emit('participants', participantsList)
+                                }
+                            }
+                        }
+                    } else {
+                        const payload = {
+                            roomID: params?.id,
                         }
 
-                        const userIds = participantsData.map((participant: { user_id: string }) => participant.user_id);
+                        const response = await fetch(`/api/support/getChatRoomAPI`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${cookies.roleToken}`
+                            },
+                            body: JSON.stringify(payload)
+                        })
 
-                        const { data: usersData, error: usersError } = await supabase
-                            .from('user_metadata')
-                            .select('id: userID, username, role')
-                            .in('userID', userIds);
+                        const result = await response.json();
 
-                        if (usersError) {
-                            console.error(usersError);
-                            return;
-                        }
+                        if (!isMounted) return;
 
-                        const participants = usersData;
-                        setUsersData(participants)
+                        if (response.ok) {
+                            setIsLoading(false);
+                            setChatData(result.chatData)
+                            setUsersData(result.usersData);
+                            setMessages(result.messages);
 
-                        const formattedData = {
-                            ...data,
-                            messages: data.messages.map(msg => ({
-                                ...msg,
-                                content: "",
-                                unreaded: false,
-                            }))
-                        };
-                        setChatData({
-                            id: formattedData.id,
-                            title: formattedData.title,
-                            created_at: formattedData.created_at,
-                            description: formattedData.description,
-                            status: formattedData.status,
-                            files: formattedData.files,
-                        });
-                        setMessages(formattedData.messages)
-                        setIsLoading(false);
-
-                        if (error) {
-                            console.error(error);
-                        } else {
                             if (socket) {
                                 const participantsList = {
-                                    participants: participants
+                                    participants: result.usersData
                                 }
 
                                 socket.emit('participants', participantsList)
                             }
+
+                        } else {
+                            console.error('Error fetching chat room data');
+                            return router.push('/');
                         }
                     }
-                } else {
-                    const payload = {
-                        roomID: params?.id,
-                    }
-
-                    const response = await fetch(`/api/support/getChatRoomAPI`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${cookies.auth_token}`
-                        },
-                        body: JSON.stringify(payload)
-                    })
-
-                    const result = await response.json();
-
-                    if (!isMounted) return;
-
-                    if (response.ok) {
-                        setIsLoading(false);
-                        setChatData(result.chatData)
-                        setUsersData(result.usersData);
-                        setMessages(result.messages);
-
-                        if (socket) {
-                            const participantsList = {
-                                participants: result.usersData
-                            }
-
-                            socket.emit('participants', participantsList)
-                        }
-
-                    } else {
-                        console.error('Error fetching chat room data');
-                        return router.push('/');
-                    }
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                    return router.push('/');
                 }
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                return router.push('/');
             }
         }
 
@@ -225,11 +232,11 @@ export default function SupportChatRoom() {
             isMounted = false;
         }
 
-    }, [cookies, params?.id, router, socket, userData?.id]);
+    }, [cookies, params?.id, router, socket, userData]);
 
     return (
         <div className={`w-full ${MainFont.className} text-white caret-transparent`}>
-            <Header />
+            <Header role={handleRole} />
             {isLoading ? (
                 <motion.div
                     initial={{ opacity: 0 }}
@@ -247,7 +254,7 @@ export default function SupportChatRoom() {
                     className={`min-h-[calc(100vh-100px)] mt-[100px] flex flex-col justify-center items-center bg-[url('/login/gradient_bg.png')] object-cover bg-cover bg-center bg-no-repeat`}
                 >
                     <div className='w-full flex flex-row justify-center sm:min-w-[500px] md:min-w-[750px]'>
-                        {userData?.role === 'admin' ? (
+                        {userRole === 'admin' ? (
                             <AdminPanel chatData={chatData} usersData={usersData} cookies={cookies} socket={socket} />
                         ) : (
                             null

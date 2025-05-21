@@ -20,7 +20,7 @@ export default async function getAllUsers(req: NextApiRequest, res: NextApiRespo
         let decoded;
         
         try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
+            decoded = jwt.verify(token, process.env.SUPABASE_JWT_SECRET as string) as JwtPayload;
         } catch ( error ) {
             console.error('Invalid token', error);
             return res.status(403).json({ error: 'Token is not vailed' });

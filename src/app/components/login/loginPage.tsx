@@ -1,9 +1,9 @@
 "use client";
 import { Loader } from "@/app/components/load";
 import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import * as Yup from "yup";
-import Link from "next/link";
+// import Link from "next/link";
 import { K2D } from "next/font/google";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion"
@@ -45,9 +45,11 @@ export function LoginPage() {
         resolver: yupResolver(validationSchema)
     });
 
-    setTimeout(() => {
-        setIsLoading(false);
-    }, 300)
+    useEffect(() => {
+        setTimeout(() => {
+            setIsLoading(false);
+        }, 300)
+    })
 
     const onSubmit = async (formData: userInterface) => {
         try {
@@ -58,26 +60,42 @@ export function LoginPage() {
                 });
 
                 if (signInError) {
+                    setServerMessage('Email or password is invalid');
                     console.error('Supabase sign-in error occurred', signInError);
                 } else if (signInData && signInData.user) {
                     const userId = signInData.user.id;
                     const { data: userMetadata, error: metadataError } = await supabase
-                        .from('user_metadata')
+                        .from('user_roles')
                         .select('*')
-                        .eq('userID', userId)
+                        .eq('user_id', userId)
                         .single()
-
                     if (metadataError) {
                         console.error('Error fetching user metadata:', metadataError);
                     } else if (userMetadata) {
-                        setUserData({
-                            id: userId || '',
-                            username: userMetadata.username || '',
-                            email: signInData.user.email || '',
-                            role: userMetadata.role || 'authenticated',
-                        });
-                        setIsAuth(true);
-                        router.push('/');
+                        const { data: userData, error } = await supabase.auth.getUser();
+
+                        if (error) {
+                            console.error(error);
+                        } else {
+                            setUserData({
+                                id: userId || '',
+                                username: userData.user?.user_metadata.username || '',
+                                email: signInData.user.email || '',
+                            });
+                            setIsAuth(true);
+
+                            const response = await fetch('/api/users/createRoleTokenAPI', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(userId)
+                            })
+
+                            if (response.ok) {
+                                router.push('/');
+                            }
+                        }
                     }
                 }
             } else {
@@ -128,7 +146,7 @@ export function LoginPage() {
                                 >
                                     {errors.username?.message || serverError?.username || serverMessage}
                                 </motion.p>
-                                <input type="text" {...register("username")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none focus:caret-white" placeholder="Login" />
+                                <input type="text" {...register("username")} className="w-[250px] sm:w-[350px] md:w-[500px] border-b-2 tracking-wider bg-transparent text-center text-2xl outline-none focus:caret-white" placeholder="Email" />
                             </div>
 
                             <div className="flex flex-col text-center">
@@ -144,10 +162,10 @@ export function LoginPage() {
                             </div>
                             <input type="submit" value="LOGIN" className="w-[250px] h-[50px] text-lg tracking-wider transition-colors duration-75 rounded border border-[#F5DEB3] bg-[#C2724F] hover:bg-[#c2724f91]" />
                         </form>
-                        <div className="flex flex-col text-center gap-2 uppercase text-base underline tracking-widest">
+                        {/* <div className="flex flex-col text-center gap-2 uppercase text-base underline tracking-widest">
                             <Link href="/restoring_access">CAN’N LOG IN</Link>
                             <Link href="/signup">CREATE ACCOUNT</Link>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             )}

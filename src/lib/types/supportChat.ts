@@ -1,13 +1,11 @@
 export type UsersData = {
-    id: string,
+    user_id: string,
     username: string,
-    role: string,
 }
 
 export type UserData = {
     id: string;
     username: string;
-    role: string;
     email: string;
 } | null;
 

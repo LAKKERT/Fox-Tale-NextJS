@@ -12,7 +12,7 @@ export default async function ResendEmailTransporter(req: NextApiRequest, res: N
     try {
         await resend.emails.send({
             from: 'onboarding@resend.dev',
-            to: ['lakkert2002@yandex.ru'],
+            to: [`${data.to}`],
             subject: 'hello world',
             html: `<p>it works! ${data.code}</p>`,
         })
