@@ -49,23 +49,44 @@ export default function SupportChatRoom() {
 
     useEffect(() => {
         if (!socket) {
-            const socketInstance = io("http://localhost:3000", { path: "/api/support/socket" })
-            setSocket(socketInstance);
-
-            socketInstance.on("message", (msg) => {
-                setMessages((prev) => [...prev, msg]);
-            });
-
-            socketInstance.on("participants", (participant) => {
-                setUsersData([...participant.participants]);
-            });
-
-            socketInstance.on('closeChat', (chatData) => {
-                setChatData({ ...chatData })
-            });
-
-            return () => {
-                socketInstance.disconnect();
+            if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                const socketInstance = io("https://fox-tale-next-js.vercel.app", { path: "/api/support/socket" })
+                setSocket(socketInstance);
+    
+                socketInstance.on("message", (msg) => {
+                    setMessages((prev) => [...prev, msg]);
+                });
+    
+                socketInstance.on("participants", (participant) => {
+                    setUsersData([...participant.participants]);
+                });
+    
+                socketInstance.on('closeChat', (chatData) => {
+                    setChatData({ ...chatData })
+                });
+    
+                return () => {
+                    socketInstance.disconnect();
+                }
+            } else {
+                const socketInstance = io("http://localhost:3000", { path: "/api/support/socket" })
+                setSocket(socketInstance);
+    
+                socketInstance.on("message", (msg) => {
+                    setMessages((prev) => [...prev, msg]);
+                });
+    
+                socketInstance.on("participants", (participant) => {
+                    setUsersData([...participant.participants]);
+                });
+    
+                socketInstance.on('closeChat', (chatData) => {
+                    setChatData({ ...chatData })
+                });
+    
+                return () => {
+                    socketInstance.disconnect();
+                }
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
