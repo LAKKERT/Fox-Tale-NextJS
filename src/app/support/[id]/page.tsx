@@ -43,47 +43,82 @@ export default function SupportChatRoom() {
 
     const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
 
+
     const handleRole = (role: string) => {
         setUserRole(role)
     }
+
+    const chatChannel = supabase.channel('support-channel');
+    
+    useEffect(() => {
+        chatChannel
+            .on(
+                'broadcast',
+                { event: 'sendMessage' },
+                (payload) => {
+                    setMessages(prev => [...prev, payload.payload.message]);
+                }
+            )
+            .subscribe();
+
+        chatChannel.on(
+            'broadcast',
+            { event: 'addParticipant' },
+            (payload) => {
+                setUsersData(payload.payload.participants);
+            }
+        )
+
+        chatChannel.on(
+            'broadcast',
+            { event: 'closeChat' },
+            (payload) => {
+                setChatData({...payload.payload})
+            }
+        )
+
+        return () => {
+            chatChannel.unsubscribe();
+        }
+    }, [])
 
     useEffect(() => {
         if (!socket) {
             if (process.env.NEXT_PUBLIC_ENV === 'production') {
                 const socketInstance = io("/", { path: "/api/support/socket" })
                 setSocket(socketInstance);
-    
+
                 socketInstance.on("message", (msg) => {
                     setMessages((prev) => [...prev, msg]);
                 });
-    
+
                 socketInstance.on("participants", (participant) => {
                     setUsersData([...participant.participants]);
                 });
-    
+
                 socketInstance.on('closeChat', (chatData) => {
                     setChatData({ ...chatData })
                 });
-    
+
                 return () => {
                     socketInstance.disconnect();
                 }
             } else {
                 const socketInstance = io("http://localhost:3000", { path: "/api/support/socket" })
                 setSocket(socketInstance);
-    
+
                 socketInstance.on("message", (msg) => {
                     setMessages((prev) => [...prev, msg]);
                 });
-    
+
                 socketInstance.on("participants", (participant) => {
                     setUsersData([...participant.participants]);
                 });
-    
+
                 socketInstance.on('closeChat', (chatData) => {
                     setChatData({ ...chatData })
                 });
-    
+
                 return () => {
                     socketInstance.disconnect();
                 }
@@ -194,12 +229,19 @@ export default function SupportChatRoom() {
                             if (error) {
                                 console.error(error);
                             } else {
-                                if (socket) {
-                                    const participantsList = {
-                                        participants: participantsData
-                                    }
+                                if (chatChannel) {
+                                    chatChannel.send({
+                                        type: 'broadcast',
+                                        event: 'addParticipant',
+                                        payload: {
+                                            participants: participantsData
+                                        }
+                                    })
+                                    // const participantsList = {
+                                    //     participants: participantsData
+                                    // }
 
-                                    socket.emit('participants', participantsList)
+                                    // socket.emit('participants', participantsList)
                                 }
                             }
                         }
@@ -276,14 +318,14 @@ export default function SupportChatRoom() {
                 >
                     <div className='w-full flex flex-row justify-center sm:min-w-[500px] md:min-w-[750px]'>
                         {userRole === 'admin' ? (
-                            <AdminPanel chatData={chatData} usersData={usersData} cookies={cookies} socket={socket} />
+                            <AdminPanel chatData={chatData} usersData={usersData} cookies={cookies} socket={socket} chat={chatChannel} />
                         ) : (
                             null
                         )}
                         <div className='flex flex-col gap-3'>
                             <ChatBoard userData={userData} usersData={usersData} chatData={chatData} messages={messages} isLoading={isLoading} />
 
-                            <ChatInputField chatData={chatData} socket={socket} userID={userData?.id} />
+                            <ChatInputField chatData={chatData} socket={socket} userID={userData?.id} chat={chatChannel} />
                         </div>
                     </div>
                 </motion.div>

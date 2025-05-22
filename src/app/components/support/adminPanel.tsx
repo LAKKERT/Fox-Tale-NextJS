@@ -5,6 +5,8 @@ import styles from "@/app/styles/home/variables.module.scss";
 import { motion } from 'framer-motion';
 import { ChatData, UsersData } from "@/lib/types/supportChat";
 import { supabase } from "@/lib/supabase/supabaseClient";
+import { RealtimeChannel } from "@supabase/supabase-js";
+
 interface Props {
     usersData: UsersData[];
     chatData: ChatData;
@@ -13,14 +15,19 @@ interface Props {
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     socket: any
+    chat: RealtimeChannel
 }
 
-export function AdminPanel({ usersData, chatData, cookies, socket }: Props) {
+export function AdminPanel({ usersData, chatData, cookies, socket, chat }: Props) {
     const [confirmClose, setConfirmClose] = useState(false);
 
     const closeChatRoom = async () => {
         try {
             if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                const chatIsClose = {
+                    ...chatData,
+                    status: true
+                }
                 const { error } = await supabase
                     .from('chat_room')
                     .update({
@@ -30,8 +37,12 @@ export function AdminPanel({ usersData, chatData, cookies, socket }: Props) {
                 if (error) {
                     console.error(error);
                 } else {
-                    if (socket) {
-                        socket.emit('closeChat', chatData);
+                    if (chat) {
+                        chat.send({
+                            type: 'broadcast',
+                            event: 'closeChat',
+                            payload: chatIsClose
+                        })
                     }
                 }
             } else {

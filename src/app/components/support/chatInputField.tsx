@@ -7,6 +7,7 @@ import styles from "@/app/styles/home/variables.module.scss";
 import { motion } from "framer-motion";
 import { ChatData } from "@/lib/types/supportChat";
 import { supabase } from "@/lib/supabase/supabaseClient";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 const MAX_FILES_ALLOWED = 3;
 
@@ -19,9 +20,10 @@ interface Props {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     socket: any;
     userID?: string;
+    chat: RealtimeChannel;
 }
 
-export function ChatInputField({chatData, socket, userID}: Props) {
+export function ChatInputField({ chatData, socket, userID, chat }: Props) {
     const [message, setMessage] = useState('');
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -97,7 +99,7 @@ export function ChatInputField({chatData, socket, userID}: Props) {
             }
         }
 
-        if (socket) {
+        if (socket || chat) {
             const messageData = {
                 content: message,
                 fileUrl: fileUrl,
@@ -105,10 +107,18 @@ export function ChatInputField({chatData, socket, userID}: Props) {
                 user_id: userID,
                 status: chatData?.status
             }
-            socket.emit("message", messageData);
             setSelectedFiles([]);
             setMessage("");
             if (process.env.NEXT_PUBLIC_ENV === 'production') {
+                chat.send(
+                    {
+                        type: 'broadcast',
+                        event: 'sendMessage',
+                        payload: {
+                            message: messageData
+                        }
+                    }
+                )
                 const { error } = await supabase
                     .from('messages')
                     .insert({
@@ -119,6 +129,8 @@ export function ChatInputField({chatData, socket, userID}: Props) {
                         file_url: fileUrl,
                     });
                 if (error) console.error(error);
+            } else {
+                socket.emit("message", messageData);
             }
         }
     }

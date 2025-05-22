@@ -13,7 +13,7 @@ export default function WebSocketAPI(req, res) {
         path: "/api/support/socket",
         cors: {
             origin: process.env.NODE_ENV === "production" 
-                ? "/" 
+                ? "https://dhgchffvriqxzhmldzaz.supabase.co" 
                 : "http://localhost:3000",
             methods: ["GET", "POST"],
             credentials: true
