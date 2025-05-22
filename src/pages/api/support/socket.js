@@ -13,7 +13,7 @@ export default function WebSocketAPI(req, res) {
         path: "/api/support/socket",
         cors: {
             origin: process.env.NODE_ENV === "production" 
-                ? "https://fox-tale-next-js.vercel.app" 
+                ? "/" 
                 : "http://localhost:3000",
             methods: ["GET", "POST"],
             credentials: true

@@ -50,7 +50,7 @@ export default function SupportChatRoom() {
     useEffect(() => {
         if (!socket) {
             if (process.env.NEXT_PUBLIC_ENV === 'production') {
-                const socketInstance = io("https://fox-tale-next-js.vercel.app", { path: "/api/support/socket" })
+                const socketInstance = io("/", { path: "/api/support/socket" })
                 setSocket(socketInstance);
     
                 socketInstance.on("message", (msg) => {
