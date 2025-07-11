@@ -16,7 +16,7 @@ export type ContentBlock = {
 export type NewsStructure = {
     title: string;
     description: string;
-    add_at: Date;
+    add_at: string;
     content_blocks: {
         id: string;
         heading: string;

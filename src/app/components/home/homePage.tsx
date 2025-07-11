@@ -97,9 +97,8 @@ export function Main() {
                         <div className="uppercase text-xl lg:text-3xl py-2 text-white text-center">- MAIN NEWS -</div>
 
                         <div className={`flex flex-col items-center md:flex-row gap-8 sm:mx-auto md:w-[732px] xl:w-auto xl:justify-center overflow-x-auto ${styles.custom_scroll}`}>
-
-                            {newsItems.map((item, item_id) => (
-                                <div key={item_id} className="relative py-2 px-4 sm:p-4 w-[320px] h-[190px] sm:w-[350px] sm:h-[220px]">
+                            {newsItems.map((item, itemId) => (
+                                <div key={itemId} className="relative py-2 px-4 sm:p-4 w-[320px] h-[190px] sm:w-[350px] sm:h-[220px]">
                                     <Image src="/home/outline_card.svg" alt="outline" width={100} height={100} className="absolute inset-0 w-full h-full pointer-events-none z-[1] " />
                                     <div className="relative flex flex-col bg-[#d8b5a3] md:min-w-[318px] h-full z-[0] rounded">
                                         <div className="text-center uppercase py-2 text-lg font-light">{item?.title}</div>

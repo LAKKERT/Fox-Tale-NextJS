@@ -108,7 +108,7 @@ export default function UniversePage() {
                             <div className="w-full flex flex-row flex-wrap gap-4 justify-center ">
                                 {universeData.map((item, i) => {
                                     return (
-                                        <div key={i} className="relative group">
+                                        <article key={i} className="relative group">
                                             <Link href={`/universe/${item.id}`}>
                                                 <motion.div
                                                     whileTap={{ scale: 0.95 }}
@@ -177,7 +177,7 @@ export default function UniversePage() {
                                                     </motion.div>
                                                 </motion.div>
                                             </Link>
-                                        </div>
+                                        </article>
                                     )
                                 })}
                             </div>

@@ -11,7 +11,7 @@ const MainFont = K2D({
 export function Footer() {
     return (
         <div className={`flex justify-center p-5 bg-black border-t-2 border-[#f5885a]  ${MainFont.className}`}>
-            <div className="flex flex-col lg:flex-row items-center gap-5 lg:gap-20">
+            <nav className="flex flex-col lg:flex-row items-center gap-5 lg:gap-20">
 
                 <div>
                     <Link href="/">
@@ -67,7 +67,7 @@ export function Footer() {
                         Discord
                     </Link>
                 </div>
-            </div>
+            </nav>
         </div>
     );
 }

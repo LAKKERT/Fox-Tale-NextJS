@@ -2,13 +2,11 @@
 import { Header } from "@/app/components/header";
 import { Footer } from "@/app/components/footer";
 import { Loader } from "@/app/components/load";
-import Link from "next/link";
-import { useState, useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useState, useEffect, useCallback } from "react";
+import { useForm } from "react-hook-form";
 import { useCookies } from "react-cookie";
 import { saveFile } from "@/pages/api/news/saveImagesAPI";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { K2D } from "next/font/google";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Yup from "yup";
@@ -18,6 +16,9 @@ import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/supabaseClient";
 import { CharacterDetailData, CharacterInputData } from "@/lib/interfaces/character"
 import { UniverseType } from "@/lib/interfaces/universe";
+import { Introduction } from "@/app/components/characters/introduction";
+import { ToolBar } from "@/app/components/characters/toolBar";
+import { Content } from "@/app/components/characters/content";
 
 const MainFont = K2D({
     style: "normal",
@@ -232,28 +233,6 @@ export default function UniversePage() {
 
     }, [isEditMode, selectedTerritories])
 
-    const editMode = () => {
-        if (isDelete === true) {
-            setIsDelete(false);
-        } else {
-            const value = isEditMode;
-
-            setIsEditMode(!value);
-            setSelectedFiles(null);
-        }
-    }
-
-    const deletePostHandle = () => {
-        if (isEditMode === true) {
-            setIsDelete(false);
-        } else {
-
-            const value = isDelete;
-
-            setIsDelete(!value);
-        }
-    }
-
     const getFileProperties = async (file: File) => {
         const fullName = file.name;
 
@@ -360,35 +339,7 @@ export default function UniversePage() {
         }
     }
 
-    const onDelete = async () => {
-        try {
-            if (process.env.NEXT_PUBLIC_ENV === 'production') {
-                const { error } = await supabase
-                    .from('characters')
-                    .delete()
-                    .eq('id', params?.id)
-                if (error) console.error(error)
-            } else {
-                const response = await fetch(`/api/characters/charactersAPI?characterID=${params?.id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${cookies.auth_token}`
-                    }
-                })
-
-                if (response.ok) {
-                    router.push('/characters');
-                } else {
-                    console.error('error occurred');
-                }
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    const selectCardsHandler = (id: number) => {
+    const changeSelectedCards = useCallback((id: number) => {
         setSelectedTerritories(prev => {
             const isAlreadySelected = prev.includes(id);
             const newSelected = isAlreadySelected
@@ -416,7 +367,16 @@ export default function UniversePage() {
 
             return newSelected;
         });
-    };
+    }, [allUniverses])
+
+    const modeChange = useCallback((editMode: boolean, deleteMode: boolean) => {
+        setIsEditMode(editMode);
+        setIsDelete(deleteMode);
+    }, []);
+
+    const changeSelectedFile = useCallback((file: File | null) => {
+        setSelectedFiles(file);
+    }, [])
 
     return (
         <div className="w-full min-h-[calc(100vh-100px)] mt-[100px] bg-black object-cover bg-cover bg-center bg-no-repeat overflow-hidden caret-transparent">
@@ -440,70 +400,7 @@ export default function UniversePage() {
                     >
                         <form onSubmit={handleSubmit(onSubmit)}>
 
-                            <motion.div className={`w-full bg-white`}
-                                key={characterData?.id}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ duration: 0.3 }}
-                            >
-
-                                <div className="relative caret-transparent h-full">
-                                    <motion.p
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: .3 }}
-                                        className={`uppercase absolute inset-0 text-center text-balance flex items-center justify-center text-white text-xl md:text-7xl tracking-[5px] caret-transparent z-10 ${isEditMode ? 'hidden' : 'block'}`}
-                                    >
-                                        {characterData?.name}
-                                    </motion.p>
-
-                                    <motion.input
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: .3 }}
-                                        placeholder="TITLE"
-                                        {...register('name')}
-                                        className={`absolute uppercase w-full bg-transparent outline-none top-0 bottom-0 my-auto text-white placeholder:text-white text-xl md:text-7xl tracking-[5px] text-center focus:caret-white ${isEditMode ? 'block' : 'hidden'}`}
-                                    />
-                                    {process.env.NEXT_PUBLIC_ENV === 'production' ? (
-                                        <Image
-                                            src={!selectedFile
-                                                ? `${characterData?.cover}`
-                                                : URL.createObjectURL(selectedFile)
-                                            }
-                                            alt="Selected cover"
-                                            width={500}
-                                            height={300}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-
-                                        <Image
-                                            src={!selectedFile
-                                                ? `http://localhost:3000/${characterData?.cover}`
-                                                : URL.createObjectURL(selectedFile)
-                                            }
-                                            alt="Selected cover"
-                                            width={500}
-                                            height={300}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    )}
-
-                                    <input
-                                        type="file"
-                                        {...register('cover')}
-                                        onChange={(e) => {
-                                            if (e.target.files) {
-                                                setSelectedFiles(e.target.files[0]);
-                                            }
-                                        }}
-                                        id="inputFile"
-                                        className="hidden"
-                                    />
-
-                                </div>
-                            </motion.div>
+                            <Introduction register={register} characterData={characterData} selectedFile={selectedFile} isEditMode={isEditMode} changeSelectedFile={changeSelectedFile} />
 
                             <AnimatePresence>
                                 <motion.div
@@ -522,330 +419,12 @@ export default function UniversePage() {
                                     }}
 
                                 >
-                                    <div className="flex flex-col items-center">
-                                        <div className="flex flex-row justify-between mt-2">
-                                            {userRole === "admin" && (
-                                                <div className="flex flex-row gap-3">
-                                                    <button type="button" onClick={editMode}>EDIT</button>
-                                                    <button type="button" onClick={deletePostHandle} >DELETE</button>
-                                                </div>
-                                            )}
-                                        </div>
+                                    <ToolBar userRole={userRole} isEditMode={isEditMode} isDelete={isDelete} router={router} params={params} cookies={cookies} modeChange={modeChange} />
 
-                                        <motion.div
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{ height: isDelete ? '60px' : '0px', opacity: isDelete ? 1 : 0 }}
-                                            transition={{ duration: .3 }}
-                                            className={`${userRole === 'admin' ? 'block' : 'hidden'}`}
-                                        >
-                                            <p className={`${isDelete ? 'block' : 'hidde pointer-events-none'}`}>Do you really want to delete this article?</p>
-                                            <div className={`flex flex-row justify-center gap-2 ${isDelete ? 'block' : 'hidde pointer-events-none'}`}>
-                                                <button type="button" onClick={() => onDelete()}>Yes</button>
-                                                <button type="button" onClick={() => setIsDelete(false)} >No</button>
-                                            </div>
-                                        </motion.div>
-                                    </div>
-
-                                    <motion.div
-                                        initial={{ height: 'auto' }}
-                                        animate={{
-                                            height: isEditMode ? 'auto' : '0',
-                                            transition: {
-                                                duration: .3,
-                                                ease: "easeInOut"
-                                            }
-                                        }}
-                                    >
-                                        {isEditMode && (
-                                            <div className="flex flex-col">
-                                                <motion.p
-                                                    initial={{ opacity: 0, height: 0 }}
-                                                    animate={{ opacity: errors.name?.message ? 1 : 0, height: errors.name?.message ? 30 : 0 }}
-                                                    transition={{ duration: .3 }}
-                                                    className="text-center text-orange-300 text-[13px] sm:text-[18px]"
-                                                >
-                                                    {errors.name?.message}
-                                                </motion.p>
-
-                                                <motion.label
-                                                    htmlFor="inputFile"
-                                                    initial={{
-                                                        opacity: 0,
-                                                        scale: 0.95,
-                                                        y: 10
-                                                    }}
-                                                    animate={{
-                                                        opacity: 1,
-                                                        scale: 1,
-                                                        y: 0
-                                                    }}
-                                                    exit={{
-                                                        opacity: 0,
-                                                        y: 10
-                                                    }}
-                                                    transition={{
-                                                        duration: 0.2,
-                                                        ease: "easeInOut"
-                                                    }}
-                                                    className={`min-w-[185px] max-h-[42px] text-center py-2  px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3]`}
-                                                >
-                                                    Change cover
-                                                </motion.label>
-                                            </div>
-                                        )}
-                                    </motion.div>
-
-
-                                    <motion.div layout={'position'} className="max-w-[640px] w-full h-auto flex flex-col gap-3">
-                                        <pre className={`text-lg text-wrap text-[#F5DEB3] px-2 md:px-0 ${isEditMode ? 'hidden' : 'block'}`}>
-                                            {characterData?.description}
-                                        </pre>
-                                        <motion.p
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: errors.description?.message ? 1 : 0, height: errors.description?.message ? 30 : 0 }}
-                                            transition={{ duration: .3 }}
-                                            className="text-center text-orange-300 text-[13px] sm:text-[18px]"
-                                        >
-                                            {errors.description?.message}
-                                        </motion.p>
-                                        <motion.textarea
-                                            {...register(`description`)}
-                                            onInput={(e) => {
-                                                const target = e.target as HTMLTextAreaElement;
-
-                                                target.style.height = "auto";
-                                                target.style.minHeight = "50px";
-                                                target.style.height = `${target.scrollHeight}px`;
-                                            }}
-                                            className={` text-left text-lg text-wrap px-2 text-[#F5DEB3] overflow-hidden py-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${isEditMode ? 'block' : 'hidden'} focus:caret-white`}
-                                            style={{
-                                                boxSizing: "border-box"
-                                            }}
-                                        />
-                                    </motion.div>
-
-                                    <div>
-                                        <motion.p
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: errors.territories?.message ? 1 : 0, height: errors.territories?.message ? 30 : 0 }}
-                                            transition={{ duration: .3 }}
-                                            className="text-center text-orange-300 text-[13px] sm:text-[18px]"
-                                        >
-                                            {errors.territories?.message}
-                                        </motion.p>
-
-                                        <Controller
-                                            control={control}
-                                            name="territories"
-                                            defaultValue={selectedTerritories}
-                                            render={({ field }) => {
-                                                return (
-                                                    <motion.div layout={'position'} className="flex flex-col items-center gap-4">
-                                                        <h2 className="uppercase text-2xl">TERRITORIES</h2>
-                                                        <div className="w-full max-w-xl sm:max-w-2xl lg:max-w-4xl xl:max-w-5xl flex flex-wrap justify-center gap-3 ">
-                                                            {territories.length > 0 ? (
-                                                                territories.map((item) => (
-                                                                    <motion.div
-                                                                        key={item.id}
-                                                                        initial={{ opacity: 0, scale: 0.5 }}
-                                                                        animate={{
-                                                                            opacity: 1,
-                                                                            scale: 1,
-                                                                            borderColor: isEditMode && selectedTerritories.includes(item.id)
-                                                                                ? "#C2724F"
-                                                                                : "transparent"
-                                                                        }}
-                                                                        exit={{ opacity: 0, scale: 0 }}
-                                                                        transition={{
-                                                                            duration: 0.3,
-                                                                            ease: "easeInOut",
-                                                                            scale: { type: "spring" }
-                                                                        }}
-                                                                        whileTap={{ scale: 0.95 }}
-
-                                                                        onClick={() => {
-                                                                            if (isEditMode) {
-                                                                                const newValue = field.value.includes(item.id)
-                                                                                    ? field.value.filter(value => value !== item.id)
-                                                                                    : [...field.value, item.id]
-                                                                                selectCardsHandler(item.id)
-                                                                                field.onChange(newValue)
-                                                                            }
-                                                                        }}
-                                                                        className={`border-4 rounded-lg flex justify-center gap-3 ${isEditMode ? 'z-10' : 'z-0'}`}
-                                                                    >
-                                                                        <Link href={`/universe/${item.id}`} className={` ${isEditMode ? 'pointer-events-none' : ''} ${isEditMode ? 'z-0' : 'z-10'}`}>
-                                                                            <motion.div
-                                                                                whileHover='hover'
-                                                                                className=" relative w-[250px] h-[345px] rounded shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
-                                                                            >
-                                                                                <Image
-                                                                                    src={`http://localhost:3000/${item.cover}`}
-                                                                                    alt="Place Cover"
-                                                                                    fill
-                                                                                    sizes="(max-width: 768px) 100vw, 50vw"
-                                                                                    className="object-cover object-center"
-                                                                                    quality={100}
-                                                                                />
-
-                                                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                                                    <p className="uppercase text-2xl text-white z-10 drop-shadow-lg">
-                                                                                        {item.name}
-                                                                                    </p>
-                                                                                </div>
-
-                                                                                <motion.div
-                                                                                    variants={{ hover: { opacity: 0.3 } }}
-                                                                                    className="absolute inset-0 bg-black/0"
-                                                                                />
-
-                                                                                <motion.div
-                                                                                    variants={{
-                                                                                        hover: {
-                                                                                            opacity: 1,
-                                                                                            y: 0,
-                                                                                            transition: {
-                                                                                                duration: 0.3
-                                                                                            }
-                                                                                        }
-                                                                                    }}
-                                                                                    initial={{ opacity: 0, y: 50 }}
-                                                                                    className="absolute bottom-0 w-full bg-gradient-to-t from-black/90 via-black/70 to-transparent p-4"
-                                                                                >
-                                                                                    <div className="flex w-full items-center justify-between text-white">
-                                                                                        <span className="text-lg">Read more</span>
-                                                                                        <motion.div
-                                                                                            variants={{
-                                                                                                hover: { x: 5 },
-                                                                                            }}
-                                                                                            className="w-6 h-6"
-                                                                                        >
-                                                                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                                                            </svg>
-                                                                                        </motion.div>
-                                                                                    </div>
-                                                                                </motion.div>
-                                                                            </motion.div>
-                                                                        </Link>
-                                                                    </motion.div>
-                                                                ))
-                                                            ) : (
-                                                                <div>No territories</div>
-                                                            )}
-                                                        </div>
-
-                                                        <div className={`w-full flex flex-col justify-center  ${isEditMode ? 'block' : 'hidden'}`}>
-                                                            <motion.h2
-                                                                initial={{ opacity: 0, y: -10, scale: 0.98 }}
-                                                                animate={{ opacity: isEditMode ? 1 : 0, y: isEditMode ? -10 : 0, scale: isEditMode ? 1 : 0.98 }}
-                                                                transition={{ duration: .3 }}
-                                                                className="text-center uppercase text-2xl">ALL TERRITORIES
-                                                            </motion.h2>
-                                                            <div className="w-full flex flex-wrap justify-center gap-3">
-                                                                {allTerritories.length > 0 ? (
-                                                                    <AnimatePresence mode='popLayout'>
-                                                                        {allTerritories.map((item) => (
-                                                                            <motion.div
-                                                                                key={item.id}
-                                                                                initial={{ opacity: 0, scale: 0.5 }}
-                                                                                animate={{
-                                                                                    opacity: 1,
-                                                                                    scale: 1,
-                                                                                    borderColor: isEditMode && selectedTerritories.includes(item.id)
-                                                                                        ? "#C2724F"
-                                                                                        : "transparent"
-                                                                                }}
-                                                                                exit={{ opacity: 0, scale: 0 }}
-                                                                                transition={{
-                                                                                    duration: 0.3,
-                                                                                    ease: "easeInOut",
-                                                                                    scale: { type: "spring" }
-                                                                                }}
-                                                                                whileTap={{ scale: 0.95 }}
-                                                                                onClick={() => {
-                                                                                    if (isEditMode) {
-                                                                                        const newValue = field.value.includes(item.id)
-                                                                                            ? field.value.filter(value => value !== item.id)
-                                                                                            : [...field.value, item.id]
-                                                                                        selectCardsHandler(item.id)
-                                                                                        field.onChange(newValue);
-                                                                                    }
-                                                                                }}
-                                                                                className={`border-4 rounded-lg flex justify-center gap-3 ${isEditMode ? 'z-10' : 'z-0'}`}
-                                                                            >
-                                                                                <Link href={`/universe/${item.id}`} className={` ${isEditMode ? 'pointer-events-none' : ''} ${isEditMode ? 'z-0' : 'z-20'}`}>
-                                                                                    <motion.div
-                                                                                        whileHover='hover'
-                                                                                        className=" relative w-[250px] h-[345px] rounded shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
-                                                                                    >
-                                                                                        <Image
-                                                                                            src={`http://localhost:3000/${item.cover}`}
-                                                                                            alt="Place Cover"
-                                                                                            fill
-                                                                                            sizes="(max-width: 768px) 100vw, 50vw"
-                                                                                            className="object-cover object-center"
-                                                                                            quality={100}
-                                                                                        />
-
-                                                                                        <div className="absolute inset-0 flex items-center justify-center">
-                                                                                            <p className="uppercase text-2xl text-white z-10 drop-shadow-lg">
-                                                                                                {item.name}
-                                                                                            </p>
-                                                                                        </div>
-
-                                                                                        <motion.div
-                                                                                            variants={{ hover: { opacity: 0.3 } }}
-                                                                                            className="absolute inset-0 bg-black/0"
-                                                                                        />
-
-                                                                                        <motion.div
-                                                                                            variants={{
-                                                                                                hover: {
-                                                                                                    opacity: 1,
-                                                                                                    y: 0,
-                                                                                                    transition: {
-                                                                                                        duration: 0.3
-                                                                                                    }
-                                                                                                }
-                                                                                            }}
-                                                                                            initial={{ opacity: 0, y: 50 }}
-                                                                                            className="absolute bottom-0 w-full bg-gradient-to-t from-black/90 via-black/70 to-transparent p-4"
-                                                                                        >
-                                                                                            <div className="flex w-full items-center justify-between text-white">
-                                                                                                <span className="text-lg">Read more</span>
-                                                                                                <motion.div
-                                                                                                    variants={{
-                                                                                                        hover: { x: 5 },
-                                                                                                    }}
-                                                                                                    className="w-6 h-6"
-                                                                                                >
-                                                                                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                                                                    </svg>
-                                                                                                </motion.div>
-                                                                                            </div>
-                                                                                        </motion.div>
-                                                                                    </motion.div>
-                                                                                </Link>
-                                                                            </motion.div>
-                                                                        ))}
-                                                                    </AnimatePresence>
-                                                                ) : (
-                                                                    <div>No territories available</div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </motion.div>
-                                                )
-                                            }}
-                                        />
-                                    </div>
-
+                                    <Content register={register} control={control} selectedTerritories={selectedTerritories} territories={territories} errors={errors} allTerritories={allTerritories} isEditMode={isEditMode} characterData={characterData} changeSelectedCards={changeSelectedCards} />
 
                                     <motion.button
                                         layout
-
                                         initial={{
                                             opacity: 0,
                                             y: -10,

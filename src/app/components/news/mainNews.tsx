@@ -153,7 +153,7 @@ export function NewsPageComponent({role}: userRoleInt) {
                             {paginatedNews && paginatedNews.length > 0 ? (
                                 paginatedNews.map((newsItem) => {
                                     return (
-                                        <div key={newsItem.id} className="lg:max-h-[220px] flex flex-col lg:grid lg:grid-cols-[320px_minmax(656px,1fr)] xl:grid-cols-[350px_minmax(716px,1fr)] gap-3">
+                                        <article key={newsItem.id} className="lg:max-h-[220px] flex flex-col lg:grid lg:grid-cols-[320px_minmax(656px,1fr)] xl:grid-cols-[350px_minmax(716px,1fr)] gap-3">
                                             <div className="h-full w-[290px] md:w-[320px] xl:w-[350px]">
                                                 <div className="relative py-2 lg:px-4 md:p-4 w-[290px] md:w-[320px] h-[190px] xl:w-[350px] xl:h-[220px]">
                                                     <Image src="/home/outline_card.svg" alt="outline" fill className="hidden lg:block absolute inset-0 w-full h-full pointer-events-none z-[1] object-fill object-center" />
@@ -169,11 +169,11 @@ export function NewsPageComponent({role}: userRoleInt) {
                                                         </div>
 
                                                         <div className="mt-auto pl-2 pb-1">
-                                                            <p className="text-sm">
+                                                            <time className="text-sm" dateTime={`${new Date(newsItem.add_at).toISOString().split('T'[0])}`}>
                                                                 {new Date(newsItem.add_at).toLocaleString("ru-RU", {
                                                                     dateStyle: 'short'
                                                                 })}
-                                                            </p>
+                                                            </time>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -194,7 +194,7 @@ export function NewsPageComponent({role}: userRoleInt) {
                                                     <Image src="/home/Arrow.svg" alt="arrow" width={25} height={25} className="mt-[2px]" />
                                                 </Link>
                                             </div>
-                                        </div>
+                                        </article>
                                     )
                                 })
                             ) : (

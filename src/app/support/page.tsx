@@ -84,26 +84,28 @@ export default function SupportPage() {
 
                             <div className="max-w-[1110px] flex flex-col gap-5">
                                 {cards.map((card) => (
-                                    <button key={card.id} onClick={() => toggleCard(card.id)}>
-                                        <div className={`flex flex-col bg-[rgba(6,6,6,.65)] rounded p-2 `}>
-                                            <div className="text-lg md:text-lg flex flex-row justify-between">
-                                                <p className="text-lg md:text-xl">{card.title}</p>
+                                    <section key={card.id}>
+                                        <button onClick={() => toggleCard(card.id)}>
+                                            <div className={`flex flex-col bg-[rgba(6,6,6,.65)] rounded p-2 `}>
+                                                <div className="text-lg md:text-lg flex flex-row justify-between">
+                                                    <p className="text-lg md:text-xl">{card.title}</p>
 
-                                                <div className={`select-none transform duration-300 ${openCards[card.id] ? 'rotate-180' : 'rotate-360'}`}>
-                                                    <p>▼</p>
+                                                    <div className={`select-none transform duration-300 ${openCards[card.id] ? 'rotate-180' : 'rotate-360'}`}>
+                                                        <p>▼</p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <motion.div
-                                                initial={{ height: '0px' }}
-                                                animate={{ height: openCards[card.id] ? 'auto' : '0px' }}
-                                                transition={{ duration: .3 }}
-                                                className="overflow-hidden text-md md:text-lg select-text text-left"
-                                            >
-                                                {card.content}
-                                            </motion.div>
+                                                <motion.div
+                                                    initial={{ height: '0px' }}
+                                                    animate={{ height: openCards[card.id] ? 'auto' : '0px' }}
+                                                    transition={{ duration: .3 }}
+                                                    className="overflow-hidden text-md md:text-lg select-text text-left"
+                                                >
+                                                    {card.content}
+                                                </motion.div>
 
-                                        </div>
-                                    </button>
+                                            </div>
+                                        </button>
+                                    </section>
                                 ))}
                             </div>
 
@@ -112,10 +114,14 @@ export default function SupportPage() {
                                 <Link href='/support/create_support_chat' className="flex justify-center items-center w-[250px] h-[50px] text-lg tracking-wider transition-colors duration-75 rounded border border-[#F5DEB3] bg-[#C2724F] hover:bg-[#b66847] uppercase select-none">WRITE</Link>
                             </div>
 
-                            <div className="flex flex-col items-center gap-5">
-                                <p className="text-lg md:text-2xl text-balance text-center">If you want to view the history of your requests, please follow the link.</p>
-                                <Link href='/support/requests_history' className="flex justify-center items-center w-[250px] h-[50px] text-lg tracking-wider transition-colors duration-75 rounded border border-[#F5DEB3] bg-[#C2724F] hover:bg-[#b66847] uppercase select-none">HISTORY</Link>
-                            </div>
+                            {userRole ? (
+                                <div className="flex flex-col items-center gap-5">
+                                    <p className="text-lg md:text-2xl text-balance text-center">If you want to view the history of your requests, please follow the link.</p>
+                                    <Link href='/support/requests_history' className="flex justify-center items-center w-[250px] h-[50px] text-lg tracking-wider transition-colors duration-75 rounded border border-[#F5DEB3] bg-[#C2724F] hover:bg-[#b66847] uppercase select-none">HISTORY</Link>
+                                </div>
+                            ) : (
+                                null
+                            )}
 
                             <div className={`flex flex-col items-center gap-5 ${userRole === 'admin' ? '' : 'hidden'}`}>
                                 <p className={`text-lg md:text-2xl text-balance text-center`}>All requests</p>

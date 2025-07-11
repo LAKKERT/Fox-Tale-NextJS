@@ -126,7 +126,7 @@ export function Header({ role }: UserRoleInt) {
     return (
         <div
             className={`fixed w-full z-50 select-none`}>
-            <div className={`fixed top-0 z-50 h-[100px] w-full px-3 flex lg:justify-between items-center bg-black ${MainFont.className} ${isOptionsMenuOpen ? "outline outline-[rgba(245,136,90,.9)]" : "outline-none"}`}>
+            <nav className={`fixed top-0 z-50 h-[100px] w-full px-3 flex lg:justify-between items-center bg-black ${MainFont.className} ${isOptionsMenuOpen ? "outline outline-[rgba(245,136,90,.9)]" : "outline-none"}`}>
 
                 <MobileMode isMenuOpen={isMenuOpen} toggleMenu={toggleMenu} />
 
@@ -198,7 +198,7 @@ export function Header({ role }: UserRoleInt) {
                         </Link>
                     </div>
                 }
-            </div>
+            </nav>
 
             <div className={`absolute right-0 block lg:hidden bg-[#000000b6] h-screen w-full sm:w-1/2 transform duration-500 ease-in-out ${isMenuOpen ? "opacity-100 translate-x-0" : "opacity-0 translate-x-full"}`}>
                 <div className="flex lg:hidden flex-col items-start p-5 gap-5">

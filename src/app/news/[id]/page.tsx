@@ -3,8 +3,7 @@
 import { Header } from "@/app/components/header";
 import { Footer } from "@/app/components/footer";
 import { Loader } from "@/app/components/load";
-import Image from "next/image";
-import { useState, useEffect, useCallback, useRef, ChangeEvent } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useCookies } from "react-cookie";
 import { useUserStore } from "@/stores/userStore";
 import { K2D } from "next/font/google";
@@ -15,12 +14,12 @@ import * as Yup from "yup";
 import _ from "lodash";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { saveFile } from "@/pages/api/news/saveImagesAPI";
-import styles from "@/app/styles/home/variables.module.scss";
-import { useRouter } from "next/navigation";
-import { useParams } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 import { ContentBlock, NewsStructure, FileMetadata, FormValues } from "@/lib/types/news";
 import { supabase } from "@/lib/supabase/supabaseClient";
+import { IntroductionBlock } from "@/app/components/news/introductionBlock";
+import { ContentBlocks } from "@/app/components/news/contentBlock";
 
 const MainFont = K2D({
     style: "normal",
@@ -72,26 +71,12 @@ export default function PostDetail() {
     const [cookies] = useCookies(['roleToken']);
     const router = useRouter();
 
-    const imgRef = useRef<HTMLElement[]>([]);
-    const textAreaRef = useRef<HTMLElement[][]>([]);
-
-    const debouncedUpdate = useRef(
-        _.debounce((block, contentBlockIndex, h, v) => {
-            update(contentBlockIndex, {
-                ...block[contentBlockIndex],
-                vertical_position: v,
-                horizontal_position: h
-            });
-        }, 300)
-    ).current;
-
-    const {
-        register, control, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
-            resolver: yupResolver(validationSchema),
-            defaultValues: {
-                content_blocks: [],
-            }
-        });
+    const { register, control, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+        resolver: yupResolver(validationSchema),
+        defaultValues: {
+            content_blocks: [],
+        }
+    });
 
     const { fields: content_blocks, append, update, replace } = useFieldArray({
         control,
@@ -194,14 +179,6 @@ export default function PostDetail() {
         fetchPostData();
     }, [userData, cookies, router, params, reset]);
 
-    const editMode = () => {
-        if (deletePost === true) {
-            setDeletePost(false);
-        } else {
-            const value = editModeActive;
-            setEditModeActive(!value);
-        }
-    }
 
     useEffect(() => {
         if (!editModeActive && postData) {
@@ -213,15 +190,12 @@ export default function PostDetail() {
         }
     }, [editModeActive, postData, reset]);
 
-    const deletePostHandle = () => {
-        if (editModeActive === true) {
-            setDeletePost(false);
-        } else {
-            const value = deletePost;
-
-            setDeletePost(!value);
-        }
-    }
+    const editModeChange = useCallback((editMode: boolean, deleteMode: boolean) => {
+        setEditModeActive(editMode);
+        setDeletePost(deleteMode);
+    },
+        []
+    )
 
     const addParagraph = () => {
         const newOrder = content_blocks.length > 0 ? content_blocks[content_blocks.length - 1].order_index + 1 : 0;
@@ -234,53 +208,6 @@ export default function PostDetail() {
             covers: null,
             order_index: newOrder,
             content: [{ id: uuidv4(), content: '', image: null, order_index: 0 }]
-        });
-    };
-
-    const addContentBlock = (contentBlockIndex: number) => {
-        const contentBlock = content_blocks[contentBlockIndex];
-        const newContentOrder = contentBlock.content.length;
-        update(contentBlockIndex, {
-            ...contentBlock,
-            content: [...contentBlock.content, { id: uuidv4(), content: '', image: null, order_index: newContentOrder }]
-        });
-    };
-
-    const deleteContentBlock = (contentBlockIndex: number, contentIndex: number) => {
-        const updatedcontent = content_blocks[contentBlockIndex].content.filter(
-            (_, idx) => idx !== contentIndex
-        ).map((content, index) => ({ ...content, order_index: index }));
-
-        update(contentBlockIndex, {
-            ...content_blocks[contentBlockIndex],
-            content: updatedcontent
-        });
-    };
-
-    const deleteParagraph = (paragraphIndex: number) => {
-        const updatedContents = content_blocks
-            .filter((_, idx) => idx !== paragraphIndex)
-            .map((contentBlock, index) => ({ ...contentBlock, order_index: index }));
-
-        replace(updatedContents);
-    };
-
-    const handleCoverChange = async (contentBlockIndex: number, file: File) => {
-        const updatedParagraph = {
-            ...content_blocks[contentBlockIndex],
-            covers: file
-        };
-        update(contentBlockIndex, updatedParagraph);
-    };
-
-    const handleImageChange = (contentBlockIndex: number, contentIndex: number, file: File) => {
-        const updatedcontent = content_blocks[contentBlockIndex].content.map((content, idx) =>
-            idx === contentIndex ? { ...content, image: file } : content
-        );
-
-        update(contentBlockIndex, {
-            ...content_blocks[contentBlockIndex],
-            content: updatedcontent
         });
     };
 
@@ -432,60 +359,6 @@ export default function PostDetail() {
         }
     };
 
-    const handleDeletePost = async () => {
-        try {
-            if (process.env.NEXT_PUBLIC_ENV === 'production') {
-                const { error } = await supabase
-                    .from('news')
-                    .delete()
-                    .eq('id', params?.id)
-                if (error) console.error(error);
-                const { error: contentBlocksError } = await supabase
-                    .from('content_blocks')
-                    .delete()
-                    .eq('news_id', params?.id)
-                if (contentBlocksError) console.error(contentBlocksError);
-
-                router.push('/news')
-            } else {
-                const response = await fetch(`/api/news/addNewsAPI`, {
-                    method: 'DELETE',
-                    headers: {
-                        'content-type': 'application/json',
-                        'Authorization': `Bearer ${cookies.roleToken}`
-                    },
-                    body: JSON.stringify({ postID: params?.id })
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    router.push(result.redirectUrl);
-                } else {
-                    console.error('Error deleting post:');
-                }
-            }
-        } catch (error) {
-            console.error('Error deleting post:', error);
-        }
-    }
-
-    const handlePositionChange = (contentBlockIndex: number, hValue: number, vValue: number) => {
-        if (imgRef.current) {
-            imgRef.current[contentBlockIndex].style.objectPosition = `${hValue}% ${vValue}%`;
-        }
-    }
-
-    const handleSliderChange = (contentBlockIndex: number, isHorizontal: boolean, e: ChangeEvent<HTMLInputElement>) => {
-        const value = Number(e.target.value);
-
-        const newH = isHorizontal ? value : content_blocks[contentBlockIndex].horizontal_position;
-        const newV = !isHorizontal ? value : content_blocks[contentBlockIndex].vertical_position;
-
-        handlePositionChange(contentBlockIndex, newH, newV);
-        debouncedUpdate(content_blocks, contentBlockIndex, newH, newV);
-    }
-
     const [windowSize, setWindowSize] = useState({
         width: typeof window !== "undefined" ? window.innerWidth : 0,
         height: typeof window !== "undefined" ? window.innerHeight : 0,
@@ -524,6 +397,7 @@ export default function PostDetail() {
     return (
         <div className="w-full min-h-[calc(100vh-100px)] mt-[100px] bg-black object-cover bg-cover bg-center bg-no-repeat overflow-hidden caret-transparent">
             <Header role={handleRole} />
+
             <div className={`max-w-[768px] xl:max-w-[1110px] flex flex-col justify-center items-center gap-0 lg:max-w-8xl mx-auto mt-[100px] px-4 pb-8 ${MainFont.className} text-[#F5DEB3] caret-transparent`}>
                 {isLoading ? (
                     <motion.div
@@ -551,345 +425,10 @@ export default function PostDetail() {
                                 <form onSubmit={handleSubmit(onSubmit)}
                                     className="flex flex-col gap-8"
                                 >
-                                    <motion.div
-                                        className=" min-h-[260px] max-w-[1110px] flex flex-col justify-evenly gap-3 text-center text-balance"
-                                    >
-                                        <h1 className={`text-xl md:text-2xl ${editModeActive ? 'hidden' : 'block'}`}>
-                                            {postData?.title}
-                                        </h1>
-
-                                        <motion.input
-                                            {...register('title')}
-                                            className={` w-full bg-transparent outline-none border-b-2 border-white focus:border-orange-400 transition-colors duration-300 text-xl md:text-2xl text-center focus:caret-white ${editModeActive ? 'block' : 'hidden'}`}
-                                        />
-
-                                        <motion.p
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: errors.title?.message ? 30 : 0, height: errors.title?.message ? 'auto' : '0px' }}
-                                            transition={{ duration: .3 }}
-                                            className=" text-orange-300 text-[13px] sm:text-[18px]"
-                                        >
-                                            {errors.title?.message}
-                                        </motion.p>
-
-                                        <p
-                                            className={`text-base md:text-lg ${editModeActive ? 'hidden' : 'block'}`}
-                                        >
-                                            {postData?.description}
-                                        </p>
-
-                                        <motion.textarea
-                                            {...register('description')}
-                                            onInput={(e) => {
-                                                const target = e.target as HTMLTextAreaElement;
-
-                                                target.style.height = "auto";
-                                                target.style.minHeight = "50px";
-                                                target.style.height = `${target.scrollHeight}px`;
-                                            }}
-                                            className={`text-center text-sm md:text-base text-balance text-[#F5DEB3] overflow-hidden py-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll} ${editModeActive ? 'block' : 'hidden'} focus:caret-white`}
-                                            style={{
-
-                                                maxHeight: "70vh",
-                                                boxSizing: "border-box"
-                                            }}
-                                        />
-
-                                        <motion.p
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: errors.description?.message ? 30 : 0, height: errors.description?.message ? 'auto' : '0px' }}
-                                            transition={{ duration: .3 }}
-                                            className=" text-orange-300 text-[13px] sm:text-[18px]"
-                                        >
-                                            {errors.description?.message}
-                                        </motion.p>
-
-                                        <div className="w-full flex flex-row justify-between">
-                                            <p className="text-left text-base">
-                                                {postData?.add_at ?
-                                                    new Date(postData.add_at).toLocaleString("ru-RU", {
-                                                        dateStyle: 'short'
-                                                    })
-                                                    :
-                                                    'Н/Д'}
-                                            </p>
-                                            {userRole === "admin" && (
-                                                <div className="flex flex-row gap-3">
-                                                    <button type="button" onClick={editMode}>EDIT</button>
-                                                    <button type="button" onClick={deletePostHandle}>DELETE</button>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <motion.div
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{ height: deletePost ? '60px' : '0px', opacity: deletePost ? 1 : 0 }}
-                                            transition={{ duration: .3 }}
-                                            className={`${userRole === 'admin' ? 'block' : 'hidden'}`}
-                                        >
-                                            <p>Do you really want to delete this article?</p>
-                                            <div className="flex flex-row justify-center gap-2">
-                                                <button type="button" onClick={() => handleDeletePost()} >Yes</button>
-                                                <button type="button" onClick={() => setDeletePost(false)}>No</button>
-                                            </div>
-                                        </motion.div>
-                                    </motion.div>
+                                    <IntroductionBlock register={register} postData={postData} editModeActive={editModeActive} deletePost={deletePost} errors={errors} userRole={userRole} editModeChange={editModeChange} params={params} />
 
                                     <AnimatePresence mode="wait">
-                                        {content_blocks && content_blocks?.map((contentBlock, contentBlockIndex) => {
-                                            return (
-                                                <motion.div
-                                                    layout={'position'}
-                                                    key={contentBlock.id}
-                                                    transition={{ duration: .3, type: 'spring', bounce: 0.25 }}
-                                                    className=" max-w-[1110px] flex flex-col justify-center items-center gap-4"
-                                                >
-                                                    <h2
-                                                        className={`text-center text-xl wrap text-balance ${editModeActive ? 'hidden' : 'block'}`}
-                                                    >
-                                                        {contentBlock.heading}
-                                                    </h2>
-
-                                                    <input
-                                                        {...register(`content_blocks.${contentBlockIndex}.heading`)}
-                                                        className={` w-full bg-transparent outline-none border-b-2 border-white focus:border-orange-400 transition-colors duration-300 text-xl text-center focus:caret-white ${editModeActive ? 'block' : 'hidden'}`}
-                                                        onChange={(e) => {
-                                                            update(contentBlockIndex, {
-                                                                ...contentBlock,
-                                                                heading: e.target.value
-                                                            })
-                                                        }}
-                                                    />
-
-                                                    <motion.p
-                                                        initial={{ opacity: 0, height: 0 }}
-                                                        animate={{ opacity: errors.content_blocks?.[contentBlockIndex]?.heading?.message ? 1 : 0, height: errors.content_blocks?.[contentBlockIndex]?.heading?.message ? 'auto' : '0px' }}
-                                                        transition={{ duration: .3 }}
-                                                        className={` text-orange-300 text-[13px] sm:text-[18px] ${editModeActive ? 'block' : 'hidden'}`}
-                                                    >
-                                                        {errors.content_blocks?.[contentBlockIndex]?.heading?.message}
-                                                    </motion.p>
-
-                                                    <motion.p
-                                                        initial={{ opacity: 0, height: 0 }}
-                                                        animate={{ opacity: errors.title?.message ? 30 : 0, height: errors.title?.message ? 'auto' : '0px' }}
-                                                        transition={{ duration: .3 }}
-                                                        className={` text-orange-300 text-[13px] sm:text-[18px] ${editModeActive ? 'block' : 'hidden'}`}
-                                                    >
-                                                        {errors.title?.message}
-                                                    </motion.p>
-
-                                                    {contentBlock.covers && (
-                                                        <motion.div
-                                                            layout="position"
-                                                            className="w-full h-64 relative mb-4"
-                                                        >
-                                                            {process.env.NEXT_PUBLIC_ENV === 'production' ? (
-                                                                <Image
-                                                                    ref={e => {
-                                                                        if (e) {
-                                                                            imgRef.current[contentBlockIndex] = e
-                                                                        }
-                                                                    }}
-                                                                    src={
-                                                                        typeof contentBlock.covers === 'string'
-                                                                            ? `${contentBlock.covers}`
-                                                                            : URL.createObjectURL(contentBlock.covers)
-                                                                    }
-                                                                    alt="covers"
-                                                                    fill
-                                                                    className={`transform-gpu rounded object-cover`}
-                                                                    style={{ objectPosition: `${contentBlock.horizontal_position}% ${contentBlock.vertical_position}%` }}
-                                                                    sizes="(max-width: 768px) 100vw, 50vw"
-                                                                    quality={100}
-                                                                />
-                                                            ) : (
-                                                                <Image
-                                                                    ref={e => {
-                                                                        if (e) {
-                                                                            imgRef.current[contentBlockIndex] = e
-                                                                        }
-                                                                    }}
-                                                                    src={typeof contentBlock.covers === 'string'
-                                                                        ? `http://localhost:3000/${contentBlock.covers}`
-                                                                        : URL.createObjectURL(contentBlock.covers)}
-                                                                    alt="covers"
-                                                                    fill
-                                                                    className={`transform-gpu rounded object-cover`}
-                                                                    style={{ objectPosition: `${contentBlock.horizontal_position}% ${contentBlock.vertical_position}%` }}
-                                                                    sizes="(max-width: 768px) 100vw, 50vw"
-                                                                    quality={100}
-                                                                />
-                                                            )}
-                                                        </motion.div>
-                                                    )}
-
-                                                    <motion.div
-                                                        layout={'position'}
-                                                        className={`w-full flex flex-col items-center ${content_blocks[contentBlockIndex]?.covers ? "gap-0" : ""}  `}
-                                                    >
-                                                        <input
-                                                            type="file"
-                                                            onChange={(e) => {
-                                                                const file = e.target.files?.[0];
-                                                                if (file) {
-                                                                    handleCoverChange(contentBlockIndex, file);
-                                                                }
-                                                            }}
-                                                            className="hidden"
-                                                            id={`covers-${contentBlockIndex}`}
-                                                        />
-
-                                                        <label
-                                                            htmlFor={`covers-${contentBlockIndex}`}
-                                                            className={` min-w-[185px] text-center py-2 mb-3 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3] transition-colors duration-75 hover:bg-[#c2724f91] ${editModeActive ? 'block' : 'hidden'}`}
-                                                        >
-                                                            {contentBlock.covers ? 'Change covers' : 'Upload covers'}
-                                                        </label>
-
-                                                        <div
-                                                            className={`w-full flex flex-col items-center gap-6`}
-                                                        >
-                                                            <input type="range" {...register(`content_blocks.${contentBlockIndex}.horizontal_position`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(contentBlockIndex, true, e)} min="0" max="100" className={`${styles.custom_input_range} ${editModeActive ? 'block' : 'hidden'} ${contentBlock.covers ? 'block' : 'hidden'}`} />
-                                                            <input type="range" {...register(`content_blocks.${contentBlockIndex}.vertical_position`, { valueAsNumber: true })} onChange={(e) => handleSliderChange(contentBlockIndex, false, e)} min="0" max="100" className={`${styles.custom_input_range} ${editModeActive ? 'block' : 'hidden'} ${contentBlock.covers ? 'block' : 'hidden'}`} />
-                                                        </div>
-                                                    </motion.div>
-
-                                                    <div className="w-full relative flex-col flex gap-4">
-                                                        <AnimatePresence mode="popLayout">
-                                                            {contentBlock.content.map((content, contentIndex) => {
-                                                                return (
-                                                                    <motion.div
-                                                                        key={content.id}
-                                                                        layout={'position'}
-                                                                        transition={{ duration: .3, type: 'spring', bounce: 0.25 }}
-                                                                        className=" w-full flex flex-col justify-center items-center gap-2 p-3"
-                                                                    >
-                                                                        {content.image && (
-                                                                            <div className="w-full h-96 relative mb-4">
-                                                                                {process.env.NEXT_PUBLIC_ENV === 'production' ? (
-                                                                                    <Image
-                                                                                        src={typeof content.image === 'string'
-                                                                                            ? `${content.image}`
-                                                                                            : URL.createObjectURL(content.image)}
-                                                                                        alt="Content"
-                                                                                        fill
-                                                                                        className="rounded object-contain"
-                                                                                        sizes="(max-width: 768px) 100vw, 50vw"
-                                                                                        quality={80}
-                                                                                    />
-                                                                                ) : (
-
-                                                                                    <Image
-                                                                                        src={typeof content.image === 'string'
-                                                                                            ? `http://localhost:3000/${content.image}`
-                                                                                            : URL.createObjectURL(content.image)}
-                                                                                        alt="Content"
-                                                                                        fill
-                                                                                        className="rounded object-contain"
-                                                                                        sizes="(max-width: 768px) 100vw, 50vw"
-                                                                                        quality={80}
-                                                                                    />
-                                                                                )}
-                                                                            </div>
-                                                                        )}
-
-                                                                        <input
-                                                                            type="file"
-                                                                            onChange={(e) => {
-                                                                                const file = e.target.files?.[0];
-                                                                                if (file) {
-                                                                                    handleImageChange(contentBlockIndex, contentIndex, file)
-                                                                                }
-                                                                            }}
-                                                                            className="hidden"
-                                                                            id={`image-${contentBlockIndex}-${contentIndex}`}
-                                                                        />
-
-                                                                        <motion.label
-                                                                            htmlFor={`image-${contentBlockIndex}-${contentIndex}`}
-                                                                            className={` min-w-[185px] text-center py-2 px-4 bg-[#C2724F] rounded cursor-pointer select-none border border-[#F5DEB3] transition-colors duration-75 hover:bg-[#c2724f91] ${editModeActive ? 'block' : 'hidden'}`}
-                                                                        >
-                                                                            {content.image ? 'Change Image' : 'Upload Image'}
-                                                                        </motion.label>
-
-                                                                        <div
-                                                                            className="w-full"
-                                                                            ref={(el) => {
-                                                                                if (el) {
-                                                                                    if (!textAreaRef.current[contentBlockIndex]) {
-                                                                                        textAreaRef.current[contentBlockIndex] = [];
-                                                                                    }
-                                                                                    textAreaRef.current[contentBlockIndex][contentIndex] = el;
-
-                                                                                }
-                                                                            }}
-                                                                        >
-                                                                            <pre
-                                                                                className={`text-left text-sm md:text-base text-balance ${editModeActive ? 'hidden' : 'block'}`}
-                                                                            >
-                                                                                {content.content}
-                                                                            </pre>
-                                                                        </div>
-
-                                                                        <motion.textarea
-                                                                            {...register(`content_blocks.${contentBlockIndex}.content.${contentIndex}.content`)}
-                                                                            onInput={(e) => {
-                                                                                const target = e.target as HTMLTextAreaElement;
-
-                                                                                target.style.height = "auto";
-                                                                                target.style.minHeight = "50px";
-                                                                                target.style.height = `${target.scrollHeight}px`;
-                                                                            }}
-                                                                            className={`text-left text-sm md:text-base text-balance text-[#F5DEB3] overflow-hidden py-2 w-full border-2 bg-transparent outline-none resize-none rounded border-white focus:border-orange-400 transition-colors duration-300 ${styles.custom_scroll} ${editModeActive ? 'block' : 'hidden'} focus:caret-white`}
-                                                                            style={{
-
-                                                                                maxHeight: "70vh",
-                                                                                boxSizing: "border-box"
-                                                                            }}
-                                                                        />
-
-                                                                        <motion.p
-                                                                            initial={{ opacity: 0, height: 0 }}
-                                                                            animate={{ opacity: errors.content_blocks?.[contentBlockIndex]?.content?.[contentIndex]?.content?.message ? 30 : 0, height: errors.content_blocks?.[contentBlockIndex]?.content?.[contentIndex]?.content?.message ? 'auto' : '0px' }}
-                                                                            transition={{ duration: .3 }}
-                                                                            className=" text-orange-300 text-[13px] sm:text-[18px]"
-                                                                        >
-                                                                            {errors.content_blocks?.[contentBlockIndex]?.content?.[contentIndex]?.content?.message}
-                                                                        </motion.p>
-
-                                                                        <motion.button
-                                                                            type="button"
-                                                                            onClick={() => deleteContentBlock(contentBlockIndex, contentIndex)}
-                                                                            className={` min-w-[185px] bg-red-500 px-4 py-2 rounded  transition-colors duration-75 hover:bg-[#c40000] ${editModeActive ? 'block' : 'hidden'}`}
-                                                                        >
-                                                                            Delete Content Block
-                                                                        </motion.button>
-                                                                    </motion.div>
-                                                                )
-                                                            })}
-                                                        </AnimatePresence>
-                                                    </div>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => addContentBlock(contentBlockIndex)}
-                                                        className={`min-w-[185px] bg-blue-400 px-4 py-2 rounded  transition-colors duration-75 hover:bg-[#4576b3] ${editModeActive ? 'block' : 'hidden'}`}
-                                                    >
-                                                        Add Content Block
-                                                    </button>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => deleteParagraph(contentBlockIndex)}
-                                                        className={`min-w-[185px] bg-rose-500 px-4 py-2 rounded  transition-colors duration-75 hover:bg-[#9f1239] ${editModeActive ? 'block' : 'hidden'}`}
-                                                    >
-                                                        Delete contentBlock
-                                                    </button>
-                                                </motion.div>)
-                                        }
-
-                                        )}
+                                        <ContentBlocks register={register} update={update} replace={replace} errors={errors} editModeActive={editModeActive} content_blocks={content_blocks} />
                                     </AnimatePresence>
 
                                     <div className="w-full flex flex-col items-center">
@@ -898,7 +437,7 @@ export default function PostDetail() {
                                             onClick={addParagraph}
                                             className={`w-[185px] bg-slate-500 px-4 py-2 rounded ${editModeActive ? 'block' : 'hidden'}`}
                                         >
-                                            Add New contentBlock
+                                            Add Content Block
                                         </button>
 
                                         <button type="submit" className={`w-[185px] ${editModeActive ? 'block' : 'hidden'} mt-4 px-6 py-2 bg-green-500 rounded`}>
