@@ -85,7 +85,7 @@ export default function SupportPage() {
                             <div className="max-w-[1110px] flex flex-col gap-5">
                                 {cards.map((card) => (
                                     <section key={card.id}>
-                                        <button onClick={() => toggleCard(card.id)}>
+                                        <button onClick={() => toggleCard(card.id)} className="w-full">
                                             <div className={`flex flex-col bg-[rgba(6,6,6,.65)] rounded p-2 `}>
                                                 <div className="text-lg md:text-lg flex flex-row justify-between">
                                                     <p className="text-lg md:text-xl">{card.title}</p>

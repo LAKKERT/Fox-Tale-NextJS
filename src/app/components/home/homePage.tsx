@@ -72,7 +72,7 @@ export function Main() {
     }, [])
 
     return (
-        <div data-testid="custom-element">
+        <div>
             {isLoading ? (
                 <motion.div
                     initial={{ opacity: 1 }}
