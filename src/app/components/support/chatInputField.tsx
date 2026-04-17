@@ -110,25 +110,38 @@ export function ChatInputField({ chatData, socket, userID, chat }: Props) {
             setSelectedFiles([]);
             setMessage("");
             if (process.env.NEXT_PUBLIC_ENV === 'production') {
-                chat.send(
-                    {
+                try {
+                    const { data, error } = await supabase
+                        .from('messages')
+                        .insert({
+                            room_id: chatData?.id,
+                            user_id: userID,
+                            message: messageData.content,
+                            sent_at: new Date().toISOString(),
+                            file_url: fileUrl,
+                        })
+                        .select()
+                        .single();
+                    
+                    if (error) {
+                        console.error(error);
+                        return;
+                    }
+    
+                    await chat.send({
                         type: 'broadcast',
                         event: 'sendMessage',
                         payload: {
-                            message: messageData
+                            message: {
+                                ...data,
+                                content: data.message,
+                                unreaded: true
+                            }
                         }
-                    }
-                )
-                const { error } = await supabase
-                    .from('messages')
-                    .insert({
-                        room_id: chatData?.id,
-                        user_id: userID,
-                        message: messageData.content,
-                        sent_at: new Date().toISOString(),
-                        file_url: fileUrl,
-                    });
-                if (error) console.error(error);
+                    })
+                }catch (error) {
+                    console.error("Error sending message:", error);
+                }
             } else {
                 socket.emit("message", messageData);
             }

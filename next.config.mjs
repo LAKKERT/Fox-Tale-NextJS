@@ -6,7 +6,7 @@ const cspHeader = `
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https://*.supabase.co http://localhost:3000;
     font-src 'self';
-    connect-src 'self' https://dhgchffvriqxzhmldzaz.supabase.co wss://dhgchffvriqxzhmldzaz.supabase.co;
+    connect-src 'self' https://djkfiizfubtxobavjtcr.supabase.co wss://djkfiizfubtxobavjtcr.supabase.co;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
@@ -38,7 +38,7 @@ const nextConfig = {
             },
             {
                 protocol: 'https',
-                hostname: 'dhgchffvriqxzhmldzaz.supabase.co',
+                hostname: 'djkfiizfubtxobavjtcr.supabase.co',
                 pathname: '/storage/v1/object/public/**',
             },
         ],

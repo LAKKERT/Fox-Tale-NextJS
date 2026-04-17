@@ -96,7 +96,7 @@ export default function UniversePage() {
                         <div className="flex flex-col items-center gap-4">
 
                             <div className="flex flex-col items-center gap-3">
-                                <h1 className="uppercase text-3xl">
+                                <h1 className="uppercase text-3xl text-[#F5DEB3]">
                                     territories
                                 </h1>
 
@@ -112,7 +112,7 @@ export default function UniversePage() {
                                             <Link href={`/universe/${item.id}`}>
                                                 <motion.div
                                                     whileTap={{ scale: 0.95 }}
-                                                    className="relative w-[250px] h-[345px] bg-white rounded shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
+                                                    className={`relative w-[250px] h-[345px] bg-white rounded shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden`}
                                                     whileHover="hover"
                                                 >
                                                     {process.env.NEXT_PUBLIC_ENV === 'production' ? (
@@ -137,7 +137,7 @@ export default function UniversePage() {
                                                     )}
 
                                                     <div className="absolute inset-0 flex items-center justify-center">
-                                                        <p className="uppercase text-2xl text-white z-10 drop-shadow-lg">
+                                                        <p className="uppercase text-2xl text-[#F5DEB3] [text-shadow:0_4px_2px_rgb(0_0_0_/_1)] z-10 drop-shadow-lg">
                                                             {item.name}
                                                         </p>
                                                     </div>

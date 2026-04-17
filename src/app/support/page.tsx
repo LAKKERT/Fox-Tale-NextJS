@@ -102,7 +102,6 @@ export default function SupportPage() {
                                                 >
                                                     {card.content}
                                                 </motion.div>
-
                                             </div>
                                         </button>
                                     </section>
@@ -113,7 +112,7 @@ export default function SupportPage() {
                                 <p className="text-lg md:text-2xl text-balance text-center">If you haven&apos;t found the answer to your problem, please contact our support team.</p>
                                 <Link href='/support/create_support_chat' className="flex justify-center items-center w-[250px] h-[50px] text-lg tracking-wider transition-colors duration-75 rounded border border-[#F5DEB3] bg-[#C2724F] hover:bg-[#b66847] uppercase select-none">WRITE</Link>
                             </div>
-
+                                
                             {userRole ? (
                                 <div className="flex flex-col items-center gap-5">
                                     <p className="text-lg md:text-2xl text-balance text-center">If you want to view the history of your requests, please follow the link.</p>

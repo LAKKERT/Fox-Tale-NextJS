@@ -48,6 +48,7 @@ export function ChatBoard({ userData, usersData, chatData, messages, isLoading }
     const [showImage, setShowImage] = useState<string | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const messageRefs = useRef<HTMLElement[]>([]);
+    const [lastSeenMessageId, setLastSeenMessageId] = useState<number | null>(null);
     const observer = useRef<IntersectionObserver | null>(null);
     const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -60,55 +61,85 @@ export function ChatBoard({ userData, usersData, chatData, messages, isLoading }
     }, []);
 
     useEffect(() => {
-        const handleUnloadOrPopState = async () => {
-            if (state.lastSeenMessage !== null) {
-                const payload = {
-                    userID: userData?.id,
-                    roomID: chatData.id,
-                    lastSeenMessage: state.lastSeenMessage,
-                };
+        if (!state.lastSeenMessage || !lastSeenMessageId) return;
 
-                try {
-                    if (process.env.NEXT_PUBLIC_ENV === 'production') {
-                        const { error } = await supabase
-                            .from('last_message')
-                            .insert({
-                                last_message_id: state.lastSeenMessage,
-                                user_id: userData?.id,
-                                room_id: chatData.id,
-                            })
-                        if (error) console.error(error);
-                    } else {
-                        const response = await fetch('/api/support/lastMessageAPI', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(payload),
-                        });
+        console.log('last_Message_Changed', state.lastSeenMessage, lastSeenMessageId)
 
-                        if (response.ok) {
-                            console.log('Last message sent');
-                        } else {
-                            console.error('Error sending last message');
-                        }
-                    }
-                } catch (errors) {
-                    console.error('Error sending last message:', errors);
+        if (lastSeenMessageId < state.lastSeenMessage) {
+            const insertLastMessageSeen = async () => {
+                const { error } = await supabase.from("last_message").upsert({
+                    last_message_id: state.lastSeenMessage,
+                    user_id: userData?.id,
+                    room_id: chatData.id
+                },
+                    {
+                        onConflict: "user_id, room_id"
+                    });
+
+                if (error) {
+                    console.error('error insert last message');
+                }else {
+                    setLastSeenMessageId(state.lastSeenMessage);
                 }
-            } else {
-                console.error('lastSeenMessage is null, not sending the data');
             }
-        };
+            insertLastMessageSeen();
+        }
 
-        window.addEventListener('beforeunload', handleUnloadOrPopState);
-        window.addEventListener('popstate', handleUnloadOrPopState);
 
-        return () => {
-            window.removeEventListener('beforeunload', handleUnloadOrPopState);
-            window.removeEventListener('popstate', handleUnloadOrPopState);
-        };
-    }, [state.lastSeenMessage, userData?.id, chatData.id]);
+    }, [state.lastSeenMessage, lastSeenMessageId, chatData?.id, userData?.id ]);
+
+    // useEffect(() => {
+    //     const handleUnloadOrPopState = async () => {
+    //         // console.log('last', state.lastSeenMessage)
+    //         if (state.lastSeenMessage !== null) {
+    //             const payload = {
+    //                 userID: userData?.id,
+    //                 roomID: chatData.id,
+    //                 lastSeenMessage: state.lastSeenMessage,
+    //             };
+
+    //             try {
+    //                 if (process.env.NEXT_PUBLIC_ENV === 'production') {
+    //                     console.log('lastSeenMessage', state.lastSeenMessage)
+    //                     const { error } = await supabase
+    //                         .from('last_message')
+    //                         .insert({
+    //                             last_message_id: state.lastSeenMessage,
+    //                             user_id: userData?.id,
+    //                             room_id: chatData.id,
+    //                         })
+    //                     if (error) console.error(error);
+    //                 } else {
+    //                     const response = await fetch('/api/support/lastMessageAPI', {
+    //                         method: 'POST',
+    //                         headers: {
+    //                             'Content-Type': 'application/json',
+    //                         },
+    //                         body: JSON.stringify(payload),
+    //                     });
+
+    //                     if (response.ok) {
+    //                         console.log('Last message sent');
+    //                     } else {
+    //                         console.error('Error sending last message');
+    //                     }
+    //                 }
+    //             } catch (errors) {
+    //                 console.error('Error sending last message:', errors);
+    //             }
+    //         } else {
+    //             console.error('lastSeenMessage is null, not sending the data');
+    //         }
+    //     };
+
+    //     window.addEventListener('beforeunload', handleUnloadOrPopState);
+    //     window.addEventListener('popstate', handleUnloadOrPopState);
+
+    //     return () => {
+    //         window.removeEventListener('beforeunload', handleUnloadOrPopState);
+    //         window.removeEventListener('popstate', handleUnloadOrPopState);
+    //     };
+    // }, [state.lastSeenMessage, userData?.id, chatData.id]);
 
     useEffect(() => {
         const fetchLastSeenMessage = async () => {
@@ -128,6 +159,7 @@ export function ChatBoard({ userData, usersData, chatData, messages, isLoading }
                     if (error) {
                         console.error('last message', error);
                     } else {
+                        setLastSeenMessageId(data.last_message_id);
                         messageRefs.current[data.last_message_id]?.scrollIntoView({ behavior: "smooth" });
                     }
                 } else {
@@ -221,23 +253,21 @@ export function ChatBoard({ userData, usersData, chatData, messages, isLoading }
     }
 
     useEffect(() => {
-        let messageIndex = 0;
-
         observer.current = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
-                const dataId: string = String(entry.target.getAttribute("data-id"));
-                if (entry.isIntersecting) {
-                    const messageId = parseInt(dataId, 10);
+                if (!entry.isIntersecting) return;
 
-                    if (messageId > messageIndex) {
-                        messageIndex = messageId;
-                        dispatch({ type: 'SET_LAST_SEEN_MESSAGE', payload: messageIndex });
-                    }
+                const dataId = entry.target.getAttribute("data-id");
+                const messageId = Number(dataId);
 
-                    for (let i = 0; i <= messageId; i++) {
-                        if (messages[i]?.unreaded === true) {
-                            messages[i].unreaded = false;
-                        }
+                dispatch({
+                    type: 'SET_LAST_SEEN_MESSAGE',
+                    payload: messageId
+                });
+
+                for (let i = 0; i <= messageId; i++) {
+                    if (messages[i]?.unreaded) {
+                        messages[i].unreaded = false;
                     }
                 }
             });

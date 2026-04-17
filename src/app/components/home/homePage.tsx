@@ -101,9 +101,9 @@ export function Main() {
                                 <div key={itemId} className="relative py-2 px-4 sm:p-4 w-[320px] h-[190px] sm:w-[350px] sm:h-[220px]">
                                     <Image src="/home/outline_card.svg" alt="outline" width={100} height={100} className="absolute inset-0 w-full h-full pointer-events-none z-[1] " />
                                     <div className="relative flex flex-col bg-[#d8b5a3] md:min-w-[318px] h-full z-[0] rounded">
-                                        <div className="text-center uppercase py-2 text-lg font-light">{item?.title}</div>
+                                        <div className="text-center text-[100%] uppercase py-2 underline underline-offset-4 font-light line-clamp-1">{item?.title}</div>
                                         <div className="text-base px-2 h-auto">
-                                            <p className='line-clamp-4 sm:line-clamp-5'>{item?.description}</p>
+                                            <p className='line-clamp-4 sm:line-clamp-4'>{item?.description}</p>
                                         </div>
                                         <div className="flex justify-between items-end mt-auto px-2 pb-2">
                                             <p className="text-sm">
