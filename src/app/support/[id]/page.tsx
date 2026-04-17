@@ -80,6 +80,7 @@ export default function SupportChatRoom() {
         return () => {
             chatChannel.unsubscribe();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     useEffect(() => {
@@ -295,6 +296,7 @@ export default function SupportChatRoom() {
             isMounted = false;
         }
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [cookies, params?.id, router, socket, userData]);
 
     return (
